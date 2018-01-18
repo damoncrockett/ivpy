@@ -8,9 +8,8 @@ def show(pathcol,idx,thumb=False):
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
     return im
 
-def montage(pathcol,featdf,featcol,thumb=100,sample=False,idx=False):
+def montage(pathcol,featdf,featcol,thumb=100,sample=False,idx=False,bg="#4a4a4a"):
     xgrid = 868 / thumb # hard-coded bc of Jupyter cell sizes
-    featdf = featdf[featdf[featcol] > 0.0]
 
     if sample!=False:
         featdf = featdf.sample(n=sample)
@@ -28,8 +27,7 @@ def montage(pathcol,featdf,featcol,thumb=100,sample=False,idx=False):
     y = y[:len(paths)]
     coords = zip(x,y)
     
-    #canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),(50,50,50))
-    canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),(255,255,255))
+    canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
     
     for i,j in zip(range(len(paths)),featdf.index):
         im = Image.open(paths.iloc[i])

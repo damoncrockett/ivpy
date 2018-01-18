@@ -1,124 +1,154 @@
 /*
+ivpy
+Damon Crockett (http://damoncrockett.com)
 
-    Name:       ivpy Jupyter notebook theme
-    Author:     Damon Crockett (http://damoncrockett.com)
+Style settings for use with iv.py, a Python library for iconographic visualization 
+inside computational notebooks: https://github.com/damoncrockett/ivpy
 
-    Style settings for use with iv.py, a Python library for iconographic visualization inside computational notebooks
-
-    repo URL: https://github.com/damoncrockett/ivpy
-
-    Template for additional mods by Sherif Soliman (http://sherifsoliman.com/2016/01/11/theming-ipython-jupyter-notebook/)
-    CodeMirror template adapted for IPython Notebook by Nikhil Sonnad (https://github.com/nsonnad/base16-ipython-notebook)
-    CodeMirror template by Jan T. Sott (https://github.com/idleberg/base16-chrome-devtools)
-
+Use: rename file 'custom.css' and add to .jupyter/custom/ in your user folder
 */
 
-/* Uncomment to use a custom font
-div#notebook, div.CodeMirror, div.output_area pre, div.output_wrapper, div.prompt {
-  font-family: 'Custom Font Name', monospace !important;
-}
-*/
-
-
-
-/*Otherwise, a lot of backgrounds are white.*/
-div#notebook {background-color: #7f7f7f; border-top: none;}
-div#notebook-container {background-color: #7f7f7f;}
-
-/*Don't need to see jupyter logo, filename, last saved, etc.*/
-/*div#header-container { display: none; }*/
-
-/*This prevents scrollable output from having an ugly grey
-shadow around it*/
-div.output.output_scroll {
-    box-shadow: none;
+div#notebook {
+  background-color: #4a4a4a; 
+  border-top: none;
 }
 
-/*Scroll bars*/
-::-webkit-scrollbar {
-    width: 12px;
+div#notebook_list :hover {
+  background-color: #978d85; /* orange-y gray */ 
 }
 
-/* Handle */
-::-webkit-scrollbar-thumb {
-    -webkit-border-radius: 5px;
-    border-radius: 5px;
-    background: #484848;
-}
-::-webkit-scrollbar-thumb:window-inactive {
-	background: #484848; 
+div#notebook_list_header {
+  background-color: #4a4a4a;
 }
 
+div#notebook-container {
+  background-color: #4a4a4a;
+  box-shadow: none;
+}
 
-/*########################*/
+div#header { background-color: #4a4a4a; }
+div#header-container { display: none; } /* Jupyter logo, etc. */
 
+div#menus { 
+  background-color: #4a4a4a; 
+  border: none;
+}
 
-/* GLOBALS */
-body {background-color: #7f7f7f;}
-a {color: #7587a6;}
+p#kernel_indicator {
+  color: #dddddd;
+}
 
-/* INTRO PAGE */
-.toolbar_info, .list_container {color: #bfbfbf;}
+.navbar-default .navbar-nav > li > a {
+  color: #dddddd;
+}
 
-/* NOTEBOOK */
+.navbar-default .navbar-nav > li > a:hover {
+  color: #222222;
+}
 
-/* comment out this line to bring the toolbar back */
-/*div#maintoolbar, div#header {display: none !important;}*/
+.btn-default{
+  background-color: #4a4a4a;
+  color: #dddddd;
+  border-color: #dddddd;
+}
 
-div.input_prompt {color: #9b703f;}
-div.output_prompt {color: #9b859d;}
+select#cell_type {
+  background-color: #4a4a4a;
+  color: #dddddd;
+  border-color: #dddddd;
+}
+
+div#terminal_list, div#running_list {
+  background-color: #4a4a4a;
+  color: #dddddd;
+}
+
+div#terminal_list :hover, div#running_list :hover {
+  background-color: #978d85; /* orange-y gray */
+}
+
+div.output.output_scroll { box-shadow: none; }
+
+body {
+  background-color: #4a4a4a;
+  color: #dddddd;
+}
+
+a { color: #dddddd; }
+a:hover { color: #222222; }
+a:focus { color: #63aaff; } /* light blue */
+
+.item_icon {
+  color: #dddddd;
+}
+
+.toolbar_info, .list_container {color: #dddddd;}
+
+div.input_prompt {color: #978d85;}
+div.output_prompt {color: #978d85;}
+
 div.input_area {
-  border-radius: 0px;
-  border: 1px solid #464b50;
+  border-radius: 2px;
+  border: 1px solid #222222;
+  background-color: #dddddd;
 }
-div.output_area {background-color: #7f7f7f;}
-div.output_area pre {font-weight: normal; color: #e5e5e5;}
-div.output_subarea {font-weight: normal; color: #e5e5e5;}
+
+div#running .panel-group .panel .panel-heading {
+  background-color: #4a4a4a;
+}
+
+div.output_area {background-color: #4a4a4a;}
+div.output_area pre {font-weight: normal; color: #dddddd;}
+div.output_subarea {font-weight: normal; color: #dddddd;}
 
 .rendered_html table, .rendered_html th, .rendered_html tr, .rendered_html td {
-  border: 1px  #e5e5e5 solid;
-  color: #e5e5e5;
+  border: 1px  #978d85 solid;
+  color: #000000;
+} /* df colors */
+
+div.output_html { font-family: sans-serif; } /* df text; not sure what else */
+
+div.cell.selected {
+  border-radius: 2px;
+  border-color: #978d85;
 }
-div.output_html { font-family: sans-serif; }
-table.dataframe tr {border: 1px #e5e5e5;}
 
-div.cell.selected {border-radius: 0px;}
-div.cell.edit_mode {border-radius: 0px; border: thin solid #9b859d;}
-div.text_cell_render, div.output_html {color: #e5e5e5;}
+div.cell.edit_mode { border-radius: 2px; border: thin solid #222222; }
+div.text_cell_render { color: #dddddd; } /* markdown text output */ 
 
-span.ansiblack {color: #323537;}
-span.ansiblue {color: #afc4db;}
-span.ansigray {color: #838184;}
-span.ansigreen {color: #8f9d6a;}
-span.ansipurple {color: #9b859d;}
-span.ansired {color: #cf6a4c;}
-span.ansiyellow {color: #f9ee98;}
+span.ansiblack {color: #222222;}
+span.ansiblue {color: #286dc0;}
+span.ansigray {color: #978d85;}
+span.ansigreen {color: #5f712d;} /* darker green */
+span.ansipurple {color: #00356b;}
+span.ansired {color: #bd5319;} 
+span.ansiyellow {color: #ffbf00;}
 
-div.output_stderr {background-color: #cf6a4c;}
-div.output_stderr pre {color: #c3c3c3;}
+div.output_stderr {background-color: #4a4a4a;}
+div.output_stderr pre {color: #dddddd;}
 
-.cm-s-ipython.CodeMirror {background: #7f7f7f; color: #e5e5e5;}
-.cm-s-ipython div.CodeMirror-selected {background: #323537 !important;}
-.cm-s-ipython .CodeMirror-gutters {background: #1e1e1e; border-right: 0px;}
-.cm-s-ipython .CodeMirror-linenumber {color: #5f5a60;}
-.cm-s-ipython .CodeMirror-cursor {border-left: 1px solid #838184 !important;}
+.cm-s-ipython.CodeMirror {background: #4a4a4a; color: #dddddd;}
+.cm-s-ipython div.CodeMirror-selected {background: #222222 !important;}
+.cm-s-ipython .CodeMirror-linenumber {color: #978d85;}
+.cm-s-ipython .CodeMirror-cursor {border-left: 1px solid #dddddd !important;}
 
-.cm-s-ipython span.cm-comment {color: #9b703f;}
-.cm-s-ipython span.cm-atom {color: #9b859d;}
-.cm-s-ipython span.cm-number {color: #9b859d;}
+.cm-s-ipython span.cm-comment {color: #ffbf00;}
+.cm-s-ipython span.cm-number {color: #63aaff;}
 
-.cm-s-ipython span.cm-property, .cm-s-ipython span.cm-attribute {color: #8f9d6a;}
-.cm-s-ipython span.cm-keyword {color: #cf6a4c;}
-.cm-s-ipython span.cm-string {color: #f9ee98;}
-.cm-s-ipython span.cm-operator {color: #9b703f;}
-.cm-s-ipython span.cm-builtin {color: #9b859d;}
+.cm-s-ipython span.cm-property, .cm-s-ipython span.cm-attribute {color: #9ac12e;}
+.cm-s-ipython span.cm-keyword {color: #286dc0;}
+.cm-s-ipython span.cm-string {color: #dddddd;}
+.cm-s-ipython span.cm-operator {color: #00356b;}
+.cm-s-ipython span.cm-builtin {color: #8da843;} /* lighter green */
 
-.cm-s-ipython span.cm-variable {color: #8f9d6a;}
-.cm-s-ipython span.cm-variable-2 {color: #7587a6;}
-.cm-s-ipython span.cm-def {color: #cda869;}
-.cm-s-ipython span.cm-error {background: #cf6a4c; color: #838184;}
-.cm-s-ipython span.cm-bracket {color: #e5e5e5;}
-.cm-s-ipython span.cm-tag {color: #cf6a4c;}
-.cm-s-ipython span.cm-link {color: #9b859d;}
+.cm-s-ipython span.cm-variable {color: #978d85;}
+.cm-s-ipython span.cm-variable-2 {color: #63aaff;}
+.cm-s-ipython span.cm-def {color: #8da843;}
+.cm-s-ipython span.cm-error {background: #c1502e; color: #902ec1;}
+.cm-s-ipython span.cm-bracket {color: #dddddd;}
 
-.cm-s-ipython .CodeMirror-matchingbracket { text-decoration: underline; color: #c3c3c3 !important;}
+.cm-s-ipython .CodeMirror-matchingbracket { 
+  text-decoration: none; 
+  color: #dddddd !important;
+  background-color: #222222;
+}
