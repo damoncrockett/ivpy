@@ -90,11 +90,19 @@ div.output_prompt {color: #978d85;}
 div.input_area {
   border-radius: 2px;
   border: 1px solid #222222;
-  background-color: #dddddd;
+  background-color: #4a4a4a;
 }
 
 div#running .panel-group .panel .panel-heading {
   background-color: #4a4a4a;
+}
+
+div#texteditor-backdrop {
+  background-color: #4a4a4a;
+}
+
+#texteditor-backdrop #texteditor-container .CodeMirror-gutter, #texteditor-backdrop #texteditor-container .CodeMirror-gutters {
+    background-color: #4a4a4a;
 }
 
 div.output_area {background-color: #4a4a4a;}
@@ -134,18 +142,19 @@ div.output_stderr pre {color: #dddddd;}
 
 .cm-s-ipython span.cm-comment {color: #ffbf00;}
 .cm-s-ipython span.cm-number {color: #63aaff;}
-
-.cm-s-ipython span.cm-property, .cm-s-ipython span.cm-attribute {color: #9ac12e;}
 .cm-s-ipython span.cm-keyword {color: #286dc0;}
 .cm-s-ipython span.cm-string {color: #dddddd;}
-.cm-s-ipython span.cm-operator {color: #00356b;}
+.cm-s-ipython span.cm-operator {color: #bd5319;}
 .cm-s-ipython span.cm-builtin {color: #8da843;} /* lighter green */
-
 .cm-s-ipython span.cm-variable {color: #978d85;}
 .cm-s-ipython span.cm-variable-2 {color: #63aaff;}
 .cm-s-ipython span.cm-def {color: #8da843;}
 .cm-s-ipython span.cm-error {background: #c1502e; color: #902ec1;}
 .cm-s-ipython span.cm-bracket {color: #dddddd;}
+
+.cm-s-ipython span.cm-header {color: #ffbf00;} /* not sure this line does anything */
+.cm-s-default .cm-header {color: #ffbf00;}
+.cm-header {color: #ffbf00}
 
 .cm-s-ipython .CodeMirror-matchingbracket { 
   text-decoration: none; 
