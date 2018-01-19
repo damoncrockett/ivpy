@@ -141,16 +141,30 @@ div.output_stderr pre {color: #dddddd;}
 .cm-s-ipython .CodeMirror-cursor {border-left: 1px solid #dddddd !important;}
 
 .cm-s-ipython span.cm-comment {color: #ffbf00;}
+.cm-s-ipython span.cm-string {color: #dddddd;}
+
 .cm-s-ipython span.cm-number {color: #63aaff;}
 .cm-s-ipython span.cm-keyword {color: #286dc0;}
-.cm-s-ipython span.cm-string {color: #dddddd;}
 .cm-s-ipython span.cm-operator {color: #bd5319;}
+
+/* function stuff */
 .cm-s-ipython span.cm-builtin {color: #8da843;} /* lighter green */
+.cm-s-ipython span.cm-def {color: #8da843;}
+
 .cm-s-ipython span.cm-variable {color: #978d85;}
 .cm-s-ipython span.cm-variable-2 {color: #63aaff;}
-.cm-s-ipython span.cm-def {color: #8da843;}
+.cm-s-ipython span.cm-variable-3 {color: #63aaff;}
+
+
 .cm-s-ipython span.cm-error {background: #c1502e; color: #902ec1;}
 .cm-s-ipython span.cm-bracket {color: #dddddd;}
+
+/* CSS stuff */
+.cm-s-ipython span.cm-qualifier {color: #8da843;}
+.cm-s-ipython span.cm-attribute {color: #8da843;} /* may have none */
+.cm-s-ipython span.cm-tag {color: #286dc0;}
+.cm-s-ipython span.cm-property {color: #978d85;}
+.cm-s-ipython span.cm-atom {color: #63aaff;} /* e.g., like a hex color */
 
 .cm-s-ipython span.cm-header {color: #ffbf00;} /* not sure this line does anything */
 .cm-s-default .cm-header {color: #ffbf00;}
