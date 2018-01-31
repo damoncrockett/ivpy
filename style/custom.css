@@ -5,7 +5,7 @@ Damon Crockett (http://damoncrockett.com)
 Style settings for use with iv.py, a Python library for iconographic visualization 
 inside computational notebooks: https://github.com/damoncrockett/ivpy
 
-Use: rename file 'custom.css' and add to .jupyter/custom/ in your user folder
+Use: add file to .jupyter/custom/ in your user folder
 */
 
 /* color variables */
