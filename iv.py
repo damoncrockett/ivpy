@@ -1,4 +1,4 @@
-from PIL import Image,ImageDraw
+from PIL import Image,ImageDraw,ImageFont
 import numpy as np
 import pandas as pd
 import copy
@@ -186,12 +186,7 @@ def montage(pathcol=None,featcol=None,thumb=100,sample=False,idx=False,bg="#4a4a
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         
         if idx==True:
-            pos = (7,7)
-            draw = ImageDraw.Draw(im)
-            try:
-                draw.text(pos, str(int(j)), fill='#c0c0c0')
-            except Exception as e:
-                print e
+            _idx(im,j)
 
         canvas.paste(im,coords[i])    
     
@@ -265,3 +260,48 @@ def histogram(pathcol,xfeatdf,yfeatdf,xfeat,yfeat,thumb=40,nbins=20,ascendsort=F
             y_coord = y_coord - thumb
 
     return canvas
+
+def _idx(im,j):
+    pos = 7 # hard-code
+    draw = ImageDraw.Draw(im)
+    text = str(int(j))
+    font = ImageFont.truetype('VeraMono.ttf', 8)
+    fontWidth, fontHeight = font.getsize(text)
+
+    try:
+        draw.rectangle([(pos,pos),(pos+fontWidth,pos+fontHeight)],fill='#282828',outline=None)
+        draw.text((pos,pos),text,font=font,fill='#efefef')
+    
+    except Exception as e:
+        print e
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # because I hate working at the bottom of the screen      

@@ -8,8 +8,14 @@ inside computational notebooks: https://github.com/damoncrockett/ivpy
 Use: rename file 'custom.css' and add to .jupyter/custom/ in your user folder
 */
 
+/* color variables */
+
+:root {
+  --neutral-bg: #4a4a4a;
+}
+
 div#notebook {
-  background-color: #4a4a4a; 
+  background-color: var(--neutral-bg); 
   border-top: none;
 }
 
@@ -18,19 +24,19 @@ div#notebook_list :hover {
 }
 
 div#notebook_list_header {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
 }
 
 div#notebook-container {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
   box-shadow: none;
 }
 
-div#header { background-color: #4a4a4a; }
+div#header { background-color: var(--neutral-bg); }
 div#header-container { display: none; } /* Jupyter logo, etc. */
 
 div#menus { 
-  background-color: #4a4a4a; 
+  background-color: var(--neutral-bg); 
   border: none;
 }
 
@@ -47,19 +53,19 @@ p#kernel_indicator {
 }
 
 .btn-default{
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
   color: #dddddd;
   border-color: #dddddd;
 }
 
 select#cell_type {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
   color: #dddddd;
   border-color: #dddddd;
 }
 
 div#terminal_list, div#running_list {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
   color: #dddddd;
 }
 
@@ -70,7 +76,7 @@ div#terminal_list :hover, div#running_list :hover {
 div.output.output_scroll { box-shadow: none; }
 
 body {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
   color: #dddddd;
 }
 
@@ -90,22 +96,22 @@ div.output_prompt {color: #978d85;}
 div.input_area {
   border-radius: 2px;
   border: 1px solid #222222;
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
 }
 
 div#running .panel-group .panel .panel-heading {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
 }
 
 div#texteditor-backdrop {
-  background-color: #4a4a4a;
+  background-color: var(--neutral-bg);
 }
 
 #texteditor-backdrop #texteditor-container .CodeMirror-gutter, #texteditor-backdrop #texteditor-container .CodeMirror-gutters {
-    background-color: #4a4a4a;
+    background-color: var(--neutral-bg);
 }
 
-div.output_area {background-color: #4a4a4a;}
+div.output_area {background-color: var(--neutral-bg);}
 div.output_area pre {font-weight: normal; color: #dddddd;}
 div.output_subarea {font-weight: normal; color: #dddddd;}
 
@@ -132,10 +138,10 @@ span.ansipurple {color: #00356b;}
 span.ansired {color: #bd5319;} 
 span.ansiyellow {color: #ffbf00;}
 
-div.output_stderr {background-color: #4a4a4a;}
+div.output_stderr {background-color: var(--neutral-bg);}
 div.output_stderr pre {color: #dddddd;}
 
-.cm-s-ipython.CodeMirror {background: #4a4a4a; color: #dddddd;}
+.cm-s-ipython.CodeMirror {background: var(--neutral-bg); color: #dddddd;}
 .cm-s-ipython div.CodeMirror-selected {background: #222222 !important;}
 .cm-s-ipython .CodeMirror-linenumber {color: #978d85;}
 .cm-s-ipython .CodeMirror-cursor {border-left: 1px solid #dddddd !important;}
