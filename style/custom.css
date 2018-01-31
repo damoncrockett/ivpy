@@ -1,0 +1,192 @@
+/*
+ivpy
+Damon Crockett (http://damoncrockett.com)
+
+Style settings for use with iv.py, a Python library for iconographic visualization 
+inside computational notebooks: https://github.com/damoncrockett/ivpy
+
+Use: rename file 'custom.css' and add to .jupyter/custom/ in your user folder
+*/
+
+/* color variables */
+
+:root {
+  --neutral-bg: #4a4a4a;
+  --neutral-light: #969696;
+  --bright-txt: #dddddd;
+  --near-blk: #222222;
+  --yale-light: #63aaff;
+  --yale-med: #286dc0;
+  --yeller: #ffbf00;
+  --hellgruen: #8da843;
+}
+
+/* main settings */
+
+div#notebook {
+  background-color: var(--neutral-bg); 
+  border-top: none;
+}
+
+div#notebook_list :hover {
+  background-color: var(--neutral-light);
+}
+
+div#notebook_list_header {
+  background-color: var(--neutral-bg);
+}
+
+div#notebook-container {
+  background-color: var(--neutral-bg);
+  box-shadow: none;
+}
+
+div#header { background-color: var(--neutral-bg); }
+div#header-container { display: none; } /* Jupyter logo, etc. */
+
+div#menus { 
+  background-color: var(--neutral-bg); 
+  border: none;
+}
+
+p#kernel_indicator {
+  color: var(--bright-txt);
+}
+
+.navbar-default .navbar-nav > li > a {
+  color: var(--bright-txt);
+}
+
+.navbar-default .navbar-nav > li > a:hover {
+  color: var(--near-blk);
+}
+
+.btn-default{
+  background-color: var(--neutral-bg);
+  color: var(--bright-txt);
+  border-color: var(--bright-txt);
+}
+
+select#cell_type {
+  background-color: var(--neutral-bg);
+  color: var(--bright-txt);
+  border-color: var(--bright-txt);
+}
+
+div#terminal_list, div#running_list {
+  background-color: var(--neutral-bg);
+  color: var(--bright-txt);
+}
+
+div#terminal_list :hover, div#running_list :hover {
+  background-color: var(--neutral-light);
+}
+
+div.output.output_scroll { box-shadow: none; }
+
+body {
+  background-color: var(--neutral-bg);
+  color: var(--bright-txt);
+}
+
+a { color: var(--bright-txt); }
+a:hover { color: var(--near-blk); }
+a:focus { color: var(--yale-light); } 
+
+.item_icon {
+  color: var(--bright-txt);
+}
+
+.toolbar_info, .list_container {color: var(--bright-txt);}
+
+div.input_prompt {color: var(--neutral-light);}
+div.output_prompt {color: var(--neutral-light);}
+
+div.input_area {
+  border-radius: 2px;
+  border: 1px solid var(--near-blk);
+  background-color: var(--neutral-bg);
+}
+
+div#running .panel-group .panel .panel-heading {
+  background-color: var(--neutral-bg);
+}
+
+div#texteditor-backdrop {
+  background-color: var(--neutral-bg);
+}
+
+#texteditor-backdrop #texteditor-container .CodeMirror-gutter, #texteditor-backdrop #texteditor-container .CodeMirror-gutters {
+    background-color: var(--neutral-bg);
+}
+
+div.output_area {background-color: var(--neutral-bg);}
+div.output_area pre {font-weight: normal; color: var(--bright-txt);}
+div.output_subarea {font-weight: normal; color: var(--bright-txt);}
+
+.rendered_html table, .rendered_html th, .rendered_html tr, .rendered_html td {
+  border: 1px  var(--neutral-light) solid;
+  color: #000000;
+} /* df colors */
+
+div.output_html { font-family: sans-serif; } /* df text; not sure what else */
+
+div.cell.selected {
+  border-radius: 2px;
+  border-color: var(--neutral-light);
+}
+
+div.cell.edit_mode { border-radius: 2px; border: thin solid var(--near-blk); }
+div.text_cell_render { color: var(--bright-txt); } /* markdown text output */ 
+
+span.ansiblack {color: var(--near-blk);}
+span.ansiblue {color: var(--yale-med);}
+span.ansigray {color: var(--neutral-light);}
+span.ansigreen {color: #5f712d;} /* darker green */
+span.ansipurple {color: #00356b;}
+span.ansired {color: #bd5319;} 
+span.ansiyellow {color: var(--yeller);}
+
+div.output_stderr {background-color: var(--neutral-bg);}
+div.output_stderr pre {color: var(--bright-txt);}
+
+.cm-s-ipython.CodeMirror {background: var(--neutral-bg); color: var(--bright-txt);}
+.cm-s-ipython div.CodeMirror-selected {background: var(--near-blk) !important;}
+.cm-s-ipython .CodeMirror-linenumber {color: var(--neutral-light);}
+.cm-s-ipython .CodeMirror-cursor {border-left: 1px solid var(--bright-txt) !important;}
+
+.cm-s-ipython span.cm-comment {color: var(--yeller);}
+.cm-s-ipython span.cm-string {color: var(--bright-txt);}
+
+.cm-s-ipython span.cm-number {color: var(--yale-light);}
+.cm-s-ipython span.cm-keyword {color: var(--yale-med);}
+.cm-s-ipython span.cm-operator {color: #bd5319;}
+
+/* function stuff */
+.cm-s-ipython span.cm-builtin {color: var(--hellgruen);} /* lighter green */
+.cm-s-ipython span.cm-def {color: var(--hellgruen);}
+
+.cm-s-ipython span.cm-variable {color: var(--neutral-light);}
+.cm-s-ipython span.cm-variable-2 {color: var(--yale-light);}
+.cm-s-ipython span.cm-variable-3 {color: var(--yale-light);}
+
+
+.cm-s-ipython span.cm-error {background: #c1502e; color: #902ec1;}
+.cm-s-ipython span.cm-bracket {color: var(--bright-txt);}
+
+/* CSS stuff */
+.cm-s-ipython span.cm-qualifier {color: var(--hellgruen);}
+.cm-s-ipython span.cm-attribute {color: var(--hellgruen);} /* may have none */
+.cm-s-ipython span.cm-tag {color: var(--yale-med);}
+.cm-s-ipython span.cm-property {color: var(--neutral-light);}
+.cm-s-ipython span.cm-atom {color: var(--yale-light);} /* e.g., like a hex color */
+
+.cm-s-ipython span.cm-header {color: var(--yeller);} /* not sure this line does anything */
+.cm-s-default .cm-header {color: var(--yeller);}
+.cm-header {color: var(--yeller)}
+
+.cm-s-ipython .CodeMirror-matchingbracket { 
+  text-decoration: none; 
+  color: var(--bright-txt) !important;
+  background-color: var(--near-blk);
+}
