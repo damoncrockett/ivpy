@@ -130,8 +130,7 @@ def montage(pathcol=None,featcol=None,thumb=100,sample=False,idx=False,bg="#4a4a
     If user supplies a number for 'sample', we sample pathcol and subset featcol to these 
     indices. We do this because later, we might sort by featcol. If so, we will want to then
     subset pathcol by featcol, and this won't work if pathcol is missing a bunch of the indices
-    after sampling. So we must sample both together. We raise a warning just to keep the user
-    informed of what's going on.
+    after sampling. So we must sample both together.
     """
     if sample!=False:
         
@@ -140,9 +139,6 @@ def montage(pathcol=None,featcol=None,thumb=100,sample=False,idx=False,bg="#4a4a
         
         pathcol = pathcol.sample(n=sample)
         featcol = featcol.loc[pathcol.index]
-        
-        warnings.warn("""Sampling done on 'pathcol' and applied to 'featcol'. If these columns
-            come from different DataFrames, make sure the indices match.""")
 
     """
     If user supplies featcol, we sort featcol and apply to pathcol. At this point, if featcol
@@ -153,8 +149,6 @@ def montage(pathcol=None,featcol=None,thumb=100,sample=False,idx=False,bg="#4a4a
         
         featcol = featcol.sort_values(ascending=False)
         paths = pathcol.loc[featcol.index]
-        warnings.warn("""Sorting done on 'featcol' and applied to 'pathcol'. If these columns
-            come from different DataFrames, make sure the indices match.""")
 
     """
     Building the montage
