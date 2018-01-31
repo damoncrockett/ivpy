@@ -1,24 +1,176 @@
 from PIL import Image,ImageDraw
 import numpy as np
 import pandas as pd
+import copy
+from skimage.io import imread
+from skimage import color
+import warnings
 
-def show(pathcol,idx,thumb=False):
-    im = Image.open(pathcol.loc[idx])
+ATTACHED_DATAFRAME = None
+ATTACHED_PATHCOL = None
+
+def attach(df,pathcol=None):
+    
+    if pathcol is None:
+        
+        raise ValueError("""Must supply variable 'pathcol', either as a string
+            that names a column of image paths in the supplied DataFrame, or
+            as a pandas Series of image paths 
+            """)
+
+    global ATTACHED_DATAFRAME
+    global ATTACHED_PATHCOL
+
+    ATTACHED_DATAFRAME = copy.deepcopy(df) # deep to avoid change bleed
+    
+    if isinstance(pathcol, basestring):
+        ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
+    
+    elif isinstance(pathcol, pd.Series):
+        
+        if len(pathcol)==len(ATTACHED_DATAFRAME):
+            ATTACHED_PATHCOL = copy.deepcopy(pathcol)
+        
+        else:
+            raise ValueError("Length of path list does not match length of DataFrame") 
+    
+    else:
+        raise TypeError("Variable 'pathcol' must be either a string or a pandas Series")
+
+def detach(df):
+    
+    global ATTACHED_DATAFRAME
+    global ATTACHED_PATHCOL
+
+    ATTACHED_DATAFRAME = None
+    ATTACHED_PATHCOL = None
+
+def show(idx,pathcol=None,thumb=False):
+    
+    global ATTACHED_PATHCOL
+
+    if pathcol is not None:
+        
+        if isinstance(pathcol, pd.Series):
+            im = Image.open(pathcol.loc[idx])
+        
+        else: 
+            raise ValueError("""Variable 'pathcol' must be a pandas Series""")
+        
+    else:
+        
+        try:
+            im = Image.open(ATTACHED_PATHCOL.loc[idx])
+        
+        except:
+            raise ValueError("""If no dataframe is attached, must supply a value 
+                for 'pathcol'
+                """)
+    
     if thumb!=False:
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+    
     return im
 
-def montage(pathcol,featdf,featcol,thumb=100,sample=False,idx=False,bg="#4a4a4a"):
-    xgrid = 868 / thumb # hard-coded bc of Jupyter cell sizes
+def montage(pathcol=None,featcol=None,thumb=100,sample=False,idx=False,bg="#4a4a4a"):
+    
+    global ATTACHED_DATAFRAME
+    global ATTACHED_PATHCOL    
 
+    """
+    Parsing user supplied data. If a DataFrame is attached, user can pass an empty montage
+    function which will plot all images in attached DataFrame in the order they appear there.
+    If no DataFrame is attached, user must supply 'pathcol', otherwise the function has no 
+    image files to open and plot.
+    """
+    if pathcol is None:
+        
+        if ATTACHED_PATHCOL is None:
+            raise ValueError("No DataFrame attached. Must supply 'pathcol'")
+        
+        else:
+            pathcol = copy.deepcopy(ATTACHED_PATHCOL)
+    
+    else:
+        
+        if not isinstance(pathcol, pd.Series):
+            raise ValueError("If supplied, 'pathcol' must be a pandas Series")
+
+    
+    # if featcol is none, images will be plotted by pathcol index ordering
+    if featcol is not None:
+        
+        if isinstance(featcol, pd.Series):
+            
+            if len(featcol)!=len(pathcol): 
+                raise ValueError("Lists of image paths and image features must be same length")
+        
+        elif isinstance(featcol, basestring):
+            
+            if ATTACHED_DATAFRAME is None:
+                raise ValueError("""No DataFrame attached. Variable 'featcol' must be a pandas
+                    Series""")
+            
+            else:
+                
+                tmp = copy.deepcopy(ATTACHED_DATAFRAME)
+                featcol = tmp[featcol]
+                
+                if len(featcol)!=len(pathcol): 
+                    raise ValueError("""Lists of image paths and image features must be same
+                        length""") 
+        
+        else:
+            raise ValueError("If supplied, 'featcol' must be a string or a pandas Series")
+    
+    elif featcol is None:
+        paths = copy.deepcopy(pathcol) # deep copy is possibly not necessary here     
+    
+    """
+    If user supplies a number for 'sample', we sample pathcol and subset featcol to these 
+    indices. We do this because later, we might sort by featcol. If so, we will want to then
+    subset pathcol by featcol, and this won't work if pathcol is missing a bunch of the indices
+    after sampling. So we must sample both together. We raise a warning just to keep the user
+    informed of what's going on.
+    """
     if sample!=False:
-        featdf = featdf.sample(n=sample)
+        
+        if not isinstance(sample, int):
+            raise ValueError("Sample size must be an integer")
+        
+        pathcol = pathcol.sample(n=sample)
+        featcol = featcol.loc[pathcol.index]
+        
+        warnings.warn("""Sampling done on 'pathcol' and applied to 'featcol'. If these columns
+            come from different DataFrames, make sure the indices match.""")
+
+    """
+    If user supplies featcol, we sort featcol and apply to pathcol. At this point, if featcol
+    is not None, we know it is a pandas Series (either user-supplied or from the attached df).
+    We also know it is the same length as pathcol - even if pathcol got sampled above.
+    """
+    if featcol is not None:
+        
+        featcol = featcol.sort_values(ascending=False)
+        paths = pathcol.loc[featcol.index]
+        warnings.warn("""Sorting done on 'featcol' and applied to 'pathcol'. If these columns
+            come from different DataFrames, make sure the indices match.""")
+
+    """
+    Building the montage
+    """
+    if isinstance(thumb, int):
+        xgrid = 868 / thumb # hard-coded bc of Jupyter cell sizes
     
-    featdf = featdf.sort_values(by=featcol,ascending=False)
+    elif isinstance(thumb, float):
+        xgrid = 868 / int(thumb)
+        
+        warnings.warn("Variable 'thumb' given as a float, rounded to nearest integer")
     
-    paths = pathcol.loc[featdf.index] # will still be sorted
+    else:
+        raise ValueError("Variable 'thumb' must be an integer")
+
     nrows = len(paths) / xgrid + 1 # python int division always rounds down
-    
     x = range(xgrid) * nrows
     x = [item * thumb for item in x]
     x = x[:len(paths)]
@@ -28,8 +180,8 @@ def montage(pathcol,featdf,featcol,thumb=100,sample=False,idx=False,bg="#4a4a4a"
     coords = zip(x,y)
     
     canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
-    
-    for i,j in zip(range(len(paths)),featdf.index):
+
+    for i,j in zip(range(len(paths)),pathcol.index):
         im = Image.open(paths.iloc[i])
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         
@@ -37,12 +189,17 @@ def montage(pathcol,featdf,featcol,thumb=100,sample=False,idx=False,bg="#4a4a4a"
             pos = (7,7)
             draw = ImageDraw.Draw(im)
             try:
-                draw.text(pos, str(int(j)), fill="black")
+                draw.text(pos, str(int(j)), fill='#c0c0c0')
             except Exception as e:
                 print e
 
         canvas.paste(im,coords[i])    
-    return canvas    
+    
+    return canvas  
+
+
+
+###################################################################################
 
 """
 note: an issue with scales: tools like ggplot make a scale based on the
