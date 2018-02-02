@@ -9,12 +9,13 @@ from .data import _colfilter
 
 def show(idx,pathcol=None,thumb=False):
     
-    pathcol,featcol,ycol = _colfilter(pathcol,featcol,sample)
+    pathcol,featcol,ycol = _colfilter(pathcol)
     
     im = Image.open(pathcol.loc[idx])
 
     if thumb!=False:
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+    
     return im
 
 def montage(pathcol=None,
@@ -26,7 +27,11 @@ def montage(pathcol=None,
             shape='rect',
             ascending=False):
     
-    pathcol,featcol,ycol = _colfilter(pathcol,featcol,sample)
+    # only first argument is positional
+    pathcol,featcol,ycol = _colfilter(pathcol,
+                                      featcol=featcol,
+                                      sample=sample,
+                                      ascending=ascending)
 
     if shape=='rect':
 
@@ -34,11 +39,12 @@ def montage(pathcol=None,
             xgrid = 868 / thumb # hard-coded bc of Jupyter cell sizes
         elif isinstance(thumb, float):
             xgrid = 868 / int(thumb)
-            warnings.warn("Variable 'thumb' given as a float, rounded to nearest integer")
+            warnings.warn("""Variable 'thumb' given as a float,
+                             rounded to nearest integer""")
         else:
             raise ValueError("Variable 'thumb' must be an integer")
 
-        nrows = len(pathcol) / xgrid + 1 # python int division always rounds down
+        nrows = len(pathcol) / xgrid + 1 # python int divide always rounds down
         x = range(xgrid) * nrows
         x = [item * thumb for item in x]
         x = x[:len(pathcol)]
@@ -120,7 +126,11 @@ def histogram(featcol,
               flat=False,
               coordinates='cartesian'):
     
-    pathcol,featcol,ycol = _colfilter(pathcol,featcol,sample,ycol)
+    # only first argument is positional
+    pathcol,featcol,ycol = _colfilter(pathcol,
+                                      featcol=featcol,
+                                      ycol=ycol,
+                                      sample=sample)
 
     if flat==False:
         xbin = pd.cut(featcol,nbins,labels=False)
@@ -135,11 +145,14 @@ def histogram(featcol,
     canvas = Image.new('RGB',(px_w,px_h),bg)
 
     for binlabel in bins:
-        ycol_bin = ycol[xbin==binlabel]
-        ycol_bin = ycol_bin.sort_values(ascending=ascending)
-        pathcol_bin = pathcol.loc[ycol_bin.index]
+        if ycol is not None:
+            ycol_bin = ycol[xbin==binlabel]
+            ycol_bin = ycol_bin.sort_values(ascending=ascending)
+            pathcol_bin = pathcol.loc[ycol_bin.index]
+        else:
+            pathcol_bin = pathcol[xbin==binlabel]
 
-        y_coord = px_h - thumb
+        y_coord = px_h - thumb # bc paste loc is upper left corner
         x_coord = thumb * binlabel
 
         for i in pathcol_bin.index:
@@ -166,7 +179,11 @@ def scatter(featcol,
             ydomain=None,
             coordinates='cartesian'):
     
-    pathcol,featcol,ycol = _colfilter(pathcol,featcol,sample,ycol)
+    # only first argument is positional
+    pathcol,featcol,ycol = _colfilter(pathcol,
+                                      featcol=featcol,
+                                      ycol=ycol,
+                                      sample=sample) 
 
     # scaling
     if xdomain==None:
@@ -212,7 +229,12 @@ def _idx(im,i):
     fontWidth, fontHeight = font.getsize(text)
 
     try:
-        draw.rectangle([(pos,pos),(pos+fontWidth,pos+fontHeight)],fill='#282828',outline=None)
+        draw.rectangle(
+            [(pos,pos),(pos+fontWidth,pos+fontHeight)],
+            fill='#282828',
+            outline=None
+        )
+        
         draw.text((pos,pos),text,font=font,fill='#efefef')
     
     except Exception as e:
@@ -247,4 +269,4 @@ def _idx(im,i):
 
 
 
-  # because I hate working at the bottom of the screen      
+# ende   
