@@ -170,6 +170,7 @@ def histogram(featcol,
 
     return canvas
 
+# gridding not implemented 
 def scatter(featcol,
             ycol,
             pathcol=None,
@@ -180,7 +181,8 @@ def scatter(featcol,
             gridded=False,
             xdomain=None,
             ydomain=None,
-            coordinates='cartesian'):
+            bg="#4a4a4a",
+            coordinates='cartesian'): # not yet implemented
     
     # only first argument is positional
     pathcol,featcol,ycol = _colfilter(pathcol,
@@ -188,41 +190,50 @@ def scatter(featcol,
                                       ycol=ycol,
                                       sample=sample) 
 
-    # scaling
-    if xdomain==None:
-        xmin = featcol.min()
-        xmax = featcol.max()
-    else:
-        if not all(isinstance(xdomain,(list,tuple)),len(xdomain)==2):
-            raise ValueError("'xdomain' must be two-item list or tuple")
-        else:
-            xmin = xdomain[0]
-            xmax = xdomain[1]
-
-    if ydomain==None:
-        ymin = ycol.min()
-        ymax = ycol.max()
-    else:
-        if not all(isinstance(ydomain,(list,tuple)),len(ydomain)==2):
-            raise ValueError("'ydomain' must be two-item list or tuple")
-        else:
-            ymin = ydomain[0]
-            ymax = ydomain[1]
-
-
-
-    y = [int(item * side) for item in yfeatcol]
-    
+    x = _scale(featcol,xdomain,side,thumb)
+    y = _scale(ycol,ydomain,side,thumb,y=True)
     coords = zip(x,y)
 
     canvas = Image.new('RGB',(side,side),bg) # fixed size
 
-    for i in range(len(paths)):
-        im = Image.open(paths.iloc[i])
+    counter=-1
+    for i in pathcol.index:
+        counter+=1
+        im = Image.open(pathcol.loc[i])
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-        canvas.paste(im,coords[i])
+        
+        if idx==True:
+            _idx(im,i)
+
+        canvas.paste(im,coords[counter])
 
     return canvas
+
+def _scale(col,domain,side,thumb,y=False):
+    """This will fail on missing data""" 
+
+    pinrange = side - thumb # otherwise will cut off extremes
+
+    if domain==None:
+        dmin = col.min()
+        dmax = col.max()
+    else:
+        if not all(isinstance(domain,(list,tuple)),len(domain)==2):
+            raise ValueError("'domain' must be two-item list or tuple")
+        else:
+            dmin = domain[0]
+            dmax = domain[1]
+
+    if y==False:
+        return [ int( _pct(item,dmin,dmax) * pinrange ) for item in col]
+    elif y==True:
+        return [ int( (1 - _pct(item,dmin,dmax)) * pinrange ) for item in col]
+    else:    
+        raise ValueError("'y' must be a Boolean")
+
+def _pct(item,dmin,dmax):
+    drange = dmax - dmin
+    return (item - dmin) / float(drange)
 
 def _idx(im,i):
     pos = 0 # hard-code
