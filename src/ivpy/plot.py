@@ -36,9 +36,9 @@ def montage(pathcol=None,
     if shape=='rect':
 
         if isinstance(thumb, int):
-            xgrid = 868 / thumb # hard-coded bc of Jupyter cell sizes
+            xgrid = 980 / thumb # hard-coded bc of Jupyter cell sizes
         elif isinstance(thumb, float):
-            xgrid = 868 / int(thumb)
+            xgrid = 980 / int(thumb)
             warnings.warn("""Variable 'thumb' given as a float,
                              rounded to nearest integer""")
         else:
@@ -114,17 +114,18 @@ def montage(pathcol=None,
     
     return canvas  
 
+# thumb and bin defaults multiply to 980, the Jupyter cell width
 def histogram(featcol,
               pathcol=None,
               ycol=None,
-              thumb=40,
-              nbins=20,
+              thumb=28, 
+              nbins=35, 
               sample=False,
               idx=False,
               ascending=False,
               bg="#4a4a4a",
-              flat=False,
-              coordinates='cartesian'):
+              quantile=False,
+              coordinates='cartesian'): # not yet implemented
     
     # only first argument is positional
     pathcol,featcol,ycol = _colfilter(pathcol,
@@ -132,10 +133,12 @@ def histogram(featcol,
                                       ycol=ycol,
                                       sample=sample)
 
-    if flat==False:
+    if quantile==False:
         xbin = pd.cut(featcol,nbins,labels=False)
-    elif flat==True:
-        xbin = pd.qcut(featcol,nbins,labels=False)
+    elif quantile==True:
+        xbin = pd.qcut(featcol,nbins,labels=False,duplicates='drop')
+    else:
+        raise ValueError("'quantile' must be a Boolean")
 
     bins = xbin.unique()
     binmax = xbin.value_counts().max()
