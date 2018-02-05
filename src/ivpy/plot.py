@@ -6,26 +6,106 @@ from skimage import color
 from shapely.geometry import Point
 
 from .data import _colfilter
+from .plottools import _scale, _pct, _idx, _facet
 
-def show(idx,pathcol=None,thumb=False):
-    
-    pathcol,featcol,ycol = _colfilter(pathcol)
-    
-    im = Image.open(pathcol.loc[idx])
+#------------------------------------------------------------------------------
 
-    if thumb!=False:
-        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+def show(pathcol=None,
+         featcol=None,
+         thumb=False,
+         sample=False,
+         idx=False,
+         bg='#4a4a4a',
+         ascending=False):
     
-    return im
+    """
+    Shows either a single image by index or a pathcol, possibly sampled, 
+    as a scrolling, sortable rect montage
+
+    Args:
+        shown (int,Series) --- single index or col of image paths to be shown
+        featcol (str,Series) --- sorting column
+        thumb (int) --- pixel value for thumbnail side
+        sample (int) --- integer size of sample
+        ascending (Boolean) --- sorting order
+    """
+
+    # only first argument is positional
+    pathcol,featcol,ycol = _colfilter(pathcol,
+                                      featcol=featcol,
+                                      sample=sample,
+                                      ascending=ascending)
+    
+    if isinstance(pathcol, str): # single pathstring
+        
+        im = Image.open(pathcol)
+
+        if thumb!=False:
+            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        
+        return im
+    
+    else:
+
+        if thumb==False:
+            thumb = 100
+            xgrid = 980 / thumb # hard-coded bc of Jupyter cell sizes
+        elif isinstance(thumb, int):
+            xgrid = 980 / thumb
+        elif isinstance(thumb, float):
+            xgrid = 980 / int(thumb)
+            warnings.warn("""Variable 'thumb' given as a float,
+                             rounded to nearest integer""")
+        else:
+            raise ValueError("'thumb' must be an integer")
+
+        nrows = len(pathcol) / xgrid + 1 # python int divide always rounds down
+        x = range(xgrid) * nrows
+        x = [item * thumb for item in x]
+        x = x[:len(pathcol)]
+        y = np.repeat(range(nrows),xgrid)
+        y = [item * thumb for item in y]
+        y = y[:len(pathcol)]
+        coords = zip(x,y)
+        
+        canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
+
+        counter=-1
+        for i in pathcol.index:
+            counter+=1
+            im = Image.open(pathcol.loc[i])
+            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+            
+            # idx labels placed after thumbnail
+            if idx==True:
+                _idx(im,i)
+
+            canvas.paste(im,coords[counter])
+
+        return canvas
 
 def montage(pathcol=None,
             featcol=None,
             thumb=100,
             sample=False,
             idx=False,
-            bg="#4a4a4a",
-            shape='rect',
+            bg='#4a4a4a',
+            shape='square',
             ascending=False):
+
+    """
+    Square or circular montage of images
+
+    Args:
+        pathcol (Series) --- col of image paths to be plotted
+        featcol (str,Series) --- sorting column
+        thumb (int) --- pixel value for thumbnail side
+        sample (int) --- integer size of sample
+        idx (Boolean) --- whether to print index on image
+        bg (color) --- background color
+        shape (str) --- square or circular montage
+        ascending (Boolean) --- sorting order
+    """
     
     # only first argument is positional
     pathcol,featcol,ycol = _colfilter(pathcol,
@@ -33,17 +113,9 @@ def montage(pathcol=None,
                                       sample=sample,
                                       ascending=ascending)
 
-    if shape=='rect':
+    if shape=='square':
 
-        if isinstance(thumb, int):
-            xgrid = 980 / thumb # hard-coded bc of Jupyter cell sizes
-        elif isinstance(thumb, float):
-            xgrid = 980 / int(thumb)
-            warnings.warn("""Variable 'thumb' given as a float,
-                             rounded to nearest integer""")
-        else:
-            raise ValueError("Variable 'thumb' must be an integer")
-
+        xgrid = int ( np.sqrt( len(pathcol) ) )
         nrows = len(pathcol) / xgrid + 1 # python int divide always rounds down
         x = range(xgrid) * nrows
         x = [item * thumb for item in x]
@@ -110,7 +182,7 @@ def montage(pathcol=None,
             open_grid.remove(closest_open)
 
     else:
-        raise ValueError("Shape value must be either 'rect' or 'circle'")
+        raise ValueError("'shape' must be either 'square' or 'circle'")
     
     return canvas  
 
@@ -208,75 +280,6 @@ def scatter(featcol,
         canvas.paste(im,coords[counter])
 
     return canvas
-
-def _scale(col,domain,side,thumb,y=False):
-    """This will fail on missing data""" 
-
-    pinrange = side - thumb # otherwise will cut off extremes
-
-    if domain==None:
-        dmin = col.min()
-        dmax = col.max()
-    else:
-        if not all(isinstance(domain,(list,tuple)),len(domain)==2):
-            raise ValueError("'domain' must be two-item list or tuple")
-        else:
-            dmin = domain[0]
-            dmax = domain[1]
-
-    if y==False:
-        return [ int( _pct(item,dmin,dmax) * pinrange ) for item in col]
-    elif y==True:
-        return [ int( (1 - _pct(item,dmin,dmax)) * pinrange ) for item in col]
-    else:    
-        raise ValueError("'y' must be a Boolean")
-
-def _pct(item,dmin,dmax):
-    drange = dmax - dmin
-    return (item - dmin) / float(drange)
-
-def _idx(im,i):
-    pos = 0 # hard-code
-    draw = ImageDraw.Draw(im)
-    text = str(int(i))
-    font = ImageFont.truetype('../fonts/VeraMono.ttf', 8)
-    fontWidth, fontHeight = font.getsize(text)
-
-    try:
-        draw.rectangle(
-            [(pos,pos),(pos+fontWidth,pos+fontHeight)],
-            fill='#282828',
-            outline=None
-        )
-        
-        draw.text((pos,pos),text,font=font,fill='#efefef')
-    
-    except Exception as e:
-        print e
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

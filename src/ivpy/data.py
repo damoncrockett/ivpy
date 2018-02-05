@@ -66,8 +66,15 @@ def _pathfilter(pathcol):
         else:
             pathcol = copy.deepcopy(ATTACHED_PATHCOL)
     else:
-        if not isinstance(pathcol, pd.Series):
-            raise ValueError("If supplied, 'pathcol' must be a pandas Series")
+        if isinstance(pathcol, int):
+            if ATTACHED_PATHCOL is None:
+                raise ValueError("No DataFrame attached; must supply 'pathcol'")
+            else:
+                tmp = copy.deepcopy(ATTACHED_PATHCOL)
+                pathcol = tmp.loc[pathcol]
+        
+        elif not isinstance(pathcol, pd.Series):
+            raise ValueError("'pathcol' must be a pandas Series or int")
 
     return pathcol
 
