@@ -1,8 +1,6 @@
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image
 import numpy as np
 import pandas as pd
-from skimage.io import imread
-from skimage import color
 from shapely.geometry import Point
 
 from .data import _colfilter
