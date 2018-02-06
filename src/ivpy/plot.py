@@ -142,42 +142,48 @@ def montage(pathcol=None,
         n = len(pathcol)
         side = int(np.sqrt(n)) + 5 # may have to tweak this
         x, y = range(side) * side, np.repeat(range(side),side)
-        grid_list = pd.DataFrame({"x":x,"y":y})
-
-        points = []
-        for i in grid_list.index:
-            points.append(Point(grid_list.x.loc[i],grid_list.y.loc[i]))
-        grid_list['point'] = points
-        open_grid = list(grid_list.point)
+        grid_list = [Point(item) for item in zip(x,y)]
 
         canvas = Image.new('RGB',(side*thumb, side*thumb), bg)
 
+        # plot center image
         maximus = Point(side/2,side/2)
         im = Image.open(pathcol.iloc[0])
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         x = int(maximus.x) * thumb
         y = int(maximus.y) * thumb
 
-        # idx labels placed after thumbnail
+        # idx label placed after thumbnail
         if idx==True:
             _idx(im,pathcol.index[0])
 
         canvas.paste(im,(x,y))
-        open_grid.remove(maximus)
+        grid_list.remove(maximus)
+        
+        # compute distance from center for each point
+        tmp = pd.DataFrame(
+            {"grid_list":grid_list,
+             "grid_distances":[maximus.distance(item) for item in grid_list]}
+             )
+        
+        # sorting grid locations by computed distance
+        tmp.sort_values(by='grid_distances',inplace=True) # ascending
+        grid_list = tmp.grid_list.iloc[:n-1] # n-1 bc we removed maximus
 
+        counter=-1
         for i in pathcol.index[1:]:
+            counter+=1
             im = Image.open(pathcol.loc[i])
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            closest_open = min(open_grid,key=lambda x: maximus.distance(x))
-            x = int(closest_open.x) * thumb
-            y = int(closest_open.y) * thumb
+            
+            x = int(grid_list.iloc[counter].x) * thumb
+            y = int(grid_list.iloc[counter].y) * thumb
             
             # idx labels placed after thumbnail
             if idx==True:
                 _idx(im,i)
 
             canvas.paste(im,(x,y))
-            open_grid.remove(closest_open)
 
     else:
         raise ValueError("'shape' must be either 'square' or 'circle'")
@@ -278,10 +284,3 @@ def scatter(featcol,
         canvas.paste(im,coords[counter])
 
     return canvas
-
-
-
-
-
-
-# ende   
