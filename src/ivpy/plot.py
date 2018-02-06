@@ -4,7 +4,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from .data import _colfilter
-from .plottools import _scale, _pct, _idx, _facet
+from .plottools import _scale, _pct, _idx, _facet, _placeholder
 
 #------------------------------------------------------------------------------
 
@@ -71,7 +71,12 @@ def show(pathcol=None,
         counter=-1
         for i in pathcol.index:
             counter+=1
-            im = Image.open(pathcol.loc[i])
+            
+            try:
+                im = Image.open(pathcol.loc[i])
+            except:
+                im = _placeholder()
+            
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
             # idx labels placed after thumbnail
@@ -128,7 +133,12 @@ def montage(pathcol=None,
         counter=-1
         for i in pathcol.index:
             counter+=1
-            im = Image.open(pathcol.loc[i])
+            
+            try:
+                im = Image.open(pathcol.loc[i])
+            except:
+                im = _placeholder()
+            
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
             # idx labels placed after thumbnail
@@ -148,7 +158,12 @@ def montage(pathcol=None,
 
         # plot center image
         maximus = Point(side/2,side/2)
-        im = Image.open(pathcol.iloc[0])
+        
+        try:
+            im = Image.open(pathcol.iloc[0])
+        except:
+            im = _placeholder()
+        
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         x = int(maximus.x) * thumb
         y = int(maximus.y) * thumb
@@ -173,7 +188,12 @@ def montage(pathcol=None,
         counter=-1
         for i in pathcol.index[1:]:
             counter+=1
-            im = Image.open(pathcol.loc[i])
+            
+            try:
+                im = Image.open(pathcol.loc[i])
+            except:
+                im = _placeholder()
+            
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
             x = int(grid_list.iloc[counter].x) * thumb
@@ -235,7 +255,12 @@ def histogram(featcol,
         x_coord = thumb * binlabel
 
         for i in pathcol_bin.index:
-            im = Image.open(pathcol_bin.loc[i])
+            
+            try:
+                im = Image.open(pathcol_bin.loc[i])
+            except:
+                im = _placeholder()
+            
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
             if idx==True:
@@ -275,7 +300,12 @@ def scatter(featcol,
     counter=-1
     for i in pathcol.index:
         counter+=1
-        im = Image.open(pathcol.loc[i])
+        
+        try:
+            im = Image.open(pathcol.loc[i])
+        except:
+            im = _placeholder()
+        
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         
         if idx==True:

@@ -1,4 +1,4 @@
-from PIL import ImageDraw,ImageFont
+from PIL import Image,ImageDraw,ImageFont
 
 def _scale(col,domain,side,thumb,y=False):
     """This will fail on missing data""" 
@@ -44,6 +44,9 @@ def _idx(im,i):
     
     except Exception as e:
         print e
+
+def _placeholder():
+    return Image.new('RGB',(100,100),'#969696')
 
 def _facet():
     return None
