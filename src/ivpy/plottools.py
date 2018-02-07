@@ -45,8 +45,11 @@ def _idx(im,i):
     except Exception as e:
         print e
 
-def _placeholder():
-    return Image.new('RGB',(100,100),'#969696')
+def _placeholder(thumb):
+    im = Image.new('RGB',(thumb,thumb),'#969696')
+    draw = ImageDraw.Draw(im)
+    draw.line([(0,0),(thumb,thumb)],'#dddddd')
+    return im
 
 def _facet():
     return None

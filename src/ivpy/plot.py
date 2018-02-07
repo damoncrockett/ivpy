@@ -75,7 +75,7 @@ def show(pathcol=None,
             try:
                 im = Image.open(pathcol.loc[i])
             except:
-                im = _placeholder()
+                im = _placeholder(thumb)
             
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
@@ -137,7 +137,7 @@ def montage(pathcol=None,
             try:
                 im = Image.open(pathcol.loc[i])
             except:
-                im = _placeholder()
+                im = _placeholder(thumb)
             
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
@@ -162,7 +162,7 @@ def montage(pathcol=None,
         try:
             im = Image.open(pathcol.iloc[0])
         except:
-            im = _placeholder()
+            im = _placeholder(thumb)
         
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         x = int(maximus.x) * thumb
@@ -192,7 +192,7 @@ def montage(pathcol=None,
             try:
                 im = Image.open(pathcol.loc[i])
             except:
-                im = _placeholder()
+                im = _placeholder(thumb)
             
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
@@ -259,7 +259,7 @@ def histogram(featcol,
             try:
                 im = Image.open(pathcol_bin.loc[i])
             except:
-                im = _placeholder()
+                im = _placeholder(thumb)
             
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
             
@@ -304,7 +304,7 @@ def scatter(featcol,
         try:
             im = Image.open(pathcol.loc[i])
         except:
-            im = _placeholder()
+            im = _placeholder(thumb)
         
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         
