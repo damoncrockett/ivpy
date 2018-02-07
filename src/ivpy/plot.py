@@ -223,6 +223,25 @@ def histogram(featcol,
               quantile=False,
               coordinates='cartesian'): # not yet implemented
     
+    """
+    Cartesian or polar histogram of images
+
+    Args:
+        featcol (str,Series) --- histogram axis; must be supplied
+        pathcol (Series) --- col of image paths to be plotted
+        ycol (str,Series) --- vertical sorting feature if desired
+        thumb (int) --- pixel value for thumbnail side
+        nbins (int) --- number of bins used to discretize featcol;
+            can alternatively be entered as array of bin edges
+        sample (int) --- integer size of sample
+        idx (Boolean) --- whether to print index on image
+        ascending (Boolean) --- vertical sorting direction
+        bg (color) --- background color
+        quantile (Boolean) --- whether binning is quantile-based;
+            if True, produces nearly even spread across bins
+        coordinates (str) --- Cartesian or polar
+    """
+
     # only first argument is positional
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
@@ -285,6 +304,24 @@ def scatter(featcol,
             bg="#4a4a4a",
             coordinates='cartesian'): # not yet implemented
     
+    """
+    Cartesian or polar scatterplot of images
+
+    Args:
+        featcol (str,Series) --- x-axis; must be supplied
+        ycol (str,Series) --- y-axis; must be supplied
+        pathcol (Series) --- col of image paths to be plotted
+        thumb (int) --- pixel value for thumbnail side
+        side (int) --- length of plot side in pixels; all plots enforced square
+        sample (int) --- integer size of sample
+        idx (Boolean) --- whether to print index on image
+        gridded (Boolean) --- whether to snap image locations to a grid
+        xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
+        ydomain (list,tuple) --- ymin and ymax; defaults to data extremes
+        bg (color) --- background color
+        coordinates (str) --- Cartesian or polar
+    """
+
     # only first argument is positional
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
