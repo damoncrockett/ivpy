@@ -36,7 +36,7 @@ def show(pathcol=None,
     
     if isinstance(pathcol, str): # single pathstring
         
-        im = Image.open(pathcol)-
+        im = Image.open(pathcol)
 
         if thumb!=False:
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
