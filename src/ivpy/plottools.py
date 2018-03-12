@@ -19,9 +19,9 @@ def _scale(col,domain,side,thumb,y=False):
             dmax = domain[1]
 
     if y==False:
-        return [ int( _pct(item,dmin,dmax) * pinrange ) for item in col]
+        return [int( _pct(item,dmin,dmax) * pinrange ) for item in col]
     elif y==True:
-        return [ int( (1 - _pct(item,dmin,dmax)) * pinrange ) for item in col]
+        return [int( (1 - _pct(item,dmin,dmax)) * pinrange ) for item in col]
     else:
         raise TypeError("'y' must be a Boolean")
 
