@@ -4,7 +4,7 @@ import pandas as pd
 from shapely.geometry import Point
 
 from .data import _colfilter
-from .plottools import _scale, _pct, _idx, _facet, _placeholder
+from .plottools import _scale, _pct, _idx, _placeholder
 
 #------------------------------------------------------------------------------
 
@@ -15,9 +15,9 @@ def show(pathcol=None,
          idx=False,
          bg='#4a4a4a',
          ascending=False):
-    
+
     """
-    Shows either a single image by index or a pathcol, possibly sampled, 
+    Shows either a single image by index or a pathcol, possibly sampled,
     as a scrolling, sortable rect montage
 
     Args:
@@ -33,16 +33,16 @@ def show(pathcol=None,
                                       featcol=featcol,
                                       sample=sample,
                                       ascending=ascending)
-    
+
     if isinstance(pathcol, str): # single pathstring
-        
+
         im = Image.open(pathcol)
 
         if thumb!=False:
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-        
+
         return im
-    
+
     else:
 
         if thumb==False:
@@ -55,7 +55,7 @@ def show(pathcol=None,
             warnings.warn("""Variable 'thumb' given as a float,
                              rounded to nearest integer""")
         else:
-            raise ValueError("'thumb' must be an integer")
+            raise TypeError("'thumb' must be an integer")
 
         nrows = len(pathcol) / xgrid + 1 # python int divide always rounds down
         x = range(xgrid) * nrows
@@ -65,20 +65,20 @@ def show(pathcol=None,
         y = [item * thumb for item in y]
         y = y[:len(pathcol)]
         coords = zip(x,y)
-        
+
         canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
 
         counter=-1
         for i in pathcol.index:
             counter+=1
-            
+
             try:
                 im = Image.open(pathcol.loc[i])
             except:
                 im = _placeholder(thumb)
-            
+
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            
+
             # idx labels placed after thumbnail
             if idx==True:
                 _idx(im,i)
@@ -109,7 +109,7 @@ def montage(pathcol=None,
         shape (str) --- square or circular montage
         ascending (Boolean) --- sorting order
     """
-    
+
     # only first argument is positional
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
@@ -127,20 +127,20 @@ def montage(pathcol=None,
         y = [item * thumb for item in y]
         y = y[:len(pathcol)]
         coords = zip(x,y)
-        
+
         canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
 
         counter=-1
         for i in pathcol.index:
             counter+=1
-            
+
             try:
                 im = Image.open(pathcol.loc[i])
             except:
                 im = _placeholder(thumb)
-            
+
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            
+
             # idx labels placed after thumbnail
             if idx==True:
                 _idx(im,i)
@@ -148,7 +148,7 @@ def montage(pathcol=None,
             canvas.paste(im,coords[counter])
 
     elif shape=='circle':
-        
+
         n = len(pathcol)
         side = int(np.sqrt(n)) + 5 # may have to tweak this
         x, y = range(side) * side, np.repeat(range(side),side)
@@ -158,12 +158,12 @@ def montage(pathcol=None,
 
         # plot center image
         maximus = Point(side/2,side/2)
-        
+
         try:
             im = Image.open(pathcol.iloc[0])
         except:
             im = _placeholder(thumb)
-        
+
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         x = int(maximus.x) * thumb
         y = int(maximus.y) * thumb
@@ -174,13 +174,13 @@ def montage(pathcol=None,
 
         canvas.paste(im,(x,y))
         grid_list.remove(maximus)
-        
+
         # compute distance from center for each point
         tmp = pd.DataFrame(
             {"grid_list":grid_list,
              "grid_distances":[maximus.distance(item) for item in grid_list]}
              )
-        
+
         # sorting grid locations by computed distance
         tmp.sort_values(by='grid_distances',inplace=True) # ascending
         grid_list = tmp.grid_list.iloc[:n-1] # n-1 bc we removed maximus
@@ -188,17 +188,17 @@ def montage(pathcol=None,
         counter=-1
         for i in pathcol.index[1:]:
             counter+=1
-            
+
             try:
                 im = Image.open(pathcol.loc[i])
             except:
                 im = _placeholder(thumb)
-            
+
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            
+
             x = int(grid_list.iloc[counter].x) * thumb
             y = int(grid_list.iloc[counter].y) * thumb
-            
+
             # idx labels placed after thumbnail
             if idx==True:
                 _idx(im,i)
@@ -207,22 +207,22 @@ def montage(pathcol=None,
 
     else:
         raise ValueError("'shape' must be either 'square' or 'circle'")
-    
-    return canvas  
+
+    return canvas
 
 # thumb and bin defaults multiply to 980, the Jupyter cell width
 def histogram(featcol,
               pathcol=None,
               ycol=None,
-              thumb=28, 
-              nbins=35, 
+              thumb=28,
+              nbins=35,
               sample=False,
               idx=False,
               ascending=False,
               bg="#4a4a4a",
               quantile=False,
               coordinates='cartesian'): # not yet implemented
-    
+
     """
     Cartesian or polar histogram of images
 
@@ -253,7 +253,7 @@ def histogram(featcol,
     elif quantile==True:
         xbin = pd.qcut(featcol,nbins,labels=False,duplicates='drop')
     else:
-        raise ValueError("'quantile' must be a Boolean")
+        raise TypeError("'quantile' must be a Boolean")
 
     bins = xbin.unique()
     binmax = xbin.value_counts().max()
@@ -274,14 +274,14 @@ def histogram(featcol,
         x_coord = thumb * binlabel
 
         for i in pathcol_bin.index:
-            
+
             try:
                 im = Image.open(pathcol_bin.loc[i])
             except:
                 im = _placeholder(thumb)
-            
+
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            
+
             if idx==True:
                 _idx(im,i)
 
@@ -290,7 +290,7 @@ def histogram(featcol,
 
     return canvas
 
-# gridding not implemented 
+# gridding not implemented
 def scatter(featcol,
             ycol,
             pathcol=None,
@@ -303,7 +303,7 @@ def scatter(featcol,
             ydomain=None,
             bg="#4a4a4a",
             coordinates='cartesian'): # not yet implemented
-    
+
     """
     Cartesian or polar scatterplot of images
 
@@ -326,7 +326,7 @@ def scatter(featcol,
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
                                       ycol=ycol,
-                                      sample=sample) 
+                                      sample=sample)
 
     x = _scale(featcol,xdomain,side,thumb)
     y = _scale(ycol,ydomain,side,thumb,y=True)
@@ -337,14 +337,14 @@ def scatter(featcol,
     counter=-1
     for i in pathcol.index:
         counter+=1
-        
+
         try:
             im = Image.open(pathcol.loc[i])
         except:
             im = _placeholder(thumb)
-        
+
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-        
+
         if idx==True:
             _idx(im,i)
 
