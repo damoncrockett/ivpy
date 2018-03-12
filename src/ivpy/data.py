@@ -26,7 +26,7 @@ def attach(df,pathcol=None):
             raise ValueError("""Length of path list does not match length of
                                 DataFrame""")
     else:
-        raise TypeError("""Variable 'pathcol' must be either a string or a 
+        raise TypeError("""Variable 'pathcol' must be either a string or a
                            pandas Series""")
 
 def detach(df):
@@ -66,7 +66,7 @@ def _pathfilter(pathcol):
         else:
             pathcol = copy.deepcopy(ATTACHED_PATHCOL)
     else:
-        if isinstance(pathcol, int):
+        if isinstance(pathcol, int): # for use in show()
             if ATTACHED_PATHCOL is None:
                 raise ValueError("No DataFrame attached; must supply 'pathcol'")
             else:
