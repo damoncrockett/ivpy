@@ -2,6 +2,7 @@ from PIL import Image
 from numpy import sqrt,repeat
 import pandas as pd
 from shapely.geometry import Point
+from copy import deepcopy
 
 from .data import _colfilter
 from .plottools import _scale,_pct,_idx,_placeholder,_gridcoords,_paste
