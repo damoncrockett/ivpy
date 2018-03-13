@@ -1,10 +1,10 @@
 from PIL import Image
-import numpy as np
+from numpy import sqrt,repeat
 import pandas as pd
 from shapely.geometry import Point
 
 from .data import _colfilter
-from .plottools import _scale, _pct, _idx, _placeholder
+from .plottools import _scale,_pct,_idx,_placeholder,_gridcoords,_paste
 
 #------------------------------------------------------------------------------
 
@@ -35,55 +35,21 @@ def show(pathcol=None,
                                       ascending=ascending)
 
     if isinstance(pathcol, str): # single pathstring
-
         im = Image.open(pathcol)
-
         if thumb!=False:
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
         return im
-
     else:
-
         if thumb==False:
             thumb = 100
-            xgrid = 980 / thumb # hard-coded bc of Jupyter cell sizes
-        elif isinstance(thumb, int):
-            xgrid = 980 / thumb
-        elif isinstance(thumb, float):
-            xgrid = 980 / int(thumb)
-            warnings.warn("""Variable 'thumb' given as a float,
-                             rounded to nearest integer""")
+            ncols = int( 980 / thumb ) # hard-coded bc of Jupyter cell sizes
         else:
-            raise TypeError("'thumb' must be an integer")
+            ncols = int( 980 / thumb ) # n.b. Python 3 defaults to float divide
 
-        nrows = len(pathcol) / xgrid + 1 # python int divide always rounds down
-        x = range(xgrid) * nrows
-        x = [item * thumb for item in x]
-        x = x[:len(pathcol)]
-        y = np.repeat(range(nrows),xgrid)
-        y = [item * thumb for item in y]
-        y = y[:len(pathcol)]
-        coords = zip(x,y)
-
-        canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
-
-        counter=-1
-        for i in pathcol.index:
-            counter+=1
-
-            try:
-                im = Image.open(pathcol.loc[i])
-            except:
-                im = _placeholder(thumb)
-
-            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
-            # idx labels placed after thumbnail
-            if idx==True:
-                _idx(im,i)
-
-            canvas.paste(im,coords[counter])
+        n = len(pathcol)
+        w,h,coords = _gridcoords(n,ncols,thumb)
+        canvas = Image.new('RGB',(w,h),bg)
+        _paste(pathcol,thumb,idx,canvas,coords)
 
         return canvas
 
@@ -115,46 +81,22 @@ def montage(pathcol=None,
                                       featcol=featcol,
                                       sample=sample,
                                       ascending=ascending)
+    n = len(pathcol)
 
     if shape=='square':
 
-        xgrid = int ( np.sqrt( len(pathcol) ) )
-        nrows = len(pathcol) / xgrid + 1 # python int divide always rounds down
-        x = range(xgrid) * nrows
-        x = [item * thumb for item in x]
-        x = x[:len(pathcol)]
-        y = np.repeat(range(nrows),xgrid)
-        y = [item * thumb for item in y]
-        y = y[:len(pathcol)]
-        coords = zip(x,y)
-
-        canvas = Image.new('RGB',(xgrid*thumb,nrows*thumb),bg)
-
-        counter=-1
-        for i in pathcol.index:
-            counter+=1
-
-            try:
-                im = Image.open(pathcol.loc[i])
-            except:
-                im = _placeholder(thumb)
-
-            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
-            # idx labels placed after thumbnail
-            if idx==True:
-                _idx(im,i)
-
-            canvas.paste(im,coords[counter])
+        ncols = int(sqrt(n))
+        w,h,coords = _gridcoords(n,ncols,thumb)
+        canvas = Image.new('RGB',(w,h),bg)
+        _paste(pathcol,thumb,idx,canvas,coords)
 
     elif shape=='circle':
 
-        n = len(pathcol)
         side = int(np.sqrt(n)) + 5 # may have to tweak this
-        x, y = range(side) * side, np.repeat(range(side),side)
+        x,y = range(side)*side,repeat(range(side),side)
         grid_list = [Point(item) for item in zip(x,y)]
 
-        canvas = Image.new('RGB',(side*thumb, side*thumb), bg)
+        canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
 
         # plot center image
         maximus = Point(side/2,side/2)
@@ -168,8 +110,7 @@ def montage(pathcol=None,
         x = int(maximus.x) * thumb
         y = int(maximus.y) * thumb
 
-        # idx label placed after thumbnail
-        if idx==True:
+        if idx==True: # idx label placed after thumbnail
             _idx(im,pathcol.index[0])
 
         canvas.paste(im,(x,y))
@@ -188,27 +129,77 @@ def montage(pathcol=None,
         counter=-1
         for i in pathcol.index[1:]:
             counter+=1
-
             try:
                 im = Image.open(pathcol.loc[i])
             except:
                 im = _placeholder(thumb)
-
             im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
             x = int(grid_list.iloc[counter].x) * thumb
             y = int(grid_list.iloc[counter].y) * thumb
-
-            # idx labels placed after thumbnail
-            if idx==True:
+            if idx==True: # idx labels placed after thumbnail
                 _idx(im,i)
-
             canvas.paste(im,(x,y))
 
     else:
         raise ValueError("'shape' must be either 'square' or 'circle'")
 
     return canvas
+
+def compose(*args,**kwargs):
+
+    """
+    Composes canvases into metacanvas
+
+    Args:
+        *args --- any number of canvases, given by name or plot function
+        ncols (int) --- number of columns in metacanvas (optional)
+        rounding (str) --- when ncols is None, round ncols 'up' or 'down'
+        thumb (int) --- pixel value for thumbnail side
+        bg (color) --- background color
+    """
+
+    typelist = [isinstance(item, Image.Image) for item in args]
+    if not all(typelist):
+        raise TypeError("Arguments passed to 'compose' must be PIL Images")
+
+    try:
+        thumb = kwargs['thumb']
+    except:
+        plotsizes = [item.size for item in args]
+        thumb = max([item for sublist in plotsizes for item in sublist])
+
+    try:
+        bg = kwargs['bg']
+    except:
+        bg = '#4a4a4a'
+
+    n = len(args)
+
+    try:
+        ncols = kwargs['ncols']
+    except:
+        try:
+            rounding = kwargs['rounding']
+        except:
+            rounding = 'up'
+        finally:
+            ncols = _round(sqrt(n),direction=rounding)
+    finally:
+        if not isinstance(ncols, int):
+            raise TypeError("'ncols' must be an integer")
+        if ncols > n:
+            raise ValueError("'ncols' cannot be larger than number of plots")
+
+    w,h,coords = _gridcoords(n,ncols,thumb)
+    metacanvas = Image.new('RGB',(w,h),bg)
+
+    for i in range(n):
+        canvas = args[i]
+        tmp = deepcopy(canvas) # copy because thumbnail always inplace
+        tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        metacanvas.paste(tmp,coords[i])
+
+    return metacanvas
 
 # thumb and bin defaults multiply to 980, the Jupyter cell width
 def histogram(featcol,
@@ -331,23 +322,7 @@ def scatter(featcol,
     x = _scale(featcol,xdomain,side,thumb)
     y = _scale(ycol,ydomain,side,thumb,y=True)
     coords = zip(x,y)
-
     canvas = Image.new('RGB',(side,side),bg) # fixed size
-
-    counter=-1
-    for i in pathcol.index:
-        counter+=1
-
-        try:
-            im = Image.open(pathcol.loc[i])
-        except:
-            im = _placeholder(thumb)
-
-        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
-        if idx==True:
-            _idx(im,i)
-
-        canvas.paste(im,coords[counter])
+    _paste(pathcol,thumb,idx,canvas,coords)
 
     return canvas
