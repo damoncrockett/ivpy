@@ -84,3 +84,7 @@ def _round(x,direction='down'):
         return int(x)
     elif direction=='up':
         return int(ceil(x)) # ceil returns float
+
+def _getsizes(args):
+    plotsizes = [item.size for item in args]
+    return [item for sublist in plotsizes for item in sublist]

@@ -5,7 +5,13 @@ from shapely.geometry import Point
 from copy import deepcopy
 
 from .data import _colfilter
-from .plottools import _scale,_pct,_idx,_placeholder,_gridcoords,_paste
+from .plottools import _scale,
+                       _pct,
+                       _idx,
+                       _placeholder,
+                       _gridcoords,
+                       _paste,
+                       _getsizes
 
 #------------------------------------------------------------------------------
 
@@ -163,33 +169,16 @@ def compose(*args,**kwargs):
     if not all(typelist):
         raise TypeError("Arguments passed to 'compose' must be PIL Images")
 
-    try:
-        thumb = kwargs['thumb']
-    except:
-        plotsizes = [item.size for item in args]
-        thumb = max([item for sublist in plotsizes for item in sublist])
-
-    try:
-        bg = kwargs['bg']
-    except:
-        bg = '#4a4a4a'
-
+    thumb = kwargs.get( 'thumb', max(_getsizes(args)) )
+    bg = kwargs.get('bg', '#4a4a4a')
+    rounding = kwargs.get('rounding', 'up')
     n = len(args)
+    ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
 
-    try:
-        ncols = kwargs['ncols']
-    except:
-        try:
-            rounding = kwargs['rounding']
-        except:
-            rounding = 'up'
-        finally:
-            ncols = _round(sqrt(n),direction=rounding)
-    finally:
-        if not isinstance(ncols, int):
-            raise TypeError("'ncols' must be an integer")
-        if ncols > n:
-            raise ValueError("'ncols' cannot be larger than number of plots")
+    if not isinstance(ncols, int):
+        raise TypeError("'ncols' must be an integer")
+    if ncols > n:
+        raise ValueError("'ncols' cannot be larger than number of plots")
 
     w,h,coords = _gridcoords(n,ncols,thumb)
     metacanvas = Image.new('RGB',(w,h),bg)
