@@ -93,7 +93,7 @@ def montage(pathcol=None,
 
     elif shape=='circle':
 
-        side = int(np.sqrt(n)) + 5 # may have to tweak this
+        side = int(sqrt(n)) + 5 # may have to tweak this
         x,y = range(side)*side,repeat(range(side),side)
         grid_list = [Point(item) for item in zip(x,y)]
 
