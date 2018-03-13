@@ -25,6 +25,19 @@ def _scale(col,domain,side,thumb,y=False):
     else:
         raise TypeError("'y' must be a Boolean")
 
+def _gridcoords(n,ncols,thumb):
+    nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
+    w,h = ncols*thumb,nrows*thumb
+
+    xgrid = range(ncols) * nrows
+    ygrid = repeat(range(nrows),ncols)
+    xgrid = xgrid[:n]
+    ygrid = ygrid[:n]
+    x = [item*thumb for item in xgrid]
+    y = [item*thumb for item in ygrid]
+
+    return w,h,zip(x,y)
+
 def _pct(item,dmin,dmax):
     drange = dmax - dmin
     return (item - dmin) / float(drange)
@@ -54,75 +67,21 @@ def _placeholder(thumb):
     draw.line([(0,0),(thumb,thumb)],'#dddddd')
     return im
 
+def _paste(pathcol,thumb,idx,canvas,coords):
+    counter=-1
+    for i in pathcol.index:
+        counter+=1
+        try:
+            im = Image.open(pathcol.loc[i])
+        except:
+            im = _placeholder(thumb)
+        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        if idx==True: # idx labels placed after thumbnail
+            _idx(im,i)
+        canvas.paste(im,coords[counter])
+
 def _round(x,direction='down'):
     if direction=='down':
         return int(x)
     elif direction=='up':
         return int(ceil(x)) # ceil returns float
-
-def compose(*args,**kwargs):
-
-    """
-    Composes canvases into metacanvas
-
-    Args:
-        *args --- any number of canvases, given by name or plot function
-        ncols (int) --- number of columns in metacanvas (optional)
-        rounding (str) --- when ncols is None, round ncols 'up' or 'down'
-        thumb (int) --- pixel value for thumbnail side
-        bg (color) --- background color
-    """
-
-    typelist = [isinstance(item, Image.Image) for item in args]
-    if not all(typelist):
-        raise TypeError("Arguments passed to 'compose' must be PIL Images")
-
-    n = len(args)
-
-    try:
-        ncols = kwargs['ncols']
-    except:
-        try:
-            rounding = kwargs['rounding']
-        except:
-            rounding = 'up'
-        ncols = _round(sqrt(n),direction=rounding)
-    finally:
-        if not isinstance(ncols, int):
-            raise TypeError("'ncols' must be an integer")
-        if ncols > n:
-            raise ValueError("'ncols' cannot be larger than number of plots")
-
-    nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
-    xgrid = range(ncols) * nrows
-    ygrid = repeat(range(nrows),ncols)
-
-    xgrid = xgrid[:n]
-    ygrid = ygrid[:n]
-
-    try:
-        side = kwargs['thumb']
-    except:
-        plotsizes = [item.size for item in args]
-        plotwidths = [item[0] for item in plotsizes]
-        plotheights = [item[1] for item in plotsizes]
-        side = max(max(plotwidths),max(plotheights))
-
-    px_w = ncols * side
-    px_h = nrows * side
-
-    try:
-        bg = kwargs['bg']
-    except:
-        bg = '#4a4a4a'
-
-    metacanvas = Image.new('RGB',(px_w,px_h),bg)
-    for i in range(n):
-        canvas = args[i]
-        tmp = deepcopy(canvas) # copy because thumbnail always inplace
-        tmp.thumbnail((side,side),Image.ANTIALIAS)
-        x = xgrid[i] * side
-        y = ygrid[i] * side
-        metacanvas.paste(tmp,(x,y))
-
-    return metacanvas
