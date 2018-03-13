@@ -5,13 +5,8 @@ from shapely.geometry import Point
 from copy import deepcopy
 
 from .data import _colfilter
-from .plottools import _scale,
-                       _pct,
-                       _idx,
-                       _placeholder,
-                       _gridcoords,
-                       _paste,
-                       _getsizes
+from .plottools import _scale,_pct,_idx,_placeholder
+from .plottools import _gridcoords,_paste,_getsizes
 
 #------------------------------------------------------------------------------
 
