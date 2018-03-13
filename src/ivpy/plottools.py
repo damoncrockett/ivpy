@@ -1,7 +1,6 @@
 from PIL import Image,ImageDraw,ImageFont
-from numpy import sqrt,repeat
+from numpy import repeat
 from math import ceil
-from copy import deepcopy
 
 def _scale(col,domain,side,thumb,y=False):
     """This will fail on missing data"""
