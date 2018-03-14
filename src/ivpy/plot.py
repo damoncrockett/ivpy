@@ -1,10 +1,10 @@
 from PIL import Image
-from numpy import sqrt,repeat
+from numpy import sqrt,repeat,arange
 import pandas as pd
 from shapely.geometry import Point
 from copy import deepcopy
 
-from .data import _colfilter
+from .data import _typecheck,_colfilter
 from .plottools import _scale,_pct,_idx,_placeholder
 from .plottools import _gridcoords,_paste,_getsizes,_round
 
@@ -23,14 +23,14 @@ def show(pathcol=None,
     as a scrolling, sortable rect montage
 
     Args:
-        shown (int,Series) --- single index or col of image paths to be shown
+        pathcol (int,Series) --- single index or col of image paths to be shown
         featcol (str,Series) --- sorting column
         thumb (int) --- pixel value for thumbnail side
         sample (int) --- integer size of sample
         ascending (Boolean) --- sorting order
     """
 
-    # only first argument is positional
+    _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
                                       sample=sample,
@@ -44,9 +44,9 @@ def show(pathcol=None,
     else:
         if thumb==False:
             thumb = 100
-            ncols = int( 980 / thumb ) # hard-coded bc of Jupyter cell sizes
+            ncols = int(980/thumb) # hard-coded bc of Jupyter cell sizes
         else:
-            ncols = int( 980 / thumb ) # n.b. Python 3 defaults to float divide
+            ncols = int(980/thumb) # n.b. Python 3 defaults to float divide
 
         n = len(pathcol)
         w,h,coords = _gridcoords(n,ncols,thumb)
@@ -78,7 +78,7 @@ def montage(pathcol=None,
         ascending (Boolean) --- sorting order
     """
 
-    # only first argument is positional
+    _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
                                       sample=sample,
@@ -96,61 +96,32 @@ def montage(pathcol=None,
 
         side = int(sqrt(n)) + 5 # may have to tweak this
         x,y = range(side)*side,repeat(range(side),side)
-        grid_list = [Point(item) for item in zip(x,y)]
+        gridlist = [Point(item) for item in zip(x,y)]
 
         canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
 
         # plot center image
         maximus = Point(side/2,side/2)
+        coords = [(int(maximus.x*thumb),int(maximus.y*thumb))]
+        _paste(pathcol[:1],thumb,idx,canvas,coords)
+        gridlist.remove(maximus)
 
-        try:
-            im = Image.open(pathcol.iloc[0])
-        except:
-            im = _placeholder(thumb)
+        # compute distances from center; sort by distance
+        dists = [maximus.distance(item) for item in gridlist]
+        tmp = pd.DataFrame({"gridlist":gridlist,"dists":dists})
+        tmp.sort_values(by='dists',inplace=True) # ascending
+        gridlist = tmp.gridlist.iloc[:n-1] # n-1 bc we removed maximus
 
-        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-        x = int(maximus.x) * thumb
-        y = int(maximus.y) * thumb
-
-        if idx==True: # idx label placed after thumbnail
-            _idx(im,pathcol.index[0])
-
-        canvas.paste(im,(x,y))
-        grid_list.remove(maximus)
-
-        # compute distance from center for each point
-        tmp = pd.DataFrame(
-            {"grid_list":grid_list,
-             "grid_distances":[maximus.distance(item) for item in grid_list]}
-             )
-
-        # sorting grid locations by computed distance
-        tmp.sort_values(by='grid_distances',inplace=True) # ascending
-        grid_list = tmp.grid_list.iloc[:n-1] # n-1 bc we removed maximus
-
-        counter=-1
-        for i in pathcol.index[1:]:
-            counter+=1
-            try:
-                im = Image.open(pathcol.loc[i])
-            except:
-                im = _placeholder(thumb)
-            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            x = int(grid_list.iloc[counter].x) * thumb
-            y = int(grid_list.iloc[counter].y) * thumb
-            if idx==True: # idx labels placed after thumbnail
-                _idx(im,i)
-            canvas.paste(im,(x,y))
-
-    else:
-        raise ValueError("'shape' must be either 'square' or 'circle'")
+        # plot remaining images
+        coords = [(int(item.x*thumb),int(item.y*thumb)) for item in gridlist]
+        _paste(pathcol[1:],thumb,idx,canvas,coords)
 
     return canvas
 
 def compose(*args,**kwargs):
 
     """
-    Composes canvases into metacanvas
+    Composes PIL canvases into metacanvas
 
     Args:
         *args --- any number of canvases, given by name or plot function
@@ -160,18 +131,17 @@ def compose(*args,**kwargs):
         bg (color) --- background color
     """
 
+    _typecheck(**locals()) # won't typecheck args
     typelist = [isinstance(item, Image.Image) for item in args]
     if not all(typelist):
         raise TypeError("Arguments passed to 'compose' must be PIL Images")
 
+    n = len(args)
+    rounding = kwargs.get('rounding', 'up')
+    ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
     thumb = kwargs.get( 'thumb', max(_getsizes(args)) )
     bg = kwargs.get('bg', '#4a4a4a')
-    rounding = kwargs.get('rounding', 'up')
-    n = len(args)
-    ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
 
-    if not isinstance(ncols, int):
-        raise TypeError("'ncols' must be an integer")
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
 
@@ -186,7 +156,6 @@ def compose(*args,**kwargs):
 
     return metacanvas
 
-# thumb and bin defaults multiply to 980, the Jupyter cell width
 def histogram(featcol,
               pathcol=None,
               ycol=None,
@@ -218,7 +187,7 @@ def histogram(featcol,
         coordinates (str) --- Cartesian or polar
     """
 
-    # only first argument is positional
+    _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
                                       ycol=ycol,
@@ -228,15 +197,11 @@ def histogram(featcol,
         xbin = pd.cut(featcol,nbins,labels=False)
     elif quantile==True:
         xbin = pd.qcut(featcol,nbins,labels=False,duplicates='drop')
-    else:
-        raise TypeError("'quantile' must be a Boolean")
 
     bins = xbin.unique()
     binmax = xbin.value_counts().max()
-    px_w = thumb * nbins
-    px_h = thumb * binmax
-
-    canvas = Image.new('RGB',(px_w,px_h),bg)
+    plotheight = thumb * binmax
+    canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
 
     for binlabel in bins:
         if ycol is not None:
@@ -246,27 +211,15 @@ def histogram(featcol,
         else:
             pathcol_bin = pathcol[xbin==binlabel]
 
-        y_coord = px_h - thumb # bc paste loc is upper left corner
-        x_coord = thumb * binlabel
-
-        for i in pathcol_bin.index:
-
-            try:
-                im = Image.open(pathcol_bin.loc[i])
-            except:
-                im = _placeholder(thumb)
-
-            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
-            if idx==True:
-                _idx(im,i)
-
-            canvas.paste(im,(x_coord,y_coord))
-            y_coord = y_coord - thumb
+        n = len(pathcol_bin)
+        xcoord = thumb * binlabel
+        ycoord = plotheight - thumb # bc paste loc is UPPER left corner
+        ycoords = arange(ycoord,plotheight-thumb*(n+1),-thumb)
+        coords = [tuple((xcoord,item)) for item in ycoords]
+        _paste(pathcol_bin,thumb,idx,canvas,coords)
 
     return canvas
 
-# gridding not implemented
 def scatter(featcol,
             ycol,
             pathcol=None,
@@ -298,7 +251,7 @@ def scatter(featcol,
         coordinates (str) --- Cartesian or polar
     """
 
-    # only first argument is positional
+    _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
                                       ycol=ycol,

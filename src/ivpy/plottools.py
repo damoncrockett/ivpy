@@ -11,18 +11,13 @@ def _scale(col,domain,side,thumb,y=False):
         dmin = col.min()
         dmax = col.max()
     else:
-        if not all(isinstance(domain,(list,tuple)),len(domain)==2):
-            raise TypeError("'domain' must be two-item list or tuple")
-        else:
-            dmin = domain[0]
-            dmax = domain[1]
+        dmin = domain[0]
+        dmax = domain[1]
 
     if y==False:
         return [int( _pct(item,dmin,dmax) * pinrange ) for item in col]
     elif y==True:
         return [int( (1 - _pct(item,dmin,dmax)) * pinrange ) for item in col]
-    else:
-        raise TypeError("'y' must be a Boolean")
 
 def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
