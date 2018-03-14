@@ -4,6 +4,93 @@ import copy
 ATTACHED_DATAFRAME = None
 ATTACHED_PATHCOL = None
 
+def _typecheck(**kwargs):
+
+    """data table columns"""
+    pathcol = kwargs.get('pathcol')
+    featcol = kwargs.get('featcol')
+    ycol = kwargs.get('ycol')
+    facetcol = kwargs.get('facetcol')
+
+    """type checking"""
+    if pathcol is not None:
+        if not isinstance(pathcol,(int,pd.Series)):
+            raise TypeError("""'pathcol' must be an integer or
+                               a pandas Series""")
+    if featcol is not None:
+        if not isinstance(featcol,(basestring,pd.Series)):
+            raise TypeError("'featcol' must be a string or a pandas Series")
+    if ycol is not None:
+        if not isinstance(ycol,(basestring,pd.Series)):
+            raise TypeError("'ycol' must be a string or a pandas Series")
+    if facetcol is not None:
+        if not isinstance(facetcol,(basestring,pd.Series)):
+            raise TypeError("'facetcol' must be a string or a pandas Series")
+
+    """plot settings"""
+    thumb = kwargs.get('thumb')
+    sample = kwargs.get('sample')
+    idx = kwargs.get('idx')
+    bg = kwargs.get('bg')
+    ascending = kwargs.get('ascending')
+    shape = kwargs.get('shape')
+    ncols = kwargs.get('ncols')
+    rounding = kwargs.get('rounding')
+    nbins = kwargs.get('nbins')
+    quantile = kwargs.get('quantile')
+    coordinates = kwargs.get('coordinates')
+    side = kwargs.get('side')
+    gridded = kwargs.get('gridded')
+    xdomain = kwargs.get('xdomain')
+    ydomain = kwargs.get('ydomain')
+
+    """type checking"""
+    if thumb is not None:
+        if not isinstance(thumb,int):
+            raise TypeError("'thumb' must be an integer")
+    if sample is not None:
+        if not isinstance(sample,int):
+            raise TypeError("'sample' must be an integer")
+    if idx is not None:
+        if not isinstance(idx,bool):
+            raise TypeError("'idx' must be True or False")
+    if bg is not None:
+        if not isinstance(bg,(tuple,basestring)):
+            raise TypeError("'bg' must be an RGB triplet or a string")
+    if ascending is not None:
+        if not isinstance(ascending,bool):
+            raise TypeError("'ascending' must be True or False")
+    if shape is not None:
+        if not any([shape=='square',shape=='circle']):
+            raise ValueError("'shape' must be 'circle' or 'square'")
+    if ncols is not None:
+        if not isinstance(ncols,int):
+            raise TypeError("'ncols' must be an integer")
+    if rounding is not None:
+        if not any([rounding=='up',rounding=='down']):
+            raise ValueError("'rounding' must be 'up' or 'down'")
+    if nbins is not None:
+        if not isinstance(nbins,int):
+            raise TypeError("'nbins' must be an integer")
+    if quantile is not None:
+        if not isinstance(quantile,bool):
+            raise TypeError("'quantile' must be True or False")
+    if coordinates is not None:
+        if not any([coordinates=='cartesian',coordinates=='polar']):
+            raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
+    if side is not None:
+        if not isinstance(side,int):
+            raise TypeError("'side' must be an integer")
+    if gridded is not None:
+        if not isinstance(gridded,bool):
+            raise TypeError("'gridded' must be True or False")
+    if xdomain is not None:
+        if not all([isinstance(xdomain,(list,tuple)),len(xdomain)==2]):
+            raise TypeError("'xdomain' must be a two-item list or tuple")
+    if ydomain is not None:
+        if not all([isinstance(ydomain,(list,tuple)),len(ydomain)==2]):
+            raise TypeError("'ydomain' must be a two-item list or tuple")
+
 def attach(df,pathcol=None):
 
     if pathcol is None:
@@ -25,9 +112,6 @@ def attach(df,pathcol=None):
         else:
             raise ValueError("""Length of path list does not match length of
                                 DataFrame""")
-    else:
-        raise TypeError("""Variable 'pathcol' must be either a string or a
-                           pandas Series""")
 
 def detach(df):
 
@@ -73,9 +157,6 @@ def _pathfilter(pathcol):
                 tmp = copy.deepcopy(ATTACHED_PATHCOL)
                 pathcol = tmp.loc[pathcol]
 
-        elif not isinstance(pathcol, pd.Series):
-            raise ValueError("'pathcol' must be a pandas Series or int")
-
     return pathcol
 
 def _featfilter(pathcol,col):
@@ -97,9 +178,6 @@ def _featfilter(pathcol,col):
                 if not col.index.equals(pathcol.index): # too strong criterion?
                     raise ValueError("""Image paths and image features must
                                         have same indices""")
-        else:
-            raise TypeError("""If supplied, feature variable must be a string
-                                or a pandas Series""")
 
     return col
 
@@ -113,10 +191,7 @@ def _sample(pathcol,featcol,ycol,sample):
     sampling. So we must sample both together.
     """
     if sample!=False:
-        if not isinstance(sample, int):
-            raise TypeError("Sample size must be an integer")
         pathcol = pathcol.sample(n=sample)
-
         if featcol is not None:
             featcol = featcol.loc[pathcol.index]
         if ycol is not None:
@@ -143,19 +218,3 @@ def _sort(pathcol,featcol,ycol,ascending):
             ycol = ycol.loc[pathcol.index]
 
     return pathcol,featcol,ycol
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # ende
