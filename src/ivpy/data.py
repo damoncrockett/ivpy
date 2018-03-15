@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import copy
 
 ATTACHED_DATAFRAME = None
@@ -40,9 +41,10 @@ def _typecheck(**kwargs):
     quantile = kwargs.get('quantile')
     coordinates = kwargs.get('coordinates')
     side = kwargs.get('side')
-    gridded = kwargs.get('gridded')
     xdomain = kwargs.get('xdomain')
     ydomain = kwargs.get('ydomain')
+    xbins = kwargs.get('xbins')
+    ybins = kwargs.get('ybins')
 
     """type checking"""
     if thumb is not None:
@@ -81,15 +83,18 @@ def _typecheck(**kwargs):
     if side is not None:
         if not isinstance(side,int):
             raise TypeError("'side' must be an integer")
-    if gridded is not None:
-        if not isinstance(gridded,bool):
-            raise TypeError("'gridded' must be True or False")
     if xdomain is not None:
         if not all([isinstance(xdomain,(list,tuple)),len(xdomain)==2]):
             raise TypeError("'xdomain' must be a two-item list or tuple")
     if ydomain is not None:
         if not all([isinstance(ydomain,(list,tuple)),len(ydomain)==2]):
             raise TypeError("'ydomain' must be a two-item list or tuple")
+    if xbins is not None:
+        if not isinstance(xbins,(np.ndarray,list,tuple,int)):
+            raise TypeError("'xbins' must be an int or a sequence")
+    if ybins is not None:
+        if not isinstance(ybins,(np.ndarray,list,tuple,int)):
+            raise TypeError("'ybins' must be an int or a sequence")
 
 def attach(df,pathcol=None):
 
@@ -218,3 +223,9 @@ def _sort(pathcol,featcol,ycol,ascending):
             ycol = ycol.loc[pathcol.index]
 
     return pathcol,featcol,ycol
+
+def _bin(col,bins):
+    col = pd.cut(col,bins)
+    leftbinedges = [float(str(item).split(",")[0].lstrip("([")) for item in col]
+
+    return pd.Series(leftbinedges,index=col.index)
