@@ -2,8 +2,10 @@
 ivpy
 Damon Crockett (http://damoncrockett.com)
 
-Style settings for use with iv.py, a Python library for iconographic visualization 
-inside computational notebooks: https://github.com/damoncrockett/ivpy
+Style settings for use with iv.py, a Python library for iconographic
+visualization inside computational notebooks:
+
+https://github.com/damoncrockett/ivpy
 
 Use: add file to .jupyter/custom/ in your user folder
 */
@@ -24,7 +26,7 @@ Use: add file to .jupyter/custom/ in your user folder
 /* main settings */
 
 div#notebook {
-  background-color: var(--neutral-bg); 
+  background-color: var(--neutral-bg);
   border-top: none;
 }
 
@@ -43,9 +45,10 @@ div#notebook-container {
 
 div#header { background-color: var(--neutral-bg); }
 div#header-container { display: none; } /* Jupyter logo, etc. */
+div#ipython_notebook { display: none; } /* Juypter logo in newest ver */
 
-div#menus { 
-  background-color: var(--neutral-bg); 
+div#menus {
+  background-color: var(--neutral-bg);
   border: none;
 }
 
@@ -91,7 +94,7 @@ body {
 
 a { color: var(--bright-txt); }
 a:hover { color: var(--near-blk); }
-a:focus { color: var(--yale-light); } 
+a:focus { color: var(--yale-light); }
 
 .item_icon {
   color: var(--bright-txt);
@@ -127,6 +130,7 @@ div.output_subarea {font-weight: normal; color: var(--bright-txt);}
 .rendered_html table, .rendered_html th, .rendered_html tr, .rendered_html td {
   border: 1px  var(--neutral-light) solid;
   color: #000000;
+  background-color: var(--neutral-bg);
 } /* df colors */
 
 div.output_html { font-family: sans-serif; } /* df text; not sure what else */
@@ -137,14 +141,14 @@ div.cell.selected {
 }
 
 div.cell.edit_mode { border-radius: 2px; border: thin solid var(--near-blk); }
-div.text_cell_render { color: var(--bright-txt); } /* markdown text output */ 
+div.text_cell_render { color: var(--bright-txt); } /* markdown text output */
 
 span.ansiblack {color: var(--near-blk);}
 span.ansiblue {color: var(--yale-med);}
 span.ansigray {color: var(--neutral-light);}
 span.ansigreen {color: #5f712d;} /* darker green */
 span.ansipurple {color: #00356b;}
-span.ansired {color: #bd5319;} 
+span.ansired {color: #bd5319;}
 span.ansiyellow {color: var(--yeller);}
 
 div.output_stderr {background-color: var(--neutral-bg);}
@@ -185,8 +189,8 @@ div.output_stderr pre {color: var(--bright-txt);}
 .cm-s-default .cm-header {color: var(--yeller);}
 .cm-header {color: var(--yeller)}
 
-.cm-s-ipython .CodeMirror-matchingbracket { 
-  text-decoration: none; 
+.cm-s-ipython .CodeMirror-matchingbracket {
+  text-decoration: none;
   color: var(--bright-txt) !important;
   background-color: var(--near-blk);
 }
