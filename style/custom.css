@@ -43,6 +43,10 @@ div#notebook-container {
   box-shadow: none;
 }
 
+.notebook_app > #header {
+  box-shadow: none; /* removes weird transition between menu and body */
+}
+
 div#header { background-color: var(--neutral-bg); }
 div#header-container { display: none; } /* Jupyter logo, etc. */
 div#ipython_notebook { display: none; } /* Juypter logo in newest ver */
