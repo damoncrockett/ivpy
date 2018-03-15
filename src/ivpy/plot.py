@@ -4,7 +4,7 @@ import pandas as pd
 from shapely.geometry import Point
 from copy import deepcopy
 
-from .data import _typecheck,_colfilter
+from .data import _typecheck,_colfilter,_bin
 from .plottools import _scale,_pct,_idx,_placeholder
 from .plottools import _gridcoords,_paste,_getsizes,_round
 
@@ -230,6 +230,8 @@ def scatter(featcol,
             gridded=False,
             xdomain=None,
             ydomain=None,
+            xbins=None,
+            ybins=None,
             bg="#4a4a4a",
             coordinates='cartesian'): # not yet implemented
 
@@ -244,9 +246,10 @@ def scatter(featcol,
         side (int) --- length of plot side in pixels; all plots enforced square
         sample (int) --- integer size of sample
         idx (Boolean) --- whether to print index on image
-        gridded (Boolean) --- whether to snap image locations to a grid
         xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         ydomain (list,tuple) --- ymin and ymax; defaults to data extremes
+        xbins (int,seq) --- 'bins' argument passed to pd.cut()
+        ybins (int,seq) --- 'bins' argument passed to pd.cut()
         bg (color) --- background color
         coordinates (str) --- Cartesian or polar
     """
@@ -256,6 +259,11 @@ def scatter(featcol,
                                       featcol=featcol,
                                       ycol=ycol,
                                       sample=sample)
+
+    if xbins is not None:
+        featcol = _bin(featcol,xbins)
+    if ybins is not None:
+        ycol = _bin(ycol,ybins)
 
     x = _scale(featcol,xdomain,side,thumb)
     y = _scale(ycol,ydomain,side,thumb,y=True)
