@@ -1,23 +1,44 @@
 from PIL import Image,ImageDraw,ImageFont
-from numpy import repeat
+from numpy import repeat,radians,cos,sin
 from math import ceil
 
-def _scale(col,domain,side,thumb,y=False):
-    """This will fail on missing data"""
+def _pol2cart((rho,phi)):
+    x = rho * cos(phi)
+    y = rho * sin(phi)
+    return(x,y)
 
-    pinrange = side - thumb # otherwise will cut off extremes
+def _bin2phi(nbins,binnum):
+    incr = float(360)/nbins
+    return radians(incr*binnum)
 
-    if domain==None:
-        dmin = col.min()
-        dmax = col.max()
-    else:
-        dmin = domain[0]
-        dmax = domain[1]
+def _bin2phideg(nbins,binnum):
+    incr = float(360)/nbins
+    return incr*binnum
 
-    if y==False:
-        return [int( _pct(item,dmin,dmax) * pinrange ) for item in col]
-    elif y==True:
-        return [int( (1 - _pct(item,dmin,dmax)) * pinrange ) for item in col]
+def _scalecart(featcol,ycol,xdomain,ydomain,side,thumb):
+    featcolpct = _pct(featcol,xdomain)
+    ycolpct = _pct(ycol,ydomain)
+    pasterange = side - thumb # otherwise will cut off extremes
+    x = [int(item*pasterange) for item in featcolpct]
+    y = [int((1-item)*pasterange) for item in ycolpct]
+    return x,y
+
+def _scalepol(featcol,ycol,xdomain,ydomain,side,thumb):
+    # get percentiles for col values
+    featcolpct = _pct(featcol,xdomain)
+    ycolpct = _pct(ycol,ydomain)
+    # derive polar coordinates from percentiles and 360 degree std
+    rhos = [item for item in featcolpct] # unit radius
+    phis = [item*float(360) for item in ycolpct]
+    phiradians = [radians(item) for item in phis]
+    # convert these to xy coordinates in (-1,1) range
+    xycoords = [_pol2cart(item) for item in zip(rhos,phiradians)]
+    # convert to canvas coordinates
+    pasterange = side - thumb # otherwise will cut off extremes
+    radius = float(pasterange)/2
+    x = [int(item[0]*radius+radius) for item in xycoords]
+    y = [int(radius-item[1]*radius) for item in xycoords]
+    return x,y,phis
 
 def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
@@ -32,9 +53,16 @@ def _gridcoords(n,ncols,thumb):
 
     return w,h,zip(x,y)
 
-def _pct(item,dmin,dmax):
+def _pct(col,domain):
+    """This will fail on missing data"""
+    if domain==None:
+        dmin = col.min()
+        dmax = col.max()
+    else:
+        dmin = domain[0]
+        dmax = domain[1]
     drange = dmax - dmin
-    return (item - dmin) / float(drange)
+    return [(item - dmin) / float(drange) for item in col]
 
 def _idx(im,i):
     pos = 0 # hard-code
@@ -61,7 +89,7 @@ def _placeholder(thumb):
     draw.line([(0,0),(thumb,thumb)],'#dddddd')
     return im
 
-def _paste(pathcol,thumb,idx,canvas,coords):
+def _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis):
     counter=-1
     for i in pathcol.index:
         counter+=1
@@ -72,7 +100,12 @@ def _paste(pathcol,thumb,idx,canvas,coords):
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         if idx==True: # idx labels placed after thumbnail
             _idx(im,i)
-        canvas.paste(im,coords[counter])
+        if coordinates=='polar':
+            im = im.convert('RGBA')
+            im = im.rotate(phis[counter],expand=1)
+            canvas.paste(im,coords[counter],im)
+        elif coordinates=='cartesian':
+            canvas.paste(im,coords[counter])
 
 def _round(x,direction='down'):
     if direction=='down':

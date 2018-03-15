@@ -5,7 +5,7 @@ from shapely.geometry import Point
 from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin
-from .plottools import _scale,_pct,_idx,_placeholder
+from .plottools import _scalecart,_scalepol
 from .plottools import _gridcoords,_paste,_getsizes,_round
 
 #------------------------------------------------------------------------------
@@ -184,7 +184,7 @@ def histogram(featcol,
         bg (color) --- background color
         quantile (Boolean) --- whether binning is quantile-based;
             if True, produces nearly even spread across bins
-        coordinates (str) --- Cartesian or polar
+        coordinates (str) --- 'cartesian' or 'polar'
     """
 
     _typecheck(**locals())
@@ -233,7 +233,7 @@ def scatter(featcol,
             xbins=None,
             ybins=None,
             bg="#4a4a4a",
-            coordinates='cartesian'): # not yet implemented
+            coordinates='cartesian'):
 
     """
     Cartesian or polar scatterplot of images
@@ -251,7 +251,7 @@ def scatter(featcol,
         xbins (int,seq) --- 'bins' argument passed to pd.cut()
         ybins (int,seq) --- 'bins' argument passed to pd.cut()
         bg (color) --- background color
-        coordinates (str) --- Cartesian or polar
+        coordinates (str) --- 'cartesian' or 'polar'
     """
 
     _typecheck(**locals())
@@ -265,10 +265,13 @@ def scatter(featcol,
     if ybins is not None:
         ycol = _bin(ycol,ybins)
 
-    x = _scale(featcol,xdomain,side,thumb)
-    y = _scale(ycol,ydomain,side,thumb,y=True)
+    if coordinates=='cartesian':
+        x,y = _scalecart(featcol,ycol,xdomain,ydomain,side,thumb)
+        phis = None # a bit hacky but can't think of a better way yet
+    elif coordinates=='polar':
+        x,y,phis = _scalepol(featcol,ycol,xdomain,ydomain,side,thumb)
     coords = zip(x,y)
     canvas = Image.new('RGB',(side,side),bg) # fixed size
-    _paste(pathcol,thumb,idx,canvas,coords)
+    _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
 
     return canvas
