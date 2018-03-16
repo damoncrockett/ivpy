@@ -126,7 +126,13 @@ def detach(df):
     ATTACHED_DATAFRAME = None
     ATTACHED_PATHCOL = None
 
-def _colfilter(pathcol,featcol=None,ycol=None,sample=False,ascending=False):
+def _colfilter(pathcol,
+               featcol=None,
+               ycol=None,
+               sample=False,
+               ascending=False,
+               xdomain=None,
+               ydomain=None):
 
     pathcol = _pathfilter(pathcol)
     featcol = _featfilter(pathcol,featcol)
@@ -134,6 +140,7 @@ def _colfilter(pathcol,featcol=None,ycol=None,sample=False,ascending=False):
 
     pathcol,featcol,ycol = _sample(pathcol,featcol,ycol,sample)
     pathcol,featcol,ycol = _sort(pathcol,featcol,ycol,ascending)
+    pathcol,featcol,ycol = _subset(pathcol,featcol,ycol,xdomain,ydomain)
 
     return pathcol,featcol,ycol
 
@@ -219,8 +226,35 @@ def _sort(pathcol,featcol,ycol,ascending):
         featcol = featcol.sort_values(ascending=ascending)
         pathcol = pathcol.loc[featcol.index]
 
+        if ycol is not None: # nb sorting by ycol not possible globally
+            ycol = ycol.loc[featcol.index]
+
+    return pathcol,featcol,ycol
+
+def _subset(pathcol,featcol,ycol,xdomain,ydomain):
+    """
+    Because this function runs after pathfilter, featfilter, sample and sort,
+    many checks have already taken place. If featcol and ycol are not None, we
+    know they must be pandas Series and not strings.
+    """
+
+    if xdomain is not None:
+        if featcol is None:
+            raise ValueError("""If 'xdomain' is supplied, 'featcol' must be
+                                supplied as well""")
+        featcol = featcol[(featcol>=xdomain[0])&(featcol<=xdomain[1])]
+        pathcol = pathcol.loc[featcol.index]
+
         if ycol is not None:
-            ycol = ycol.loc[pathcol.index]
+            ycol = ycol.loc[featcol.index]
+
+    if ydomain is not None:
+        if ycol is None:
+            raise ValueError("""If 'ydomain' is supplied, 'ycol' must be
+                                supplied as well""")
+        ycol = ycol[(ycol>=ydomain[0])&(ycol<=ydomain[1])]
+        pathcol = pathcol.loc[ycol.index]
+        featcol = featcol.loc[ycol.index] # if ycol is not None, ditto featcol
 
     return pathcol,featcol,ycol
 

@@ -12,6 +12,7 @@ from .plottools import _gridcoords,_paste,_getsizes,_round
 
 def show(pathcol=None,
          featcol=None,
+         xdomain=None,
          thumb=False,
          sample=False,
          idx=False,
@@ -33,6 +34,7 @@ def show(pathcol=None,
     _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
+                                      xdomain=xdomain,
                                       sample=sample,
                                       ascending=ascending)
 
@@ -57,6 +59,7 @@ def show(pathcol=None,
 
 def montage(pathcol=None,
             featcol=None,
+            xdomain=None,
             thumb=100,
             sample=False,
             idx=False,
@@ -81,6 +84,7 @@ def montage(pathcol=None,
     _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
+                                      xdomain=xdomain,
                                       sample=sample,
                                       ascending=ascending)
     n = len(pathcol)
@@ -157,8 +161,10 @@ def compose(*args,**kwargs):
     return metacanvas
 
 def histogram(featcol,
+              xdomain=None,
               pathcol=None,
               ycol=None,
+              ydomain=None,
               thumb=28,
               nbins=35,
               sample=False,
@@ -190,7 +196,9 @@ def histogram(featcol,
     _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
+                                      xdomain=xdomain,
                                       ycol=ycol,
+                                      ydomain=ydomain,
                                       sample=sample)
 
     if quantile==False:
@@ -257,7 +265,9 @@ def scatter(featcol,
     _typecheck(**locals())
     pathcol,featcol,ycol = _colfilter(pathcol,
                                       featcol=featcol,
+                                      xdomain=xdomain,
                                       ycol=ycol,
+                                      ydomain=ydomain,
                                       sample=sample)
 
     if xbins is not None:
@@ -266,9 +276,11 @@ def scatter(featcol,
         ycol = _bin(ycol,ybins)
 
     if coordinates=='cartesian':
+        # xdomain and ydomain only necessary here if expanding
         x,y = _scalecart(featcol,ycol,xdomain,ydomain,side,thumb)
         phis = None # a bit hacky but can't think of a better way yet
     elif coordinates=='polar':
+        # xdomain and ydomain only necessary here if expanding
         x,y,phis = _scalepol(featcol,ycol,xdomain,ydomain,side,thumb)
     coords = zip(x,y)
     canvas = Image.new('RGB',(side,side),bg) # fixed size
