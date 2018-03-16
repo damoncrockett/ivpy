@@ -59,6 +59,7 @@ def _pct(col,domain):
         dmin = col.min()
         dmax = col.max()
     else:
+        # if we contract domain, this is equivalent to above
         dmin = domain[0]
         dmax = domain[1]
     drange = dmax - dmin
