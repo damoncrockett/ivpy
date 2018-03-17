@@ -90,7 +90,7 @@ def _placeholder(thumb):
     draw.line([(0,0),(thumb,thumb)],'#dddddd')
     return im
 
-def _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis):
+def _paste(pathcol,thumb,idx,canvas,coords,coordinates=None,phis=None):
     counter=-1
     for i in pathcol.index:
         counter+=1
@@ -102,10 +102,13 @@ def _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis):
         if idx==True: # idx labels placed after thumbnail
             _idx(im,i)
         if coordinates=='polar':
-            im = im.convert('RGBA')
-            im = im.rotate(phis[counter],expand=1)
-            canvas.paste(im,coords[counter],im)
-        elif coordinates=='cartesian':
+            phi = phis[counter]
+            if 90 < phi < 270:
+                phi = phi + 180 # avoids upside down images
+            im = im.convert('RGBA') # need alpha layer to make rotation work
+            im = im.rotate(phi,expand=1) # expand so it won't clip the corners
+            canvas.paste(im,coords[counter],im) # im is a mask for itself
+        else:
             canvas.paste(im,coords[counter])
 
 def _round(x,direction='down'):

@@ -37,8 +37,7 @@ def _typecheck(**kwargs):
     shape = kwargs.get('shape')
     ncols = kwargs.get('ncols')
     rounding = kwargs.get('rounding')
-    nbins = kwargs.get('nbins')
-    quantile = kwargs.get('quantile')
+    bins = kwargs.get('bins')
     coordinates = kwargs.get('coordinates')
     side = kwargs.get('side')
     xdomain = kwargs.get('xdomain')
@@ -71,12 +70,9 @@ def _typecheck(**kwargs):
     if rounding is not None:
         if not any([rounding=='up',rounding=='down']):
             raise ValueError("'rounding' must be 'up' or 'down'")
-    if nbins is not None:
-        if not isinstance(nbins,int):
-            raise TypeError("'nbins' must be an integer")
-    if quantile is not None:
-        if not isinstance(quantile,bool):
-            raise TypeError("'quantile' must be True or False")
+    if bins is not None:
+        if not isinstance(bins,(int,list,tuple,np.ndarray)):
+            raise TypeError("'bins' must be an integer or a sequence")
     if coordinates is not None:
         if not any([coordinates=='cartesian',coordinates=='polar']):
             raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
@@ -91,10 +87,10 @@ def _typecheck(**kwargs):
             raise TypeError("'ydomain' must be a two-item list or tuple")
     if xbins is not None:
         if not isinstance(xbins,(np.ndarray,list,tuple,int)):
-            raise TypeError("'xbins' must be an int or a sequence")
+            raise TypeError("'xbins' must be an integer or a sequence")
     if ybins is not None:
         if not isinstance(ybins,(np.ndarray,list,tuple,int)):
-            raise TypeError("'ybins' must be an int or a sequence")
+            raise TypeError("'ybins' must be an integer or a sequence")
 
 def attach(df,pathcol=None):
 
