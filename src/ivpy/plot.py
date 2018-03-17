@@ -26,6 +26,7 @@ def show(pathcol=None,
     Args:
         pathcol (int,Series) --- single index or col of image paths to be shown
         featcol (str,Series) --- sorting column
+        xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
         sample (int) --- integer size of sample
         ascending (Boolean) --- sorting order
@@ -73,6 +74,7 @@ def montage(pathcol=None,
     Args:
         pathcol (Series) --- col of image paths to be plotted
         featcol (str,Series) --- sorting column
+        xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
         sample (int) --- integer size of sample
         idx (Boolean) --- whether to print index on image
@@ -166,12 +168,11 @@ def histogram(featcol,
               ycol=None,
               ydomain=None,
               thumb=28,
-              nbins=35,
+              bins=35,
               sample=False,
               idx=False,
               ascending=False,
               bg="#4a4a4a",
-              quantile=False,
               coordinates='cartesian'): # not yet implemented
 
     """
@@ -179,17 +180,17 @@ def histogram(featcol,
 
     Args:
         featcol (str,Series) --- histogram axis; must be supplied
+        xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         pathcol (Series) --- col of image paths to be plotted
         ycol (str,Series) --- vertical sorting feature if desired
+        ydomain (list,tuple) --- ymin and ymax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
-        nbins (int) --- number of bins used to discretize featcol;
+        bins (int,seq) --- number of bins used to discretize featcol;
             can alternatively be entered as array of bin edges
         sample (int) --- integer size of sample
         idx (Boolean) --- whether to print index on image
         ascending (Boolean) --- vertical sorting direction
         bg (color) --- background color
-        quantile (Boolean) --- whether binning is quantile-based;
-            if True, produces nearly even spread across bins
         coordinates (str) --- 'cartesian' or 'polar'
     """
 
@@ -201,17 +202,28 @@ def histogram(featcol,
                                       ydomain=ydomain,
                                       sample=sample)
 
-    if quantile==False:
-        xbin = pd.cut(featcol,nbins,labels=False)
-    elif quantile==True:
-        xbin = pd.qcut(featcol,nbins,labels=False,duplicates='drop')
+    # domain expansion; ydomain cannot be expanded here because not proper axis
+    if xdomain is not None:
+        xrange = xdomain[1]-xdomain[0]
+        if isinstance(bins,int):
+            increment = float(xrange)/bins
+        else:
+            """If user both supplies 'xdomain' and gives a sequence of bin edges
+               for 'bins', the sequence is overridden by the xdomain argument,
+               and new bin edges are generated, using a default number of bins
+               to define bin edges. User can avoid this default by supplying an
+               integer for 'bins'."""
+            increment = float(xrange)/int(980/thumb)
+        bins = arange(xdomain[0],xdomain[1]+increment,increment)
 
-    bins = xbin.unique()
+    xbin = pd.cut(featcol,bins,labels=False,include_lowest=True)
+    nbins = len(pd.cut(featcol,bins,include_lowest=True).value_counts())
+    nonemptybins = xbin.unique() # will ignore empty bins
     binmax = xbin.value_counts().max()
     plotheight = thumb * binmax
     canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
 
-    for binlabel in bins:
+    for binlabel in nonemptybins:
         if ycol is not None:
             ycol_bin = ycol[xbin==binlabel]
             ycol_bin = ycol_bin.sort_values(ascending=ascending)
@@ -224,7 +236,7 @@ def histogram(featcol,
         ycoord = plotheight - thumb # bc paste loc is UPPER left corner
         ycoords = arange(ycoord,plotheight-thumb*(n+1),-thumb)
         coords = [tuple((xcoord,item)) for item in ycoords]
-        _paste(pathcol_bin,thumb,idx,canvas,coords)
+        _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates)
 
     return canvas
 
@@ -275,15 +287,15 @@ def scatter(featcol,
     if ybins is not None:
         ycol = _bin(ycol,ybins)
 
-    if coordinates=='cartesian':
-        # xdomain and ydomain only necessary here if expanding
-        x,y = _scalecart(featcol,ycol,xdomain,ydomain,side,thumb)
-        phis = None # a bit hacky but can't think of a better way yet
-    elif coordinates=='polar':
-        # xdomain and ydomain only necessary here if expanding
-        x,y,phis = _scalepol(featcol,ycol,xdomain,ydomain,side,thumb)
-    coords = zip(x,y)
     canvas = Image.new('RGB',(side,side),bg) # fixed size
-    _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
+    # xdomain and ydomain only active at this stage if expanding
+    if coordinates=='cartesian':
+        x,y = _scalecart(featcol,ycol,xdomain,ydomain,side,thumb)
+        coords = zip(x,y)
+        _paste(pathcol,thumb,idx,canvas,coords,coordinates)
+    elif coordinates=='polar':
+        x,y,phis = _scalepol(featcol,ycol,xdomain,ydomain,side,thumb)
+        coords = zip(x,y)
+        _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
 
     return canvas
