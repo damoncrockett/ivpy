@@ -5,7 +5,7 @@ from shapely.geometry import Point
 from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin
-from .plottools import _scalecart,_scalepol
+from .plottools import _scalecart,_scalepol,_bin2phi,_bin2phideg,_pol2cart
 from .plottools import _gridcoords,_paste,_getsizes,_round
 
 #------------------------------------------------------------------------------
@@ -173,7 +173,7 @@ def histogram(featcol,
               idx=False,
               ascending=False,
               bg="#4a4a4a",
-              coordinates='cartesian'): # not yet implemented
+              coordinates='cartesian'):
 
     """
     Cartesian or polar histogram of images
@@ -224,8 +224,13 @@ def histogram(featcol,
     nbins = len(pd.cut(featcol,bins,include_lowest=True).value_counts())
     nonemptybins = xbin.unique() # will ignore empty bins
     binmax = xbin.value_counts().max()
-    plotheight = thumb * binmax
-    canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
+
+    if coordinates=='cartesian':
+        plotheight = thumb * binmax
+        canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
+    elif coordinates=='polar':
+        side = binmax*2*thumb+thumb
+        canvas = Image.new('RGB',(side,side),bg)
 
     for binlabel in nonemptybins:
         if ycol is not None:
@@ -236,11 +241,22 @@ def histogram(featcol,
             pathcol_bin = pathcol[xbin==binlabel]
 
         n = len(pathcol_bin)
-        xcoord = thumb * binlabel
-        ycoord = plotheight - thumb # bc paste loc is UPPER left corner
-        ycoords = arange(ycoord,plotheight-thumb*(n+1),-thumb)
-        coords = [tuple((xcoord,item)) for item in ycoords]
-        _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates)
+
+        if coordinates=='cartesian':
+            xcoord = thumb * binlabel
+            ycoord = plotheight - thumb # bc paste loc is UPPER left corner
+            ycoords = arange(ycoord,plotheight-thumb*(n+1),-thumb)
+            coords = [tuple((xcoord,item)) for item in ycoords]
+            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates)
+        elif coordinates=='polar':
+            rhos = arange(binmax,binmax-n-1,-1)
+            phi = _bin2phi(nbins,binlabel)
+            phis = repeat(_bin2phideg(nbins,binlabel),n)
+            xycoords = [_pol2cart((rho,phi)) for rho in rhos]
+            x = [int((item[0]+binmax)*thumb) for item in xycoords]
+            y = [int((binmax-item[1])*thumb) for item in xycoords]
+            coords = zip(x,y)
+            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis)
 
     return canvas
 
