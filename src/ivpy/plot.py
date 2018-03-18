@@ -202,19 +202,23 @@ def histogram(featcol,
                                       ydomain=ydomain,
                                       sample=sample)
 
-    # domain expansion; ydomain cannot be expanded here because not proper axis
+    """
+    This is domain expansion. The histogram ydomain can be contracted; it simply
+    removes data points. But it cannot be expanded, since y in a histogram is
+    not a proper axis. The user can expand the xdomain either using that kwarg
+    or by submitting a set of domain-expanding bin edges. If user gives xdomain
+    and an integer 'bins' argument, that xdomain is split into equal-width bins.
+    If the user submits other bin edges, those are the edges, regardless of
+    whether they match the submitted xdomain. This makes it possible, for
+    example, to restrict the domain using 'xdomain' and expand the plotting
+    space using 'bins'.
+    """
     if xdomain is not None:
         xrange = xdomain[1]-xdomain[0]
         if isinstance(bins,int):
+            # n.b.: this is slightly different than giving int to pd.cut
             increment = float(xrange)/bins
-        else:
-            """If user both supplies 'xdomain' and gives a sequence of bin edges
-               for 'bins', the sequence is overridden by the xdomain argument,
-               and new bin edges are generated, using a default number of bins
-               to define bin edges. User can avoid this default by supplying an
-               integer for 'bins'."""
-            increment = float(xrange)/int(980/thumb)
-        bins = arange(xdomain[0],xdomain[1]+increment,increment)
+            bins = arange(xdomain[0],xdomain[1]+increment,increment)
 
     xbin = pd.cut(featcol,bins,labels=False,include_lowest=True)
     nbins = len(pd.cut(featcol,bins,include_lowest=True).value_counts())
