@@ -229,8 +229,7 @@ def histogram(featcol,
         plotheight = thumb * binmax
         canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
     elif coordinates=='polar':
-        side = binmax*2*thumb+thumb
-        canvas = Image.new('RGB',(side,side),bg)
+        canvas = Image.new('RGB',(binmax*2*thumb+thumb,binmax*2*thumb+thumb),bg)
 
     for binlabel in nonemptybins:
         if ycol is not None:
@@ -241,21 +240,11 @@ def histogram(featcol,
             pathcol_bin = pathcol[xbin==binlabel]
 
         n = len(pathcol_bin)
-
         if coordinates=='cartesian':
-            xcoord = thumb * binlabel
-            ycoord = plotheight - thumb # bc paste loc is UPPER left corner
-            ycoords = arange(ycoord,plotheight-thumb*(n+1),-thumb)
-            coords = [tuple((xcoord,item)) for item in ycoords]
+            coords = _histcoordscart(n,binlabel,plotheight,thumb)
             _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates)
         elif coordinates=='polar':
-            rhos = arange(binmax,binmax-n-1,-1)
-            phi = _bin2phi(nbins,binlabel)
-            phis = repeat(_bin2phideg(nbins,binlabel),n)
-            xycoords = [_pol2cart((rho,phi)) for rho in rhos]
-            x = [int((item[0]+binmax)*thumb) for item in xycoords]
-            y = [int((binmax-item[1])*thumb) for item in xycoords]
-            coords = zip(x,y)
+            coords = _histcoordspolar(n,binlabel,binmax,nbins,thumb)
             _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis)
 
     return canvas
