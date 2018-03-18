@@ -2,6 +2,19 @@ from PIL import Image,ImageDraw,ImageFont
 from numpy import repeat,radians,cos,sin
 from math import ceil
 
+def _gridcoords(n,ncols,thumb):
+    nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
+    w,h = ncols*thumb,nrows*thumb
+
+    xgrid = range(ncols) * nrows
+    ygrid = repeat(range(nrows),ncols)
+    xgrid = xgrid[:n]
+    ygrid = ygrid[:n]
+    x = [item*thumb for item in xgrid]
+    y = [item*thumb for item in ygrid]
+
+    return w,h,zip(x,y)
+
 def _pol2cart((rho,phi)):
     x = rho * cos(phi)
     y = rho * sin(phi)
@@ -14,6 +27,21 @@ def _bin2phi(nbins,binnum):
 def _bin2phideg(nbins,binnum):
     incr = float(360)/nbins
     return incr*binnum
+
+def _histcoordscart(n,binlabel,plotheight,thumb):
+    xcoord = thumb * binlabel
+    ycoord = plotheight - thumb # bc paste loc is UPPER left corner
+    ycoords = arange(ycoord,plotheight-thumb*(n+1),-thumb)
+    return [tuple((xcoord,item)) for item in ycoords]
+
+def _histcoordspolar(n,binlabel,binmax,nbins,thumb):
+    rhos = arange(binmax,binmax-n-1,-1)
+    phi = _bin2phi(nbins,binlabel)
+    phis = repeat(_bin2phideg(nbins,binlabel),n)
+    xycoords = [_pol2cart((rho,phi)) for rho in rhos]
+    x = [int((item[0]+binmax)*thumb) for item in xycoords]
+    y = [int((binmax-item[1])*thumb) for item in xycoords]
+    return zip(x,y)
 
 def _scalecart(featcol,ycol,xdomain,ydomain,side,thumb):
     featcolpct = _pct(featcol,xdomain)
@@ -39,19 +67,6 @@ def _scalepol(featcol,ycol,xdomain,ydomain,side,thumb):
     x = [int(item[0]*radius+radius) for item in xycoords]
     y = [int(radius-item[1]*radius) for item in xycoords]
     return x,y,phis
-
-def _gridcoords(n,ncols,thumb):
-    nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
-    w,h = ncols*thumb,nrows*thumb
-
-    xgrid = range(ncols) * nrows
-    ygrid = repeat(range(nrows),ncols)
-    xgrid = xgrid[:n]
-    ygrid = ygrid[:n]
-    x = [item*thumb for item in xgrid]
-    y = [item*thumb for item in ygrid]
-
-    return w,h,zip(x,y)
 
 def _pct(col,domain):
     """This will fail on missing data"""
