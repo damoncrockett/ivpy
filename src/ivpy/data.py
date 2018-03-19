@@ -128,17 +128,22 @@ def _colfilter(pathcol,
                sample=False,
                ascending=False,
                xdomain=None,
-               ydomain=None):
+               ydomain=None,
+               facetcol=None):
 
     pathcol = _pathfilter(pathcol)
     featcol = _featfilter(pathcol,featcol)
     ycol = _featfilter(pathcol,ycol)
+    facetcol = _featfilter(pathcol,facetcol)
 
-    pathcol,featcol,ycol = _sample(pathcol,featcol,ycol,sample)
-    pathcol,featcol,ycol = _sort(pathcol,featcol,ycol,ascending)
-    pathcol,featcol,ycol = _subset(pathcol,featcol,ycol,xdomain,ydomain)
+    pathcol,featcol,ycol,facetcol = _sample(pathcol,featcol,ycol,
+                                            sample,facetcol)
+    pathcol,featcol,ycol,facetcol = _sort(pathcol,featcol,ycol,
+                                          ascending,facetcol)
+    pathcol,featcol,ycol,facetcol = _subset(pathcol,featcol,ycol,
+                                            xdomain,ydomain,facetcol)
 
-    return pathcol,featcol,ycol
+    return pathcol,featcol,ycol,facetcol
 
 def _pathfilter(pathcol):
 
@@ -189,7 +194,7 @@ def _featfilter(pathcol,col):
 
     return col
 
-def _sample(pathcol,featcol,ycol,sample):
+def _sample(pathcol,featcol,ycol,sample,facetcol):
 
     """
     If user supplies a number for 'sample', we sample pathcol and subset
@@ -204,10 +209,12 @@ def _sample(pathcol,featcol,ycol,sample):
             featcol = featcol.loc[pathcol.index]
         if ycol is not None:
             ycol = ycol.loc[pathcol.index]
+        if facetcol is not None:
+            facetcol = facetcol.loc[pathcol.index]
 
-    return pathcol,featcol,ycol
+    return pathcol,featcol,ycol,facetcol
 
-def _sort(pathcol,featcol,ycol,ascending):
+def _sort(pathcol,featcol,ycol,ascending,facetcol):
 
     """
     If user supplies featcol, we sort featcol and apply to path/ycol.
@@ -216,7 +223,9 @@ def _sort(pathcol,featcol,ycol,ascending):
     the same length as pathcol - even if pathcol got sampled above. Note
     that for scatterplots, sorting makes no difference. But it's easier
     to reuse this function for all plots. Note that your working DataFrame
-    is unchanged.
+    is unchanged. Also note that it is never possible to sort globally by
+    ycol. This is because only histogram and scatter have ycol, and for
+    histograms, this sorting happens bin by bin.
     """
     if featcol is not None:
         featcol = featcol.sort_values(ascending=ascending)
@@ -225,9 +234,12 @@ def _sort(pathcol,featcol,ycol,ascending):
         if ycol is not None: # nb sorting by ycol not possible globally
             ycol = ycol.loc[featcol.index]
 
-    return pathcol,featcol,ycol
+        if facetcol is not None:
+            facetcol = facetcol.loc[featcol.index]
 
-def _subset(pathcol,featcol,ycol,xdomain,ydomain):
+    return pathcol,featcol,ycol,facetcol
+
+def _subset(pathcol,featcol,ycol,xdomain,ydomain,facetcol):
     """
     Because this function runs after pathfilter, featfilter, sample and sort,
     many checks have already taken place. If featcol and ycol are not None, we
@@ -244,6 +256,9 @@ def _subset(pathcol,featcol,ycol,xdomain,ydomain):
         if ycol is not None:
             ycol = ycol.loc[featcol.index]
 
+        if facetcol is not None:
+            facetcol = facetcol.loc[featcol.index]
+
     if ydomain is not None:
         if ycol is None:
             raise ValueError("""If 'ydomain' is supplied, 'ycol' must be
@@ -252,7 +267,10 @@ def _subset(pathcol,featcol,ycol,xdomain,ydomain):
         pathcol = pathcol.loc[ycol.index]
         featcol = featcol.loc[ycol.index] # if ycol is not None, ditto featcol
 
-    return pathcol,featcol,ycol
+        if facetcol is not None:
+            facetcol = facetcol.loc[ycol.index]
+
+    return pathcol,featcol,ycol,facetcol
 
 def _bin(col,bins):
     col = pd.cut(col,bins)
