@@ -10,6 +10,7 @@ from .plottools import _gridcoords,_gridcoordscircle,_paste,_getsizes,_round
 from .plottools import _histcoordscart,_histcoordspolar,_gridcoordscirclemax
 
 #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def show(pathcol=None,
          featcol=None,
@@ -59,61 +60,7 @@ def show(pathcol=None,
 
         return canvas
 
-def montage(pathcol=None,
-            featcol=None,
-            xdomain=None,
-            thumb=100,
-            sample=False,
-            idx=False,
-            bg='#4a4a4a',
-            shape='square',
-            ascending=False):
-
-    """
-    Square or circular montage of images
-
-    Args:
-        pathcol (Series) --- col of image paths to be plotted
-        featcol (str,Series) --- sorting column
-        xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
-        thumb (int) --- pixel value for thumbnail side
-        sample (int) --- integer size of sample
-        idx (Boolean) --- whether to print index on image
-        bg (color) --- background color
-        shape (str) --- square or circular montage
-        ascending (Boolean) --- sorting order
-    """
-
-    _typecheck(**locals())
-    pathcol,featcol,ycol = _colfilter(pathcol,
-                                      featcol=featcol,
-                                      xdomain=xdomain,
-                                      sample=sample,
-                                      ascending=ascending)
-    n = len(pathcol)
-
-    if shape=='square':
-
-        ncols = int(sqrt(n))
-        w,h,coords = _gridcoords(n,ncols,thumb)
-        canvas = Image.new('RGB',(w,h),bg)
-        _paste(pathcol,thumb,idx,canvas,coords)
-
-    elif shape=='circle':
-
-        side = int(sqrt(n)) + 5 # may have to tweak this
-        canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
-
-        # center image
-        gridlist,maximus,coords = _gridcoordscirclemax(side,thumb)
-        _paste(pathcol[:1],thumb,idx,canvas,coords)
-        gridlist.remove(maximus)
-
-        # remaining images
-        coords = _gridcoordscircle(n,maximus,gridlist,thumb)
-        _paste(pathcol[1:],thumb,idx,canvas,coords)
-
-    return canvas
+#------------------------------------------------------------------------------
 
 def compose(*args,**kwargs):
 
@@ -153,6 +100,69 @@ def compose(*args,**kwargs):
 
     return metacanvas
 
+#------------------------------------------------------------------------------
+
+def montage(pathcol=None,
+            featcol=None,
+            xdomain=None,
+            thumb=100,
+            sample=False,
+            idx=False,
+            bg='#4a4a4a',
+            shape='square',
+            ascending=False,
+            facetcol=None):
+
+    """
+    Square or circular montage of images
+
+    Args:
+        pathcol (Series) --- col of image paths to be plotted
+        featcol (str,Series) --- sorting column
+        xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
+        thumb (int) --- pixel value for thumbnail side
+        sample (int) --- integer size of sample
+        idx (Boolean) --- whether to print index on image
+        bg (color) --- background color
+        shape (str) --- square or circular montage
+        ascending (Boolean) --- sorting order
+        facetcol (str,Series) --- col to split data into plot facets
+    """
+
+    _typecheck(**locals())
+    pathcol,featcol,ycol,facetcol = _colfilter(pathcol,
+                                               featcol=featcol,
+                                               xdomain=xdomain,
+                                               sample=sample,
+                                               ascending=ascending,
+                                               facetcol=facetcol)
+    n = len(pathcol)
+
+    if shape=='square':
+
+        ncols = int(sqrt(n))
+        w,h,coords = _gridcoords(n,ncols,thumb)
+        canvas = Image.new('RGB',(w,h),bg)
+        _paste(pathcol,thumb,idx,canvas,coords)
+
+    elif shape=='circle':
+
+        side = int(sqrt(n)) + 5 # may have to tweak this
+        canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
+
+        # center image
+        gridlist,maximus,coords = _gridcoordscirclemax(side,thumb)
+        _paste(pathcol[:1],thumb,idx,canvas,coords)
+        gridlist.remove(maximus)
+
+        # remaining images
+        coords = _gridcoordscircle(n,maximus,gridlist,thumb)
+        _paste(pathcol[1:],thumb,idx,canvas,coords)
+
+    return canvas
+
+#------------------------------------------------------------------------------
+
 def histogram(featcol,
               xdomain=None,
               pathcol=None,
@@ -164,7 +174,8 @@ def histogram(featcol,
               idx=False,
               ascending=False,
               bg="#4a4a4a",
-              coordinates='cartesian'):
+              coordinates='cartesian',
+              facetcol=None):
 
     """
     Cartesian or polar histogram of images
@@ -183,15 +194,17 @@ def histogram(featcol,
         ascending (Boolean) --- vertical sorting direction
         bg (color) --- background color
         coordinates (str) --- 'cartesian' or 'polar'
+        facetcol (str,Series) --- col to split data into plot facets
     """
 
     _typecheck(**locals())
-    pathcol,featcol,ycol = _colfilter(pathcol,
-                                      featcol=featcol,
-                                      xdomain=xdomain,
-                                      ycol=ycol,
-                                      ydomain=ydomain,
-                                      sample=sample)
+    pathcol,featcol,ycol,facetcol = _colfilter(pathcol,
+                                               featcol=featcol,
+                                               xdomain=xdomain,
+                                               ycol=ycol,
+                                               ydomain=ydomain,
+                                               sample=sample,
+                                               facetcol=facetcol)
 
     """
     This is domain expansion. The histogram ydomain can be contracted; it simply
@@ -240,6 +253,8 @@ def histogram(featcol,
 
     return canvas
 
+#------------------------------------------------------------------------------
+
 def scatter(featcol,
             ycol,
             pathcol=None,
@@ -253,7 +268,8 @@ def scatter(featcol,
             xbins=None,
             ybins=None,
             bg="#4a4a4a",
-            coordinates='cartesian'):
+            coordinates='cartesian',
+            facetcol=None):
 
     """
     Cartesian or polar scatterplot of images
@@ -272,15 +288,17 @@ def scatter(featcol,
         ybins (int,seq) --- 'bins' argument passed to pd.cut()
         bg (color) --- background color
         coordinates (str) --- 'cartesian' or 'polar'
+        facetcol (str,Series) --- col to split data into plot facets
     """
 
     _typecheck(**locals())
-    pathcol,featcol,ycol = _colfilter(pathcol,
-                                      featcol=featcol,
-                                      xdomain=xdomain,
-                                      ycol=ycol,
-                                      ydomain=ydomain,
-                                      sample=sample)
+    pathcol,featcol,ycol,facetcol = _colfilter(pathcol,
+                                               featcol=featcol,
+                                               xdomain=xdomain,
+                                               ycol=ycol,
+                                               ydomain=ydomain,
+                                               sample=sample,
+                                               facetcol=facetcol)
 
     if xbins is not None:
         featcol = _bin(featcol,xbins)
