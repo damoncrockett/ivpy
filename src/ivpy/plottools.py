@@ -15,6 +15,20 @@ def _gridcoords(n,ncols,thumb):
 
     return w,h,zip(x,y)
 
+def _gridcoordscirclemax(side,thumb):
+    x,y = range(side)*side,repeat(range(side),side)
+    gridlist = [Point(item) for item in zip(x,y)]
+    maximus = Point(side/2,side/2)
+    return gridlist,maximus,[(int(maximus.x*thumb),int(maximus.y*thumb))]
+
+def _gridcoordscircle(n,maximus,gridlist,thumb):
+    # compute distances from center; sort by distance
+    dists = [maximus.distance(item) for item in gridlist]
+    tmp = pd.DataFrame({"gridlist":gridlist,"dists":dists})
+    tmp.sort_values(by='dists',inplace=True) # ascending
+    gridlist = tmp.gridlist.iloc[:n-1] # n-1 bc we removed maximus
+    return [(int(item.x*thumb),int(item.y*thumb)) for item in gridlist]
+
 def _pol2cart((rho,phi)):
     x = rho * cos(phi)
     y = rho * sin(phi)
