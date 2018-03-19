@@ -6,7 +6,8 @@ from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin
 from .plottools import _scalecart,_scalepol,_bin2phi,_bin2phideg,_pol2cart
-from .plottools import _gridcoords,_paste,_getsizes,_round
+from .plottools import _gridcoords,_gridcoordscircle,_paste,_getsizes,_round
+from .plottools import _histcoordscart,_histcoordspolar,_gridcoordscirclemax
 
 #------------------------------------------------------------------------------
 
@@ -101,25 +102,15 @@ def montage(pathcol=None,
     elif shape=='circle':
 
         side = int(sqrt(n)) + 5 # may have to tweak this
-        x,y = range(side)*side,repeat(range(side),side)
-        gridlist = [Point(item) for item in zip(x,y)]
-
         canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
 
-        # plot center image
-        maximus = Point(side/2,side/2)
-        coords = [(int(maximus.x*thumb),int(maximus.y*thumb))]
+        # center image
+        gridlist,maximus,coords = _gridcoordscirclemax(side,thumb)
         _paste(pathcol[:1],thumb,idx,canvas,coords)
         gridlist.remove(maximus)
 
-        # compute distances from center; sort by distance
-        dists = [maximus.distance(item) for item in gridlist]
-        tmp = pd.DataFrame({"gridlist":gridlist,"dists":dists})
-        tmp.sort_values(by='dists',inplace=True) # ascending
-        gridlist = tmp.gridlist.iloc[:n-1] # n-1 bc we removed maximus
-
-        # plot remaining images
-        coords = [(int(item.x*thumb),int(item.y*thumb)) for item in gridlist]
+        # remaining images
+        coords = _gridcoordscircle(n,maximus,gridlist,thumb)
         _paste(pathcol[1:],thumb,idx,canvas,coords)
 
     return canvas
