@@ -1,13 +1,10 @@
 from PIL import Image
-from numpy import sqrt,repeat,arange
-import pandas as pd
-from shapely.geometry import Point
+from numpy import sqrt
 from copy import deepcopy
 
-from .data import _typecheck,_colfilter,_bin
-from .plottools import _scalecart,_scalepol,_bin2phi,_bin2phideg,_pol2cart
-from .plottools import _gridcoords,_gridcoordscircle,_paste,_getsizes,_round
-from .plottools import _histcoordscart,_histcoordspolar,_gridcoordscirclemax
+from .data import _typecheck,_colfilter,_bin,_facet
+from .plottools import _gridcoords,_paste,_getsizes,_round
+from .plottools import _montage,_histogram,_scatter
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -136,30 +133,13 @@ def montage(pathcol=None,
                                                sample=sample,
                                                ascending=ascending,
                                                facetcol=facetcol)
-    n = len(pathcol)
 
-    if shape=='square':
-
-        ncols = int(sqrt(n))
-        w,h,coords = _gridcoords(n,ncols,thumb)
-        canvas = Image.new('RGB',(w,h),bg)
-        _paste(pathcol,thumb,idx,canvas,coords)
-
-    elif shape=='circle':
-
-        side = int(sqrt(n)) + 5 # may have to tweak this
-        canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
-
-        # center image
-        gridlist,maximus,coords = _gridcoordscirclemax(side,thumb)
-        _paste(pathcol[:1],thumb,idx,canvas,coords)
-        gridlist.remove(maximus)
-
-        # remaining images
-        coords = _gridcoordscircle(n,maximus,gridlist,thumb)
-        _paste(pathcol[1:],thumb,idx,canvas,coords)
-
-    return canvas
+    if facetcol is None:
+        return _montage(**locals())
+    elif facetcol is not None:
+        facetlist = _facet(**locals())
+        plotlist = [_montage(**facet) for facet in facetlist]
+        return compose(*plotlist)
 
 #------------------------------------------------------------------------------
 
@@ -206,52 +186,12 @@ def histogram(featcol,
                                                sample=sample,
                                                facetcol=facetcol)
 
-    """
-    This is domain expansion. The histogram ydomain can be contracted; it simply
-    removes data points. But it cannot be expanded, since y in a histogram is
-    not a proper axis. The user can expand the xdomain either using that kwarg
-    or by submitting a set of domain-expanding bin edges. If user gives xdomain
-    and an integer 'bins' argument, that xdomain is split into equal-width bins.
-    If the user submits other bin edges, those are the edges, regardless of
-    whether they match the submitted xdomain. This makes it possible, for
-    example, to restrict the domain using 'xdomain' and expand the plotting
-    space using 'bins'.
-    """
-    if xdomain is not None:
-        xrange = xdomain[1]-xdomain[0]
-        if isinstance(bins,int):
-            # n.b.: this is slightly different than giving int to pd.cut
-            increment = float(xrange)/bins
-            bins = arange(xdomain[0],xdomain[1]+increment,increment)
-
-    xbin = pd.cut(featcol,bins,labels=False,include_lowest=True)
-    nbins = len(pd.cut(featcol,bins,include_lowest=True).value_counts())
-    nonemptybins = xbin.unique() # will ignore empty bins
-    binmax = xbin.value_counts().max()
-
-    if coordinates=='cartesian':
-        plotheight = thumb * binmax
-        canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
-    elif coordinates=='polar':
-        canvas = Image.new('RGB',(binmax*2*thumb+thumb,binmax*2*thumb+thumb),bg)
-
-    for binlabel in nonemptybins:
-        if ycol is not None:
-            ycol_bin = ycol[xbin==binlabel]
-            ycol_bin = ycol_bin.sort_values(ascending=ascending)
-            pathcol_bin = pathcol.loc[ycol_bin.index]
-        else:
-            pathcol_bin = pathcol[xbin==binlabel]
-
-        n = len(pathcol_bin)
-        if coordinates=='cartesian':
-            coords = _histcoordscart(n,binlabel,plotheight,thumb)
-            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates)
-        elif coordinates=='polar':
-            coords = _histcoordspolar(n,binlabel,binmax,nbins,thumb)
-            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis)
-
-    return canvas
+    if facetcol is None:
+        return _histogram(**locals())
+    elif facetcol is not None:
+        facetlist = _facet(**locals())
+        plotlist = [_histogram(**facet) for facet in facetlist]
+        return compose(*plotlist)
 
 #------------------------------------------------------------------------------
 
@@ -262,7 +202,6 @@ def scatter(featcol,
             side=500,
             sample=False,
             idx=False,
-            gridded=False,
             xdomain=None,
             ydomain=None,
             xbins=None,
@@ -300,20 +239,9 @@ def scatter(featcol,
                                                sample=sample,
                                                facetcol=facetcol)
 
-    if xbins is not None:
-        featcol = _bin(featcol,xbins)
-    if ybins is not None:
-        ycol = _bin(ycol,ybins)
-
-    canvas = Image.new('RGB',(side,side),bg) # fixed size
-    # xdomain and ydomain only active at this stage if expanding
-    if coordinates=='cartesian':
-        x,y = _scalecart(featcol,ycol,xdomain,ydomain,side,thumb)
-        coords = zip(x,y)
-        _paste(pathcol,thumb,idx,canvas,coords,coordinates)
-    elif coordinates=='polar':
-        x,y,phis = _scalepol(featcol,ycol,xdomain,ydomain,side,thumb)
-        coords = zip(x,y)
-        _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
-
-    return canvas
+    if facetcol is None:
+        return _scatter(**locals())
+    elif facetcol is not None:
+        facetlist = _facet(**locals())
+        plotlist = [_scatter(**facet) for facet in facetlist]
+        return compose(*plotlist)

@@ -277,3 +277,25 @@ def _bin(col,bins):
     leftbinedges = [float(str(item).split(",")[0].lstrip("([")) for item in col]
 
     return pd.Series(leftbinedges,index=col.index)
+
+def _facet(**kwargs):
+    kwargdict = copy.deepcopy(kwargs)
+    facetcol = kwargs.get('facetcol')
+    pathcol = kwargs.get('pathcol')
+    featcol = kwargs.get('featcol')
+    ycol = kwargs.get('ycol')
+
+    facetlist = []
+    for val in facetcol.unique():
+        tmp = copy.deepcopy(kwargdict)
+        facetedcol = facetcol[facetcol==val]
+        tmp['pathcol'] = pathcol.loc[facetedcol.index]
+
+        if featcol is not None:
+            tmp['featcol'] = featcol.loc[facetedcol.index]
+        if ycol is not None:
+            tmp['ycol'] = ycol.loc[facetedcol.index]
+
+        facetlist.append(tmp)
+
+    return facetlist
