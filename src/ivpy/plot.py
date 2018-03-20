@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
-from .plottools import _montage,_histogram,_scatter
+from .plottools import _montage,_histogram,_scatter,_outline
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -80,7 +80,8 @@ def compose(*args,**kwargs):
     n = len(args)
     rounding = kwargs.get('rounding', 'up')
     ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
-    thumb = kwargs.get( 'thumb', max(_getsizes(args)) )
+    #thumb = kwargs.get( 'thumb', max(_getsizes(args)) )
+    thumb = kwargs.get( 'thumb', min(_getsizes(args)) )
     bg = kwargs.get('bg', '#4a4a4a')
 
     if ncols > n:
@@ -93,6 +94,7 @@ def compose(*args,**kwargs):
         canvas = args[i]
         tmp = deepcopy(canvas) # copy because thumbnail always inplace
         tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        tmp = _outline(tmp)
         metacanvas.paste(tmp,coords[i])
 
     return metacanvas
