@@ -80,7 +80,6 @@ def compose(*args,**kwargs):
     n = len(args)
     rounding = kwargs.get('rounding', 'up')
     ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
-    #thumb = kwargs.get( 'thumb', max(_getsizes(args)) )
     thumb = kwargs.get( 'thumb', min(_getsizes(args)) )
     bg = kwargs.get('bg', '#4a4a4a')
 

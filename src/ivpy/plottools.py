@@ -8,6 +8,7 @@ def _montage(pathcol=None,
              featcol=None,
              xdomain=None,
              ycol=None, # idle
+             ydomain=None, # idle
              thumb=None,
              sample=None,
              idx=None,
@@ -68,7 +69,8 @@ def _histogram(featcol=None,
         if isinstance(bins,int):
             # n.b.: this is slightly different than giving int to pd.cut
             increment = float(xrange)/bins
-            bins = arange(xdomain[0],xdomain[1]+increment,increment)
+            # range is overkill but don't have great way to always avoid NaNs
+            bins = arange(xdomain[0],xdomain[1]+increment*2,increment)
 
     xbin = pd.cut(featcol,bins,labels=False,include_lowest=True)
     nbins = len(pd.cut(featcol,bins,include_lowest=True).value_counts())
