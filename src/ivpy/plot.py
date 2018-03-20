@@ -93,8 +93,15 @@ def compose(*args,**kwargs):
         canvas = args[i]
         tmp = deepcopy(canvas) # copy because thumbnail always inplace
         tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
-        tmp = _outline(tmp)
-        metacanvas.paste(tmp,coords[i])
+
+        if any([tmp.width<thumb,tmp.height<thumb]):
+            mat = Image.new('RGB',(thumb,thumb),bg)
+            mat.paste(tmp,(thumb-tmp.width,thumb-tmp.height))
+            mat = _outline(mat)
+            metacanvas.paste(mat,coords[i])
+        else:
+            tmp = _outline(tmp)
+            metacanvas.paste(tmp,coords[i])
 
     return metacanvas
 
