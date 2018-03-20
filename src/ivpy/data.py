@@ -108,11 +108,10 @@ def attach(df,pathcol=None):
     if isinstance(pathcol, basestring):
         ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
     elif isinstance(pathcol, pd.Series):
-        if len(pathcol)==len(ATTACHED_DATAFRAME):
+        if pathcol.index.equals(ATTACHED_DATAFRAME.index):
             ATTACHED_PATHCOL = copy.deepcopy(pathcol)
         else:
-            raise ValueError("""Length of path list does not match length of
-                                DataFrame""")
+            raise ValueError("""'pathcol' must have same indices as 'df'""")
 
 def detach(df):
 
@@ -284,10 +283,24 @@ def _facet(**kwargs):
     pathcol = kwargs.get('pathcol')
     featcol = kwargs.get('featcol')
     ycol = kwargs.get('ycol')
+    xdomain = kwargs.get('xdomain')
+    ydomain = kwargs.get('ydomain')
+
+    # if user passes 'xdomain' or 'ydomain', these assignments change nothing
+    if featcol is not None:
+        xdomain = (featcol.min(),featcol.max())
+    if ycol is not None:
+        ydomain = (ycol.min(),ycol.max())
 
     facetlist = []
     for val in facetcol.unique():
         tmp = copy.deepcopy(kwargdict)
+
+        # this bit fixes plot axes across facets
+        tmp['xdomain'] = xdomain
+        tmp['ydomain'] = ydomain
+
+        # generate facet
         facetedcol = facetcol[facetcol==val]
         tmp['pathcol'] = pathcol.loc[facetedcol.index]
 
