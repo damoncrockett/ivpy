@@ -281,3 +281,13 @@ def _round(x,direction='down'):
 def _getsizes(args):
     plotsizes = [item.size for item in args]
     return [item for sublist in plotsizes for item in sublist]
+
+def _outline(im):
+    draw = ImageDraw.Draw(im)
+    # n.b.: lines are drawn under and to the right of the starting pixel
+    draw.line([(0,0),(im.width,0)],'#dddddd',width=1)
+    draw.line([(im.width-1,0),(im.width-1,im.height)],'#dddddd',width=1)
+    draw.line([(im.width,im.height-1),(0,im.height-1)],'#dddddd',width=1)
+    draw.line([(0,im.height),(0,0)],'#dddddd',width=1)
+
+    return im
