@@ -9,7 +9,7 @@ def _typecheck(**kwargs):
 
     """data table columns"""
     pathcol = kwargs.get('pathcol')
-    featcol = kwargs.get('featcol')
+    xcol = kwargs.get('xcol')
     ycol = kwargs.get('ycol')
     facetcol = kwargs.get('facetcol')
 
@@ -18,9 +18,9 @@ def _typecheck(**kwargs):
         if not isinstance(pathcol,(int,pd.Series)):
             raise TypeError("""'pathcol' must be an integer or
                                a pandas Series""")
-    if featcol is not None:
-        if not isinstance(featcol,(basestring,pd.Series)):
-            raise TypeError("'featcol' must be a string or a pandas Series")
+    if xcol is not None:
+        if not isinstance(xcol,(basestring,pd.Series)):
+            raise TypeError("'xcol' must be a string or a pandas Series")
     if ycol is not None:
         if not isinstance(ycol,(basestring,pd.Series)):
             raise TypeError("'ycol' must be a string or a pandas Series")
@@ -122,7 +122,7 @@ def detach(df):
     ATTACHED_PATHCOL = None
 
 def _colfilter(pathcol,
-               featcol=None,
+               xcol=None,
                ycol=None,
                sample=False,
                ascending=False,
@@ -131,18 +131,18 @@ def _colfilter(pathcol,
                facetcol=None):
 
     pathcol = _pathfilter(pathcol)
-    featcol = _featfilter(pathcol,featcol)
+    xcol = _featfilter(pathcol,xcol)
     ycol = _featfilter(pathcol,ycol)
     facetcol = _featfilter(pathcol,facetcol)
 
-    pathcol,featcol,ycol,facetcol = _sample(pathcol,featcol,ycol,
+    pathcol,xcol,ycol,facetcol = _sample(pathcol,xcol,ycol,
                                             sample,facetcol)
-    pathcol,featcol,ycol,facetcol = _sort(pathcol,featcol,ycol,
+    pathcol,xcol,ycol,facetcol = _sort(pathcol,xcol,ycol,
                                           ascending,facetcol)
-    pathcol,featcol,ycol,facetcol = _subset(pathcol,featcol,ycol,
+    pathcol,xcol,ycol,facetcol = _subset(pathcol,xcol,ycol,
                                             xdomain,ydomain,facetcol)
 
-    return pathcol,featcol,ycol,facetcol
+    return pathcol,xcol,ycol,facetcol
 
 def _pathfilter(pathcol):
 
@@ -193,7 +193,7 @@ def _featfilter(pathcol,col):
 
     return col
 
-def _sample(pathcol,featcol,ycol,sample,facetcol):
+def _sample(pathcol,xcol,ycol,sample,facetcol):
 
     """
     If user supplies a number for 'sample', we sample pathcol and subset
@@ -204,20 +204,20 @@ def _sample(pathcol,featcol,ycol,sample,facetcol):
     """
     if sample!=False:
         pathcol = pathcol.sample(n=sample)
-        if featcol is not None:
-            featcol = featcol.loc[pathcol.index]
+        if xcol is not None:
+            xcol = xcol.loc[pathcol.index]
         if ycol is not None:
             ycol = ycol.loc[pathcol.index]
         if facetcol is not None:
             facetcol = facetcol.loc[pathcol.index]
 
-    return pathcol,featcol,ycol,facetcol
+    return pathcol,xcol,ycol,facetcol
 
-def _sort(pathcol,featcol,ycol,ascending,facetcol):
+def _sort(pathcol,xcol,ycol,ascending,facetcol):
 
     """
-    If user supplies featcol, we sort featcol and apply to path/ycol.
-    At this point, if featcol is not None, we know it is a pandas Series
+    If user supplies xcol, we sort xcol and apply to path/ycol.
+    At this point, if xcol is not None, we know it is a pandas Series
     (either user-supplied or from the attached df). We also know it is
     the same length as pathcol - even if pathcol got sampled above. Note
     that for scatterplots, sorting makes no difference. But it's easier
@@ -226,37 +226,37 @@ def _sort(pathcol,featcol,ycol,ascending,facetcol):
     ycol. This is because only histogram and scatter have ycol, and for
     histograms, this sorting happens bin by bin.
     """
-    if featcol is not None:
-        featcol = featcol.sort_values(ascending=ascending)
-        pathcol = pathcol.loc[featcol.index]
+    if xcol is not None:
+        xcol = xcol.sort_values(ascending=ascending)
+        pathcol = pathcol.loc[xcol.index]
 
         if ycol is not None: # nb sorting by ycol not possible globally
-            ycol = ycol.loc[featcol.index]
+            ycol = ycol.loc[xcol.index]
 
         if facetcol is not None:
-            facetcol = facetcol.loc[featcol.index]
+            facetcol = facetcol.loc[xcol.index]
 
-    return pathcol,featcol,ycol,facetcol
+    return pathcol,xcol,ycol,facetcol
 
-def _subset(pathcol,featcol,ycol,xdomain,ydomain,facetcol):
+def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol):
     """
     Because this function runs after pathfilter, featfilter, sample and sort,
-    many checks have already taken place. If featcol and ycol are not None, we
+    many checks have already taken place. If xcol and ycol are not None, we
     know they must be pandas Series and not strings.
     """
 
     if xdomain is not None:
-        if featcol is None:
-            raise ValueError("""If 'xdomain' is supplied, 'featcol' must be
+        if xcol is None:
+            raise ValueError("""If 'xdomain' is supplied, 'xcol' must be
                                 supplied as well""")
-        featcol = featcol[(featcol>=xdomain[0])&(featcol<=xdomain[1])]
-        pathcol = pathcol.loc[featcol.index]
+        xcol = xcol[(xcol>=xdomain[0])&(xcol<=xdomain[1])]
+        pathcol = pathcol.loc[xcol.index]
 
         if ycol is not None:
-            ycol = ycol.loc[featcol.index]
+            ycol = ycol.loc[xcol.index]
 
         if facetcol is not None:
-            facetcol = facetcol.loc[featcol.index]
+            facetcol = facetcol.loc[xcol.index]
 
     if ydomain is not None:
         if ycol is None:
@@ -264,12 +264,12 @@ def _subset(pathcol,featcol,ycol,xdomain,ydomain,facetcol):
                                 supplied as well""")
         ycol = ycol[(ycol>=ydomain[0])&(ycol<=ydomain[1])]
         pathcol = pathcol.loc[ycol.index]
-        featcol = featcol.loc[ycol.index] # if ycol is not None, ditto featcol
+        xcol = xcol.loc[ycol.index] # if ycol is not None, ditto xcol
 
         if facetcol is not None:
             facetcol = facetcol.loc[ycol.index]
 
-    return pathcol,featcol,ycol,facetcol
+    return pathcol,xcol,ycol,facetcol
 
 def _bin(col,bins):
     col = pd.cut(col,bins)
@@ -281,14 +281,14 @@ def _facet(**kwargs):
     kwargdict = copy.deepcopy(kwargs)
     facetcol = kwargs.get('facetcol')
     pathcol = kwargs.get('pathcol')
-    featcol = kwargs.get('featcol')
+    xcol = kwargs.get('xcol')
     ycol = kwargs.get('ycol')
     xdomain = kwargs.get('xdomain')
     ydomain = kwargs.get('ydomain')
 
     # if user passes 'xdomain' or 'ydomain', these assignments change nothing
-    if featcol is not None:
-        xdomain = (featcol.min(),featcol.max())
+    if xcol is not None:
+        xdomain = (xcol.min(),xcol.max())
     if ycol is not None:
         ydomain = (ycol.min(),ycol.max())
 
@@ -304,8 +304,8 @@ def _facet(**kwargs):
         facetedcol = facetcol[facetcol==val]
         tmp['pathcol'] = pathcol.loc[facetedcol.index]
 
-        if featcol is not None:
-            tmp['featcol'] = featcol.loc[facetedcol.index]
+        if xcol is not None:
+            tmp['xcol'] = xcol.loc[facetedcol.index]
         if ycol is not None:
             tmp['ycol'] = ycol.loc[facetedcol.index]
 

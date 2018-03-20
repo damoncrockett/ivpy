@@ -5,7 +5,7 @@ from math import ceil
 from shapely.geometry import Point
 
 def _montage(pathcol=None,
-             featcol=None,
+             xcol=None,
              xdomain=None,
              ycol=None, # idle
              ydomain=None, # idle
@@ -39,7 +39,7 @@ def _montage(pathcol=None,
 
     return canvas
 
-def _histogram(featcol=None,
+def _histogram(xcol=None,
                xdomain=None,
                pathcol=None,
                ycol=None,
@@ -72,8 +72,8 @@ def _histogram(featcol=None,
             # range is overkill but don't have great way to always avoid NaNs
             bins = arange(xdomain[0],xdomain[1]+increment*2,increment)
 
-    xbin = pd.cut(featcol,bins,labels=False,include_lowest=True)
-    nbins = len(pd.cut(featcol,bins,include_lowest=True).value_counts())
+    xbin = pd.cut(xcol,bins,labels=False,include_lowest=True)
+    nbins = len(pd.cut(xcol,bins,include_lowest=True).value_counts())
     nonemptybins = xbin.unique() # will ignore empty bins
     binmax = xbin.value_counts().max()
 
@@ -102,7 +102,7 @@ def _histogram(featcol=None,
 
     return canvas
 
-def _scatter(featcol=None,
+def _scatter(xcol=None,
              ycol=None,
              pathcol=None,
              thumb=None,
@@ -118,7 +118,7 @@ def _scatter(featcol=None,
              facetcol=None):
 
     if xbins is not None:
-        featcol = _bin(featcol,xbins)
+        xcol = _bin(xcol,xbins)
     if ybins is not None:
         ycol = _bin(ycol,ybins)
 
@@ -126,11 +126,11 @@ def _scatter(featcol=None,
 
     # xdomain and ydomain only active at this stage if expanding
     if coordinates=='cartesian':
-        x,y = _scalecart(featcol,ycol,xdomain,ydomain,side,thumb)
+        x,y = _scalecart(xcol,ycol,xdomain,ydomain,side,thumb)
         coords = zip(x,y)
         _paste(pathcol,thumb,idx,canvas,coords,coordinates)
     elif coordinates=='polar':
-        x,y,phis = _scalepol(featcol,ycol,xdomain,ydomain,side,thumb)
+        x,y,phis = _scalepol(xcol,ycol,xdomain,ydomain,side,thumb)
         coords = zip(x,y)
         _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
 
@@ -191,20 +191,20 @@ def _histcoordspolar(n,binlabel,binmax,nbins,thumb):
     y = [int((binmax-item[1])*thumb) for item in xycoords]
     return zip(x,y),phis
 
-def _scalecart(featcol,ycol,xdomain,ydomain,side,thumb):
-    featcolpct = _pct(featcol,xdomain)
+def _scalecart(xcol,ycol,xdomain,ydomain,side,thumb):
+    xcolpct = _pct(xcol,xdomain)
     ycolpct = _pct(ycol,ydomain)
     pasterange = side - thumb # otherwise will cut off extremes
-    x = [int(item*pasterange) for item in featcolpct]
+    x = [int(item*pasterange) for item in xcolpct]
     y = [int((1-item)*pasterange) for item in ycolpct]
     return x,y
 
-def _scalepol(featcol,ycol,xdomain,ydomain,side,thumb):
+def _scalepol(xcol,ycol,xdomain,ydomain,side,thumb):
     # get percentiles for col values
-    featcolpct = _pct(featcol,xdomain)
+    xcolpct = _pct(xcol,xdomain)
     ycolpct = _pct(ycol,ydomain)
     # derive polar coordinates from percentiles and 360 degree std
-    rhos = [item for item in featcolpct] # unit radius
+    rhos = [item for item in xcolpct] # unit radius
     phis = [item*float(360) for item in ycolpct]
     phiradians = [radians(item) for item in phis]
     # convert these to xy coordinates in (-1,1) range
