@@ -10,7 +10,7 @@ from .plottools import _montage,_histogram,_scatter,_outline
 #------------------------------------------------------------------------------
 
 def show(pathcol=None,
-         featcol=None,
+         xcol=None,
          xdomain=None,
          thumb=False,
          sample=False,
@@ -24,7 +24,7 @@ def show(pathcol=None,
 
     Args:
         pathcol (int,Series) --- single index or col of image paths to be shown
-        featcol (str,Series) --- sorting column
+        xcol (str,Series) --- sorting column
         xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
         sample (int) --- integer size of sample
@@ -32,8 +32,8 @@ def show(pathcol=None,
     """
 
     _typecheck(**locals())
-    pathcol,featcol,ycol = _colfilter(pathcol,
-                                      featcol=featcol,
+    pathcol,xcol,ycol = _colfilter(pathcol,
+                                      xcol=xcol,
                                       xdomain=xdomain,
                                       sample=sample,
                                       ascending=ascending)
@@ -70,6 +70,7 @@ def compose(*args,**kwargs):
         rounding (str) --- when ncols is None, round ncols 'up' or 'down'
         thumb (int) --- pixel value for thumbnail side
         bg (color) --- background color
+        plottype (str) --- 'montage' or 'histogram', for mat placement
     """
 
     _typecheck(**locals()) # won't typecheck args
@@ -82,6 +83,7 @@ def compose(*args,**kwargs):
     ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
     thumb = kwargs.get( 'thumb', min(_getsizes(args)) )
     bg = kwargs.get('bg', '#4a4a4a')
+    plottype = kwargs.get('plottype')
 
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
@@ -96,7 +98,14 @@ def compose(*args,**kwargs):
 
         if any([tmp.width<thumb,tmp.height<thumb]):
             mat = Image.new('RGB',(thumb,thumb),bg)
-            mat.paste(tmp,(thumb-tmp.width,thumb-tmp.height))
+
+            if plottype=='histogram':
+                mat.paste(tmp,(0,thumb-tmp.height))
+            elif plottype=='montage':
+                halfwdiff = int( (thumb - tmp.width) / 2 )
+                halfhdiff = int( (thumb - tmp.height) / 2 )
+                mat.paste(tmp,(halfwdiff,halfhdiff))
+
             mat = _outline(mat)
             metacanvas.paste(mat,coords[i])
         else:
@@ -108,7 +117,7 @@ def compose(*args,**kwargs):
 #------------------------------------------------------------------------------
 
 def montage(pathcol=None,
-            featcol=None,
+            xcol=None,
             xdomain=None,
             thumb=100,
             sample=False,
@@ -123,7 +132,7 @@ def montage(pathcol=None,
 
     Args:
         pathcol (Series) --- col of image paths to be plotted
-        featcol (str,Series) --- sorting column
+        xcol (str,Series) --- sorting column
         xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
         sample (int) --- integer size of sample
@@ -135,8 +144,8 @@ def montage(pathcol=None,
     """
 
     _typecheck(**locals())
-    pathcol,featcol,ycol,facetcol = _colfilter(pathcol,
-                                               featcol=featcol,
+    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+                                               xcol=xcol,
                                                xdomain=xdomain,
                                                sample=sample,
                                                ascending=ascending,
@@ -147,11 +156,11 @@ def montage(pathcol=None,
     elif facetcol is not None:
         facetlist = _facet(**locals())
         plotlist = [_montage(**facet) for facet in facetlist]
-        return compose(*plotlist)
+        return compose(*plotlist,plottype='montage')
 
 #------------------------------------------------------------------------------
 
-def histogram(featcol,
+def histogram(xcol,
               xdomain=None,
               pathcol=None,
               ycol=None,
@@ -169,13 +178,13 @@ def histogram(featcol,
     Cartesian or polar histogram of images
 
     Args:
-        featcol (str,Series) --- histogram axis; must be supplied
+        xcol (str,Series) --- histogram axis; must be supplied
         xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         pathcol (Series) --- col of image paths to be plotted
         ycol (str,Series) --- vertical sorting feature if desired
         ydomain (list,tuple) --- ymin and ymax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
-        bins (int,seq) --- number of bins used to discretize featcol;
+        bins (int,seq) --- number of bins used to discretize xcol;
             can alternatively be entered as array of bin edges
         sample (int) --- integer size of sample
         idx (Boolean) --- whether to print index on image
@@ -186,8 +195,8 @@ def histogram(featcol,
     """
 
     _typecheck(**locals())
-    pathcol,featcol,ycol,facetcol = _colfilter(pathcol,
-                                               featcol=featcol,
+    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+                                               xcol=xcol,
                                                xdomain=xdomain,
                                                ycol=ycol,
                                                ydomain=ydomain,
@@ -199,11 +208,11 @@ def histogram(featcol,
     elif facetcol is not None:
         facetlist = _facet(**locals())
         plotlist = [_histogram(**facet) for facet in facetlist]
-        return compose(*plotlist)
+        return compose(*plotlist,plottype='histogram')
 
 #------------------------------------------------------------------------------
 
-def scatter(featcol,
+def scatter(xcol,
             ycol,
             pathcol=None,
             thumb=32,
@@ -222,7 +231,7 @@ def scatter(featcol,
     Cartesian or polar scatterplot of images
 
     Args:
-        featcol (str,Series) --- x-axis; must be supplied
+        xcol (str,Series) --- x-axis; must be supplied
         ycol (str,Series) --- y-axis; must be supplied
         pathcol (Series) --- col of image paths to be plotted
         thumb (int) --- pixel value for thumbnail side
@@ -239,8 +248,8 @@ def scatter(featcol,
     """
 
     _typecheck(**locals())
-    pathcol,featcol,ycol,facetcol = _colfilter(pathcol,
-                                               featcol=featcol,
+    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+                                               xcol=xcol,
                                                xdomain=xdomain,
                                                ycol=ycol,
                                                ydomain=ydomain,
