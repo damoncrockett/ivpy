@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
-from .plottools import _montage,_histogram,_scatter,_outline
+from .plottools import _montage,_histogram,_scatter,_mat
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -70,47 +70,56 @@ def compose(*args,**kwargs):
         rounding (str) --- when ncols is None, round ncols 'up' or 'down'
         thumb (int) --- pixel value for thumbnail side
         bg (color) --- background color
-        plottype (str) --- 'montage' or 'histogram', for mat placement
+
+        Currently, an issue needing fixing is that when 'compose' is called
+        by a plotting function, the user cannot directly control facet size.
+        Indirectly, the user can crank up 'thumb' in the original plot call.
     """
 
     _typecheck(**locals()) # won't typecheck args
-    typelist = [isinstance(item, Image.Image) for item in args]
+    # can be (canvas,matdict) tuples if called within a plotting function
+    typelist = [isinstance(item,(Image.Image,tuple)) for item in args]
     if not all(typelist):
         raise TypeError("Arguments passed to 'compose' must be PIL Images")
 
     n = len(args)
     rounding = kwargs.get('rounding', 'up')
-    ncols = kwargs.get( 'ncols', _round(sqrt(n),direction=rounding) )
-    thumb = kwargs.get( 'thumb', min(_getsizes(args)) )
+    ncols = kwargs.get('ncols',_round(sqrt(n),direction=rounding))
     bg = kwargs.get('bg', '#4a4a4a')
-    plottype = kwargs.get('plottype')
 
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
 
-    w,h,coords = _gridcoords(n,ncols,thumb)
-    metacanvas = Image.new('RGB',(w,h),bg)
+    # if user-called
+    if isinstance(args[0],Image.Image):
+        thumb = kwargs.get('thumb',min(_getsizes(args)))
+        w,h,coords = _gridcoords(n,ncols,thumb)
+        metacanvas = Image.new('RGB',(w,h),bg)
 
-    for i in range(n):
-        canvas = args[i]
-        tmp = deepcopy(canvas) # copy because thumbnail always inplace
-        tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
-        if any([tmp.width<thumb,tmp.height<thumb]):
-            mat = Image.new('RGB',(thumb,thumb),bg)
-
-            if plottype=='histogram':
-                mat.paste(tmp,(0,thumb-tmp.height))
-            elif plottype=='montage':
-                halfwdiff = int( (thumb - tmp.width) / 2 )
-                halfhdiff = int( (thumb - tmp.height) / 2 )
-                mat.paste(tmp,(halfwdiff,halfhdiff))
-
-            mat = _outline(mat)
-            metacanvas.paste(mat,coords[i])
-        else:
-            tmp = _outline(tmp)
+        for i in range(n):
+            canvas = args[i]
+            tmp = deepcopy(canvas) # copy because thumbnail always inplace
+            tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
             metacanvas.paste(tmp,coords[i])
+
+    # if called by plotting function
+    elif isinstance(args[0],tuple):
+        thumb = kwargs.get('thumb',min(_getsizes([item[0] for item in args])))
+
+        mattedfacets = []
+        for arg in args:
+            canvas = arg[0]
+            matdict = arg[1]
+            canvas.thumbnail((thumb,thumb),Image.ANTIALIAS)
+            mattedfacets.append(_mat(canvas,**matdict))
+
+        side = mattedfacets[0].width # any side in the list is fine, all same
+        w,h,coords = _gridcoords(n,ncols,side)
+        metacanvas = Image.new('RGB',(w,h),bg)
+
+        for i in range(n):
+            canvas = mattedfacets[i]
+            metacanvas.paste(canvas,coords[i])
 
     return metacanvas
 
@@ -156,7 +165,7 @@ def montage(pathcol=None,
     elif facetcol is not None:
         facetlist = _facet(**locals())
         plotlist = [_montage(**facet) for facet in facetlist]
-        return compose(*plotlist,plottype='montage')
+        return compose(*plotlist)
 
 #------------------------------------------------------------------------------
 
@@ -172,7 +181,8 @@ def histogram(xcol,
               ascending=False,
               bg="#4a4a4a",
               coordinates='cartesian',
-              facetcol=None):
+              facetcol=None,
+              xlabel=None):
 
     """
     Cartesian or polar histogram of images
@@ -192,6 +202,7 @@ def histogram(xcol,
         bg (color) --- background color
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
+        xlabel (Boolean) --- whether to include bin labels
     """
 
     _typecheck(**locals())
@@ -208,7 +219,7 @@ def histogram(xcol,
     elif facetcol is not None:
         facetlist = _facet(**locals())
         plotlist = [_histogram(**facet) for facet in facetlist]
-        return compose(*plotlist,plottype='histogram')
+        return compose(*plotlist)
 
 #------------------------------------------------------------------------------
 
@@ -225,7 +236,9 @@ def scatter(xcol,
             ybins=None,
             bg="#4a4a4a",
             coordinates='cartesian',
-            facetcol=None):
+            facetcol=None,
+            xlabel=None,
+            ylabel=None):
 
     """
     Cartesian or polar scatterplot of images
@@ -245,6 +258,8 @@ def scatter(xcol,
         bg (color) --- background color
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
+        xlabel (Boolean) --- whether to include x-axis labels
+        ylabel (Boolean) --- whether to include y-axis labels
     """
 
     _typecheck(**locals())
