@@ -15,7 +15,8 @@ def _montage(pathcol=None,
              bg=None,
              shape=None,
              ascending=None,
-             facetcol=None):
+             facetcol=None,
+             facettitle=None):
 
     n = len(pathcol)
 
@@ -37,7 +38,15 @@ def _montage(pathcol=None,
         coords = _gridcoordscircle(n,maximus,gridlist,thumb)
         _paste(pathcol[1:],thumb,idx,canvas,coords)
 
-    return canvas
+    if facetcol is None:
+        return canvas
+
+    elif facetcol is not None:
+        matdict = {'bg':bg,
+                   'facettitle':facettitle,
+                   'plottype':'montage'}
+
+        return canvas,matdict
 
 def _histogram(xcol=None,
                xdomain=None,
@@ -51,7 +60,9 @@ def _histogram(xcol=None,
                ascending=None,
                bg=None,
                coordinates=None,
-               facetcol=None):
+               facetcol=None,
+               facettitle=None,
+               xlabel=None):
 
     """
     This is domain expansion. The histogram ydomain can be contracted; it simply
@@ -100,7 +111,23 @@ def _histogram(xcol=None,
             coords,phis = _histcoordspolar(n,binlabel,binmax,nbins,thumb)
             _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis)
 
-    return canvas
+    if facetcol is None:
+        if xlabel is not None:
+            canvas = _mat(canvas,
+                          bg=bg,
+                          facetcol=facetcol,
+                          xlabel=xlabel,
+                          plottype='histogram')
+
+        return canvas
+
+    elif facetcol is not None:
+        matdict = {'bg':bg,
+                   'facettitle':facettitle,
+                   'xlabel':xlabel,
+                   'plottype':'histogram'}
+
+        return canvas,matdict
 
 def _scatter(xcol=None,
              ycol=None,
@@ -115,7 +142,10 @@ def _scatter(xcol=None,
              ybins=None,
              bg=None,
              coordinates=None,
-             facetcol=None):
+             facetcol=None,
+             facettitle=None,
+             xlabel=None,
+             ylabel=None):
 
     if xbins is not None:
         xcol = _bin(xcol,xbins)
@@ -134,7 +164,23 @@ def _scatter(xcol=None,
         coords = zip(x,y)
         _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
 
-    return canvas
+    if facetcol is None:
+        if any([xlabel is not None,ylabel is not None]):
+            canvas = _mat(canvas,
+                          bg=bg,
+                          facetcol=facetcol,
+                          xlabel=xlabel,
+                          ylabel=ylabel)
+
+        return canvas
+
+    elif facetcol is not None:
+        matdict = {'bg':bg,
+                   'facettitle':facettitle,
+                   'xlabel':xlabel,
+                   'ylabel':ylabel}
+
+        return canvas,matdict
 
 def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
@@ -293,3 +339,53 @@ def _outline(im):
     draw.line([(0,im.height),(0,0)],'#dddddd',width=1)
 
     return im
+
+def _mat(im,
+         bg=None,
+         facettitle=None,
+         xlabel=None,
+         ylabel=None,
+         plottype=None):
+
+    if im.width!=im.height:
+        im = _premat(im,bg,plottype)
+        im = _outline(im)
+    else:
+        im = _outline(im)
+
+    sampletext = "TITLE"
+    font = ImageFont.truetype('../fonts/VeraMono.ttf',16) # hardcode sz for now
+    fontWidth,fontHeight = font.getsize(sampletext)
+
+    side = im.height + fontHeight * 3 * 2 # 3 rows of text top and bottom
+    mat = Image.new('RGB',(side,side),bg)
+    halfwdiff = int( (side - im.width) / 2 )
+    halfhdiff = int( (side - im.height) / 2 )
+    mat.paste(im,(halfwdiff,halfhdiff))
+    draw = ImageDraw.Draw(mat)
+
+    if any([xlabel is not None, ylabel is not None]):
+        mat = _axislabels(mat,draw,xlabel,ylabel)
+
+    if facettitle is not None:
+        text = facettitle
+        fontWidth,fontHeight = font.getsize(text)
+        draw.text((int((side-fontWidth)/2),fontHeight),text,font=font)
+
+    return mat
+
+def _premat(im,bg,plottype):
+    side = max([im.width,im.height])
+    premat = Image.new('RGB',(side,side),bg)
+
+    if plottype=='histogram':
+        premat.paste(im,(0,side-im.height))
+    elif plottype=='montage':
+        halfwdiff = int( (side - im.width) / 2 )
+        halfhdiff = int( (side - im.height) / 2 )
+        premat.paste(im,(halfwdiff,halfhdiff))
+
+    return premat
+
+def _axislabels(mat,draw,xlabel,ylabel):
+    return None
