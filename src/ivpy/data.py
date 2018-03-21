@@ -295,6 +295,7 @@ def _facet(**kwargs):
     facetlist = []
     for val in facetcol.unique():
         tmp = copy.deepcopy(kwargdict)
+        tmp['facettitle'] = str(val)
 
         # this bit fixes plot axes across facets
         tmp['xdomain'] = xdomain
