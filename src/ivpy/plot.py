@@ -32,11 +32,11 @@ def show(pathcol=None,
     """
 
     _typecheck(**locals())
-    pathcol,xcol,ycol = _colfilter(pathcol,
-                                      xcol=xcol,
-                                      xdomain=xdomain,
-                                      sample=sample,
-                                      ascending=ascending)
+    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+                                            xcol=xcol,
+                                            xdomain=xdomain,
+                                            sample=sample,
+                                            ascending=ascending)
 
     if isinstance(pathcol, str): # single pathstring
         im = Image.open(pathcol)
