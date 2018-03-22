@@ -4,6 +4,8 @@ from numpy import repeat,sqrt,arange,radians,cos,sin
 from math import ceil
 from shapely.geometry import Point
 
+from .data import _bin
+
 def _montage(pathcol=None,
              xcol=None,
              xdomain=None,
