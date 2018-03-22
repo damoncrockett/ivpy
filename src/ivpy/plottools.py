@@ -355,9 +355,14 @@ def _mat(im,
     else:
         im = _outline(im)
 
-    sampletext = "TITLE"
-    font = ImageFont.truetype('../fonts/VeraMono.ttf',16) # hardcode sz for now
-    fontWidth,fontHeight = font.getsize(sampletext)
+    # we want a 9-letter word to span half the plot width
+    pt = 0
+    fontWidth = 0
+    while fontWidth < im.width/2:
+        pt+=1
+        sampletext = "LANDSCAPE" # just some 9-letter word
+        font = ImageFont.truetype('../fonts/VeraMono.ttf',pt)
+        fontWidth,fontHeight = font.getsize(sampletext)
 
     side = im.height + fontHeight * 3 * 2 # 3 rows of text top and bottom
     mat = Image.new('RGB',(side,side),bg)

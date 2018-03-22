@@ -104,6 +104,7 @@ def compose(*args,**kwargs):
 
     # if called by plotting function
     elif isinstance(args[0],tuple):
+        # need user control here
         thumb = kwargs.get('thumb',min(_getsizes([item[0] for item in args])))
 
         mattedfacets = []
