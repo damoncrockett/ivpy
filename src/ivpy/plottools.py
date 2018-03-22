@@ -280,7 +280,7 @@ def _idx(im,i):
     pos = 0 # hard-code
     draw = ImageDraw.Draw(im)
     text = str(int(i))
-    font = ImageFont.truetype('../fonts/VeraMono.ttf', 8)
+    font = ImageFont.truetype('../fonts/VeraMono.ttf',12)
     fontWidth, fontHeight = font.getsize(text)
 
     try:
