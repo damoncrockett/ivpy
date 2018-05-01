@@ -13,7 +13,15 @@ Shapely >= 1.5.7
 
 jupyter >= 1.0.0 (if using inside notebook)
 
-scikit-image >= 0.11.3 (if using feature extraction)
+### Dependencies for Feature Extraction
+
+TensorFlow >= 1.3.0
+
+Keras >= 2.1.3
+
+scipy >= 1.0.0
+
+scikit-image >= 0.11.3
 
 h5py >= 2.7.1
 
