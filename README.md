@@ -42,9 +42,12 @@ h5py >= 2.7.1
 3. Install requirements:
 
 
-`$ cd ivpy
-$ pip install -r requirements.txt`
+`$ cd ivpy`
+`$ pip install -r requirements.txt`
 
 4. Create .jupyter/custom/ in your home folder, and copy ivpy/style/custom.css there
 
-5. Run the jupyter notebook server in ivpy/src/
+5. Run the jupyter notebook server in ivpy/src/:
+
+`$ cd src`
+`$ jupyter notebook`
