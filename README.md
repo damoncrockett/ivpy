@@ -27,7 +27,7 @@ h5py >= 2.7.1
 
 ### Install
 
-0. Either fork or clone this repo:
+0. Clone this repo:
 
 ``$ git clone https://github.com/damoncrockett/ivpy``
 
