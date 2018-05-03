@@ -39,9 +39,11 @@ h5py >= 2.7.1
 
 `$ source myEnv/bin/activate`
 
-3. Install requirements (you'll need to switch to the ivpy directory first):
+3. Install requirements:
 
-`$ pip install -r requirements.txt`
+
+`$ cd ivpy
+$ pip install -r requirements.txt`
 
 4. Create .jupyter/custom/ in your home folder, and copy ivpy/style/custom.css there
 
