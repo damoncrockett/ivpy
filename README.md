@@ -29,19 +29,19 @@ h5py >= 2.7.1
 
 0. Clone this repo:
 
-``$ git clone https://github.com/damoncrockett/ivpy``
+`$ git clone https://github.com/damoncrockett/ivpy`
 
 1. Create Python virtual environment (not strictly necessary, but recommended) using virtualenv or, if you are using Python 3, venv:
 
-``$ virtualenv myEnv``
+`$ virtualenv myEnv`
 
 2. Activate virtual environment:
 
-``$ source myEnv/bin/activate``
+`$ source myEnv/bin/activate`
 
 3. Install requirements (you'll need to switch to the ivpy directory first):
 
-``$ pip install -r requirements.txt``
+`$ pip install -r requirements.txt`
 
 4. Create .jupyter/custom/ in your home folder, and copy ivpy/style/custom.css there
 
