@@ -25,7 +25,7 @@ scikit-image >= 0.11.3
 
 h5py >= 2.7.1
 
-### Install
+### Install & Run
 
 0. Clone this repo:
 
