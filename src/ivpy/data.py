@@ -44,6 +44,8 @@ def _typecheck(**kwargs):
     ydomain = kwargs.get('ydomain')
     xbins = kwargs.get('xbins')
     ybins = kwargs.get('ybins')
+    feature = kwargs.get('feature')
+    aggregate = kwargs.get('aggregate')
 
     """type checking"""
     if thumb is not None:
@@ -91,6 +93,19 @@ def _typecheck(**kwargs):
     if ybins is not None:
         if not isinstance(ybins,(np.ndarray,list,tuple,int)):
             raise TypeError("'ybins' must be an integer or a sequence")
+    if feature is not None:
+        feats = [
+        'brightness','saturation','hue','entropy','std','contrast',
+        'dissimilarity','homogeneity','ASM','energy','correlation',
+        'neural','tags'
+        ]
+        if feature not in feats:
+            raise ValueError("""'feature' must be one of 'brightness',
+            'saturation','hue','entropy','std','contrast','dissimilarity',
+            'homogeneity','ASM','energy','correlation','neural', or 'tags'.""")
+    if aggregate is not None:
+        if not isinstance(aggregate,bool):
+            raise TypeError("'aggregate' must be True or False")
 
 def attach(df,pathcol=None):
 
