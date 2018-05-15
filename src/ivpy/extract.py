@@ -9,15 +9,14 @@ from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from keras.models import Model
 from keras.applications import InceptionV3
+import pandas as pd
 
 from .data import _typecheck,_colfilter
 
 #------------------------------------------------------------------------------
 
-def extract(pathcol=None,feature=None,aggregate=True):
+def extract(feature=None,pathcol=None,aggregate=True):
     _typecheck(**locals())
-    if pathcol==None:
-        raise ValueError("Must supply 'pathcol'")
     pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
 
     if feature==None:
@@ -51,26 +50,49 @@ def extract(pathcol=None,feature=None,aggregate=True):
 
 #------------------------------------------------------------------------------
 
-def _brightness(pathcol,aggregate):
-    """Returns either average brightness or 10-bin distribution"""
-
+def _progressBar(pathcol):
     n = len(pathcol)
     breaks = [int(n * item) for item in np.arange(.1,1,.1)]
     pct = [str(int(item*100))+"%" for item in np.arange(.1,1,.1)]
 
-    featcol = []
-    for i in pathcol.index:
-        if i in breaks:
-            idx = breaks.index(i)
-            print pct[idx],
-        img = imread(pathcol.loc[i])
-        img = color.rgb2hsv(img)
-        featcol.append(np.mean(img[:,:,2]))
+    return breaks,pct
 
-    return featcol
+#------------------------------------------------------------------------------
 
-def _brightness_mean(img):
-    return None
+def _brightness(pathcol,aggregate):
+    """Returns either average brightness or 10-bin distribution"""
+
+    breaks,pct = _progressBar(pathcol)
+
+    if isinstance(pathcol,basestring):
+        if aggregate==True:
+            return _hsv_mean(pathcol,axis=2)
+        elif aggregate==False:
+            return _hsv_10bin(pathcol,axis=2)
+
+    elif isinstance(pathcol,pd.Series):
+
+        if aggregate==True:
+            featcol = pd.Series(index=pathcol.index)
+            for i in pathcol.index:
+                if i in breaks:
+                    print pct[breaks.index(i)],
+
+                imgpath = pathcol.loc[i]
+                featcol.loc[i] = _hsv_mean(imgpath,axis=2)
+
+            return featcol
+
+        elif aggregate==False:
+            featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
+            for i in pathcol.index:
+                if i in breaks:
+                    print pct[breaks.index(i)],
+
+                imgpath = pathcol.loc[i]
+                featdf.loc[i] = _hsv_10bin(imgpath,axis=2)
+
+            return featdf
 
 def _saturation(pathcol,aggregate):
     """Returns either average saturation or 10-bin distribution"""
@@ -79,6 +101,16 @@ def _saturation(pathcol,aggregate):
 def _hue(pathcol,aggregate):
     """Returns either huepeak or 8-bin perceptual hue distribution"""
     return None
+
+def _hsv_mean(imgpath,axis=None):
+    img = imread(imgpath)
+    img = color.rgb2hsv(img)
+    return np.mean(img[:,:,axis])
+
+def _hsv_10bin(imgpath,axis=None):
+    img = imread(imgpath)
+    img = color.rgb2hsv(img)
+    return np.histogram(img[:,:,axis],bins=10)[0]
 
 #------------------------------------------------------------------------------
 
