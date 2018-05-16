@@ -396,3 +396,10 @@ def _premat(im,bg,plottype):
 
 def _axislabels(mat,draw,xlabel,ylabel):
     return None
+
+def _progressBar(pathcol):
+    n = len(pathcol)
+    breaks = [int(n * item) for item in arange(.05,1,.05)]
+    pct = [str(int(item*100))+"%" for item in arange(.05,1,.05)]
+
+    return breaks,pct
