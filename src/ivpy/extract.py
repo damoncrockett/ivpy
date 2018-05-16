@@ -1,15 +1,19 @@
+import pandas as pd
+import numpy as np
+from PIL import Image
+
 from skimage.io import imread
 from skimage import color
-import numpy as np
 from scipy.stats import entropy
 from skimage.feature import greycomatrix, greycoprops
+from sklearn.neighbors import KernelDensity
+
 from keras.applications import imagenet_utils
 from keras.applications.inception_v3 import preprocess_input
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from keras.models import Model
 from keras.applications import InceptionV3
-import pandas as pd
 
 from .data import _typecheck,_colfilter
 from .plottools import _progressBar
@@ -51,14 +55,14 @@ def extract(feature=None,pathcol=None,aggregate=True):
 
 #------------------------------------------------------------------------------
 
-def _iterextract(pathcol,outstructure,breaks,pct,axis,func):
+def _iterextract(pathcol,outstructure,breaks,pct,func,**kwargs):
     counter=-1
     for i in pathcol.index:
         counter+=1
         if counter in breaks:
             print pct[breaks.index(counter)],
         imgpath = pathcol.loc[i]
-        outstructure.loc[i] = func(imgpath,axis=axis)
+        outstructure.loc[i] = func(imgpath,**kwargs)
     return outstructure
 
 #------------------------------------------------------------------------------
@@ -76,11 +80,11 @@ def _brightness(pathcol,aggregate):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,2,_hsv_mean)
+            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,axis=2)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,2,_hsv_10bin)
+            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,axis=2)
 
 def _saturation(pathcol,aggregate):
     """Returns either average saturation or 10-bin distribution"""
@@ -95,24 +99,60 @@ def _saturation(pathcol,aggregate):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,1,_hsv_mean)
+            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,axis=1)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,1,_hsv_10bin)
+            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,axis=1)
 
-def _hsv_mean(imgpath,axis=None):
+def _hsv_mean(imgpath,axis):
     img = imread(imgpath)
     img = color.rgb2hsv(img)
     return np.mean(img[:,:,axis])
 
-def _hsv_10bin(imgpath,axis=None):
+def _hsv_10bin(imgpath,axis):
     img = imread(imgpath)
     img = color.rgb2hsv(img)
     return np.histogram(img[:,:,axis],bins=10)[0]
 
 def _hue(pathcol,aggregate):
     """Returns either huepeak or 8-bin perceptual hue distribution"""
+
+    if isinstance(pathcol,basestring):
+        if aggregate==True:
+            return _huepeak(pathcol)
+        elif aggregate==False:
+            return _hue_8bin(pathcol)
+
+    elif isinstance(pathcol,pd.Series):
+        breaks,pct = _progressBar(pathcol)
+        if aggregate==True:
+            featcol = pd.Series(index=pathcol.index)
+            return _iterextract(pathcol,featcol,breaks,pct,_huepeak)
+
+        elif aggregate==False:
+            featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
+            return _iterextract(pathcol,featdf,breaks,pct,_hue_8bin)
+
+def _huepeak(imgpath):
+    img = imread(imgpath)
+    img = color.rgb2hsv(img)
+    img = img[:,:,0]
+    imgflat = img.flatten()
+
+    n = len(imgflat)
+    thetahat = np.std(imgflat)
+    h = 1.06 * thetahat * n**(-1/float(5)) # float() or else python uses int division
+    if h==0: # some are zero bc std of hue is zero
+        h = 1E-6 # h != 0 so kde will work
+    X = imgflat[:,np.newaxis]
+    kde = KernelDensity(kernel='gaussian',bandwidth=h).fit(X)
+
+    Xeval = np.linspace(0,1,360)[:,np.newaxis]
+    logDensity = kde.score_samples(Xeval)
+    return np.argmax(logDensity)
+
+def _hue_8bin(imgpath):
     return None
 
 #------------------------------------------------------------------------------
