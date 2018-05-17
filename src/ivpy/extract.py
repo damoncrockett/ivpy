@@ -131,29 +131,53 @@ def _hue(pathcol,aggregate):
             return _iterextract(pathcol,featcol,breaks,pct,_huepeak)
 
         elif aggregate==False:
-            featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hue_8bin)
+            featdf = pd.DataFrame(index=pathcol.index,
+                                  columns=["red","orange","yellow","green",
+                                           "cyan","blue","purple","magenta",
+                                           "highred"])
+
+            featdf = _iterextract(pathcol,featdf,breaks,pct,_hue_8bin)
+            featdf['red'] = featdf.red + featdf.highred
+            del featdf['highred']
+
+            return featdf
 
 def _huepeak(imgpath):
     img = imread(imgpath)
     img = color.rgb2hsv(img)
-    img = img[:,:,0]
-    imgflat = img.flatten()
+    imghue = img[:,:,0]
+    imghue = imghue.flatten()
 
-    n = len(imgflat)
-    thetahat = np.std(imgflat)
-    h = 1.06 * thetahat * n**(-1/float(5)) # float() or else python uses int division
+    # Silverman's rule of thumb Gaussian KDE bandwidth selection
+    n = len(imghue)
+    thetahat = np.std(imghue)
+    h = 1.06 * thetahat * n**(-1/float(5)) # float() or python uses int division
     if h==0: # some are zero bc std of hue is zero
         h = 1E-6 # h != 0 so kde will work
-    X = imgflat[:,np.newaxis]
+
+    X = imghue[:,np.newaxis]
     kde = KernelDensity(kernel='gaussian',bandwidth=h).fit(X)
 
-    Xeval = np.linspace(0,1,360)[:,np.newaxis]
+    Xeval = np.linspace(0,1,360)[:,np.newaxis] # huepeak as degrees: 0-360
     logDensity = kde.score_samples(Xeval)
     return np.argmax(logDensity)
 
 def _hue_8bin(imgpath):
-    return None
+    # nonuniform width hue bins
+    huebreaks = [0.0,
+                 0.05555555555555555,
+                 0.1388888888888889,
+                 0.19444444444444445,
+                 0.4444444444444444,
+                 0.5555555555555556,
+                 0.7222222222222222,
+                 0.7916666666666666,
+                 0.9166666666666666,
+                 1.0]
+
+    img = imread(imgpath)
+    img = color.rgb2hsv(img)
+    return np.histogram(img[:,:,0],bins=huebreaks)[0]
 
 #------------------------------------------------------------------------------
 
