@@ -33,9 +33,9 @@ def extract(feature=None,pathcol=None,aggregate=True):
     elif feature=='hue':
         return _hue(pathcol,aggregate)
     elif feature=='entropy':
-        return _entropy(pathcol)
+        return _entropy_brightness(pathcol)
     elif feature=='std':
-        return _std(pathcol)
+        return _std_brightness(pathcol)
     elif feature=='contrast':
         return _glcm(pathcol,prop='contrast')
     elif feature=='dissimilarity':
@@ -66,6 +66,15 @@ def _iterextract(pathcol,outstructure,breaks,pct,func,**kwargs):
     return outstructure
 
 #------------------------------------------------------------------------------
+
+def _imgfilter(imgpath):
+    """Returns HSV array. Might add auto-resizing to this as well"""
+
+    img = imread(imgpath)
+    if len(img.shape)==3:
+        return color.rgb2hsv(img)
+    elif len(img.shape)==2:
+        return color.rgb2hsv(color.gray2rgb(img))
 
 def _brightness(pathcol,aggregate):
     """Returns either average brightness or 10-bin distribution"""
@@ -106,13 +115,11 @@ def _saturation(pathcol,aggregate):
             return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,axis=1)
 
 def _hsv_mean(imgpath,axis):
-    img = imread(imgpath)
-    img = color.rgb2hsv(img)
+    img = _imgfilter(imgpath)
     return np.mean(img[:,:,axis])
 
 def _hsv_10bin(imgpath,axis):
-    img = imread(imgpath)
-    img = color.rgb2hsv(img)
+    img = _imgfilter(imgpath)
     return np.histogram(img[:,:,axis],bins=10)[0]
 
 def _hue(pathcol,aggregate):
@@ -143,8 +150,7 @@ def _hue(pathcol,aggregate):
             return featdf
 
 def _huepeak(imgpath):
-    img = imread(imgpath)
-    img = color.rgb2hsv(img)
+    img = _imgfilter(imgpath)
     imghue = img[:,:,0]
     imghue = imghue.flatten()
 
@@ -175,19 +181,40 @@ def _hue_8bin(imgpath):
                  0.9166666666666666,
                  1.0]
 
-    img = imread(imgpath)
-    img = color.rgb2hsv(img)
+    img = _imgfilter(imgpath)
     return np.histogram(img[:,:,0],bins=huebreaks)[0]
 
 #------------------------------------------------------------------------------
 
-def _entropy(pathcol):
+def _entropy_brightness(pathcol):
     """Returns brightness entropy"""
-    return None
 
-def _std(pathcol):
+    if isinstance(pathcol,basestring):
+        return _entropy(pathcol,axis=2)
+
+    elif isinstance(pathcol,pd.Series):
+        featcol = pd.Series(index=pathcol.index)
+        breaks,pct = _progressBar(pathcol)
+        return _iterextract(pathcol,featcol,breaks,pct,_entropy,axis=2)
+
+def _entropy(imgpath,axis=None):
+    img = _imgfilter(imgpath)
+    return entropy(np.histogram(img[:,:,axis],bins=10)[0])
+
+def _std_brightness(pathcol):
     """Returns standard deviation of brightness"""
-    return None
+
+    if isinstance(pathcol,basestring):
+        return _std(pathcol,axis=2)
+
+    elif isinstance(pathcol,pd.Series):
+        featcol = pd.Series(index=pathcol.index)
+        breaks,pct = _progressBar(pathcol)
+        return _iterextract(pathcol,featcol,breaks,pct,_std,axis=2)
+
+def _std(imgpath,axis=None):
+    img = _imgfilter(imgpath)
+    return np.std(img[:,:,axis])
 
 #------------------------------------------------------------------------------
 
