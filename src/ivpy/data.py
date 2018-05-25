@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import copy
+from PIL import Image
+import os
+from six import string_types
 
 ATTACHED_DATAFRAME = None
 ATTACHED_PATHCOL = None
@@ -19,13 +22,13 @@ def _typecheck(**kwargs):
             raise TypeError("""'pathcol' must be an integer or
                                a pandas Series""")
     if xcol is not None:
-        if not isinstance(xcol,(basestring,pd.Series)):
+        if not isinstance(xcol,(string_types,pd.Series)):
             raise TypeError("'xcol' must be a string or a pandas Series")
     if ycol is not None:
-        if not isinstance(ycol,(basestring,pd.Series)):
+        if not isinstance(ycol,(string_types,pd.Series)):
             raise TypeError("'ycol' must be a string or a pandas Series")
     if facetcol is not None:
-        if not isinstance(facetcol,(basestring,pd.Series)):
+        if not isinstance(facetcol,(string_types,pd.Series)):
             raise TypeError("'facetcol' must be a string or a pandas Series")
 
     """plot settings"""
@@ -46,6 +49,7 @@ def _typecheck(**kwargs):
     ybins = kwargs.get('ybins')
     feature = kwargs.get('feature')
     aggregate = kwargs.get('aggregate')
+    scale = kwargs.get('scale')
 
     """type checking"""
     if thumb is not None:
@@ -58,7 +62,7 @@ def _typecheck(**kwargs):
         if not isinstance(idx,bool):
             raise TypeError("'idx' must be True or False")
     if bg is not None:
-        if not isinstance(bg,(tuple,basestring)):
+        if not isinstance(bg,(tuple,string_types)):
             raise TypeError("'bg' must be an RGB triplet or a string")
     if ascending is not None:
         if not isinstance(ascending,bool):
@@ -106,6 +110,9 @@ def _typecheck(**kwargs):
     if aggregate is not None:
         if not isinstance(aggregate,bool):
             raise TypeError("'aggregate' must be True or False")
+    if scale is not None:
+        if not isinstance(aggregate,bool):
+            raise TypeError("'scale' must be True or False")
 
 def attach(df,pathcol=None):
 
@@ -120,7 +127,7 @@ def attach(df,pathcol=None):
 
     ATTACHED_DATAFRAME = copy.deepcopy(df) # deep to avoid change bleed
 
-    if isinstance(pathcol, basestring):
+    if isinstance(pathcol, string_types):
         ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
     elif isinstance(pathcol, pd.Series):
         if pathcol.index.equals(ATTACHED_DATAFRAME.index):
@@ -129,6 +136,8 @@ def attach(df,pathcol=None):
             raise ValueError("""'pathcol' must have same indices as 'df'""")
 
 def detach(df):
+    """Resets global variables to None. Not likely to be used often, since
+    attaching a new df and pathcol just replaces the old."""
 
     global ATTACHED_DATAFRAME
     global ATTACHED_PATHCOL
@@ -195,7 +204,7 @@ def _featfilter(pathcol,col):
             if not col.index.equals(pathcol.index): # too strong a criterion?
                 raise ValueError("""Image paths and image features must have
                                     same indices""")
-        elif isinstance(col, basestring):
+        elif isinstance(col, string_types):
             if ATTACHED_DATAFRAME is None:
                 raise TypeError("""No DataFrame attached. Feature variable
                                     must be a pandas Series""")
@@ -328,3 +337,36 @@ def _facet(**kwargs):
         facetlist.append(tmp)
 
     return facetlist
+
+def resize(savedir=None,pathcol=None,thumb=256):
+    """Creates thumbnails of images, saves to 'savedir'. Had considered default
+       'savedir', but decided user should always supply 'savedir', putting
+       the write responsibility on them. Could be dissuaded here."""
+
+    pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
+
+    if savedir==None:
+        raise ValueError("Must supply 'savedir'")
+    elif savedir is not None:
+        try:
+            os.mkdir(savedir)
+        except:
+            pass
+
+    if isinstance(pathcol,string_types):
+        return _resize(pathcol,savedir,thumb)
+
+    elif isinstance(pathcol,pd.Series):
+        pathcol_resized = pd.Series(index=pathcol.index)
+        for i in pathcol.index:
+            impath = pathcol.loc[i]
+            pathcol_resized.loc[i] = _resize(impath,savedir,thumb)
+        return pathcol_resized
+
+def _resize(impath,savedir,thumb):
+    im = Image.open(impath)
+    im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+    basename = os.path.basename(impath)
+    savestring = savedir + "/" + basename
+    im.save(savestring)
+    return savestring
