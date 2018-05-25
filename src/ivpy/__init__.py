@@ -4,6 +4,6 @@ __author__ = 'Damon Crockett'
 __email__ = 'damoncrockett@gmail.com'
 __version__ = '0.0.1'
 
-from data import attach,detach
-from plot import show,montage,histogram,scatter,compose
-from extract import extract
+from ivpy.data import attach,detach,resize
+from ivpy.plot import show,montage,histogram,scatter,compose
+from ivpy.extract import extract

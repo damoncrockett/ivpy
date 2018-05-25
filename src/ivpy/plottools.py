@@ -211,7 +211,7 @@ def _gridcoordscircle(n,maximus,gridlist,thumb):
     gridlist = tmp.gridlist.iloc[:n-1] # n-1 bc we removed maximus
     return [(int(item.x*thumb),int(item.y*thumb)) for item in gridlist]
 
-def _pol2cart((rho,phi)):
+def _pol2cart(rho,phi):
     x = rho * cos(phi)
     y = rho * sin(phi)
     return(x,y)
@@ -234,7 +234,7 @@ def _histcoordspolar(n,binlabel,binmax,nbins,thumb):
     rhos = arange(binmax,binmax-n-1,-1)
     phi = _bin2phi(nbins,binlabel)
     phis = repeat(_bin2phideg(nbins,binlabel),n)
-    xycoords = [_pol2cart((rho,phi)) for rho in rhos]
+    xycoords = [_pol2cart(rho,phi) for rho in rhos]
     x = [int((item[0]+binmax)*thumb) for item in xycoords]
     y = [int((binmax-item[1])*thumb) for item in xycoords]
     return zip(x,y),phis
@@ -256,7 +256,7 @@ def _scalepol(xcol,ycol,xdomain,ydomain,side,thumb):
     phis = [item*float(360) for item in ycolpct]
     phiradians = [radians(item) for item in phis]
     # convert these to xy coordinates in (-1,1) range
-    xycoords = [_pol2cart(item) for item in zip(rhos,phiradians)]
+    xycoords = [_pol2cart(item[0],item[1]) for item in zip(rhos,phiradians)]
     # convert to canvas coordinates
     pasterange = side - thumb # otherwise will cut off extremes
     radius = float(pasterange)/2
@@ -293,7 +293,7 @@ def _idx(im,i):
         draw.text((pos,pos),text,font=font,fill='#efefef')
 
     except Exception as e:
-        print e
+        print(e)
 
 def _placeholder(thumb):
     im = Image.new('RGB',(thumb,thumb),'#969696')

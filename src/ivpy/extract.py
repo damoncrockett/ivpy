@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
 from PIL import Image
+from six import string_types
 
 from skimage.io import imread
 from skimage import color
+from skimage.transform import resize
 from scipy.stats import entropy
 from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
@@ -20,34 +22,34 @@ from .plottools import _progressBar
 
 #------------------------------------------------------------------------------
 
-def extract(feature=None,pathcol=None,aggregate=True):
+def extract(feature=None,pathcol=None,aggregate=True,scale=True):
     _typecheck(**locals())
     pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
 
     if feature==None:
         raise ValueError("Must supply 'feature'")
     elif feature=='brightness':
-        return _brightness(pathcol,aggregate)
+        return _brightness(pathcol,aggregate,scale)
     elif feature=='saturation':
-        return _saturation(pathcol,aggregate)
+        return _saturation(pathcol,aggregate,scale)
     elif feature=='hue':
-        return _hue(pathcol,aggregate)
+        return _hue(pathcol,aggregate,scale)
     elif feature=='entropy':
-        return _entropy_brightness(pathcol)
+        return _entropy_brightness(pathcol,scale)
     elif feature=='std':
-        return _std_brightness(pathcol)
+        return _std_brightness(pathcol,scale)
     elif feature=='contrast':
-        return _glcm(pathcol,prop='contrast')
+        return _glcm(pathcol,scale,prop='contrast')
     elif feature=='dissimilarity':
-        return _glcm(pathcol,prop='dissimilarity')
+        return _glcm(pathcol,scale,prop='dissimilarity')
     elif feature=='homogeneity':
-        return _glcm(pathcol,prop='homogeneity')
+        return _glcm(pathcol,scale,prop='homogeneity')
     elif feature=='ASM':
-        return _glcm(pathcol,prop='ASM')
+        return _glcm(pathcol,scale,prop='ASM')
     elif feature=='energy':
-        return _glcm(pathcol,prop='energy')
+        return _glcm(pathcol,scale,prop='energy')
     elif feature=='correlation':
-        return _glcm(pathcol,prop='correlation')
+        return _glcm(pathcol,scale,prop='correlation')
     elif feature=='neural':
         return _neural(pathcol,tags=False)
     elif feature=='tags':
@@ -60,82 +62,104 @@ def _iterextract(pathcol,outstructure,breaks,pct,func,**kwargs):
     for i in pathcol.index:
         counter+=1
         if counter in breaks:
-            print pct[breaks.index(counter)],
+            pctstring = pct[breaks.index(counter)]
+            print(pctstring,end=" ")
         imgpath = pathcol.loc[i]
         outstructure.loc[i] = func(imgpath,**kwargs)
     return outstructure
 
 #------------------------------------------------------------------------------
 
-def _imgfilter(imgpath):
-    """Returns HSV array. Might add auto-resizing to this as well"""
-
+def _imgprocess(imgpath,scale):
+    """Returns (possibly scaled) HSV array."""
     img = imread(imgpath)
+
+    if scale==True:
+        h,w = img.shape[0],img.shape[1] # note weird order
+        if any([h>256,w>256]):
+            if h>w:
+                ratio = 256 / float(h)
+                newh = 256
+                neww = int( w * ratio )
+            elif w>h:
+                ratio = 256 / float(w)
+                neww = 256
+                newh = int( h * ratio )
+            elif w==h:
+                newh = 256
+                neww = 256
+
+            img = resize(img,(newh,neww))
+
     if len(img.shape)==3:
         return color.rgb2hsv(img)
     elif len(img.shape)==2:
         return color.rgb2hsv(color.gray2rgb(img))
 
-def _brightness(pathcol,aggregate):
+def _brightness(pathcol,aggregate,scale):
     """Returns either average brightness or 10-bin distribution"""
 
-    if isinstance(pathcol,basestring):
+    if isinstance(pathcol,string_types):
         if aggregate==True:
-            return _hsv_mean(pathcol,axis=2)
+            return _hsv_mean(pathcol,scale,axis=2)
         elif aggregate==False:
-            return _hsv_10bin(pathcol,axis=2)
+            return _hsv_10bin(pathcol,scale,axis=2)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,axis=2)
+            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,
+                                scale=scale,axis=2)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,axis=2)
+            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,
+                                scale=scale,axis=2)
 
-def _saturation(pathcol,aggregate):
+def _saturation(pathcol,aggregate,scale):
     """Returns either average saturation or 10-bin distribution"""
 
-    if isinstance(pathcol,basestring):
+    if isinstance(pathcol,string_types):
         if aggregate==True:
-            return _hsv_mean(pathcol,axis=1)
+            return _hsv_mean(pathcol,scale,axis=1)
         elif aggregate==False:
-            return _hsv_10bin(pathcol,axis=1)
+            return _hsv_10bin(pathcol,scale,axis=1)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,axis=1)
+            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,
+                                scale=scale,axis=1)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,axis=1)
+            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,
+                                scale=scale,axis=1)
 
-def _hsv_mean(imgpath,axis):
-    img = _imgfilter(imgpath)
+def _hsv_mean(imgpath,scale,axis):
+    img = _imgprocess(imgpath,scale)
     return np.mean(img[:,:,axis])
 
-def _hsv_10bin(imgpath,axis):
-    img = _imgfilter(imgpath)
+def _hsv_10bin(imgpath,scale,axis):
+    img = _imgprocess(imgpath,scale)
     return np.histogram(img[:,:,axis],bins=10)[0]
 
-def _hue(pathcol,aggregate):
+def _hue(pathcol,aggregate,scale):
     """Returns either huepeak or 8-bin perceptual hue distribution"""
 
-    if isinstance(pathcol,basestring):
+    if isinstance(pathcol,string_types):
         if aggregate==True:
-            return _huepeak(pathcol)
+            return _huepeak(pathcol,scale)
         elif aggregate==False:
-            return _hue_8bin(pathcol)
+            return _hue_8bin(pathcol,scale)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_huepeak)
+            return _iterextract(pathcol,featcol,breaks,pct,_huepeak,scale=scale)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,
@@ -143,14 +167,15 @@ def _hue(pathcol,aggregate):
                                            "cyan","blue","purple","magenta",
                                            "highred"])
 
-            featdf = _iterextract(pathcol,featdf,breaks,pct,_hue_8bin)
+            featdf = _iterextract(pathcol,featdf,breaks,pct,_hue_8bin,
+                                  scale=scale)
             featdf['red'] = featdf.red + featdf.highred
             del featdf['highred']
 
             return featdf
 
-def _huepeak(imgpath):
-    img = _imgfilter(imgpath)
+def _huepeak(imgpath,scale):
+    img = _imgprocess(imgpath,scale)
     imghue = img[:,:,0]
     imghue = imghue.flatten()
 
@@ -168,7 +193,7 @@ def _huepeak(imgpath):
     logDensity = kde.score_samples(Xeval)
     return np.argmax(logDensity)
 
-def _hue_8bin(imgpath):
+def _hue_8bin(imgpath,scale):
     # nonuniform width hue bins
     huebreaks = [0.0,
                  0.05555555555555555,
@@ -181,44 +206,46 @@ def _hue_8bin(imgpath):
                  0.9166666666666666,
                  1.0]
 
-    img = _imgfilter(imgpath)
+    img = _imgprocess(imgpath,scale)
     return np.histogram(img[:,:,0],bins=huebreaks)[0]
 
 #------------------------------------------------------------------------------
 
-def _entropy_brightness(pathcol):
+def _entropy_brightness(pathcol,scale):
     """Returns brightness entropy"""
 
-    if isinstance(pathcol,basestring):
-        return _entropy(pathcol,axis=2)
+    if isinstance(pathcol,string_types):
+        return _entropy(pathcol,scale,axis=2)
 
     elif isinstance(pathcol,pd.Series):
         featcol = pd.Series(index=pathcol.index)
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,featcol,breaks,pct,_entropy,axis=2)
+        return _iterextract(pathcol,featcol,breaks,pct,_entropy,
+                            scale=scale,axis=2)
 
-def _entropy(imgpath,axis=None):
-    img = _imgfilter(imgpath)
+def _entropy(imgpath,scale,axis=None):
+    img = _imgprocess(imgpath,scale)
     return entropy(np.histogram(img[:,:,axis],bins=10)[0])
 
-def _std_brightness(pathcol):
+def _std_brightness(pathcol,scale):
     """Returns standard deviation of brightness"""
 
-    if isinstance(pathcol,basestring):
-        return _std(pathcol,axis=2)
+    if isinstance(pathcol,string_types):
+        return _std(pathcol,scale,axis=2)
 
     elif isinstance(pathcol,pd.Series):
         featcol = pd.Series(index=pathcol.index)
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,featcol,breaks,pct,_std,axis=2)
+        return _iterextract(pathcol,featcol,breaks,pct,_std,
+                            scale=scale,axis=2)
 
-def _std(imgpath,axis=None):
-    img = _imgfilter(imgpath)
+def _std(imgpath,scale,axis=None):
+    img = _imgprocess(imgpath,scale)
     return np.std(img[:,:,axis])
 
 #------------------------------------------------------------------------------
 
-def _glcm(pathcol,prop):
+def _glcm(pathcol,scale,prop):
     """Returns gray-level co-occurrence matrix property"""
     return None
 
