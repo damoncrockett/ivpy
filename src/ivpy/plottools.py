@@ -159,11 +159,11 @@ def _scatter(xcol=None,
     # xdomain and ydomain only active at this stage if expanding
     if coordinates=='cartesian':
         x,y = _scalecart(xcol,ycol,xdomain,ydomain,side,thumb)
-        coords = zip(x,y)
+        coords = list(zip(x,y)) # py3 zip
         _paste(pathcol,thumb,idx,canvas,coords,coordinates)
     elif coordinates=='polar':
         x,y,phis = _scalepol(xcol,ycol,xdomain,ydomain,side,thumb)
-        coords = zip(x,y)
+        coords = list(zip(x,y)) # py3 zip
         _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
 
     if facetcol is None:
@@ -188,19 +188,19 @@ def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
     w,h = ncols*thumb,nrows*thumb
 
-    xgrid = range(ncols) * nrows
+    xgrid = list(range(ncols)) * nrows # bc py3 range returns iterator
     ygrid = repeat(range(nrows),ncols)
     xgrid = xgrid[:n]
     ygrid = ygrid[:n]
     x = [item*thumb for item in xgrid]
     y = [item*thumb for item in ygrid]
 
-    return w,h,zip(x,y)
+    return w,h,list(zip(x,y)) # py3 zip
 
 def _gridcoordscirclemax(side,thumb):
-    x,y = range(side)*side,repeat(range(side),side)
-    gridlist = [Point(item) for item in zip(x,y)]
-    maximus = Point(side/2,side/2)
+    x,y = list(range(side))*side,repeat(range(side),side) # py3 range
+    gridlist = [Point(item) for item in list(zip(x,y))]
+    maximus = Point(int(side/2),int(side/2)) # py3 defaults to float
     return gridlist,maximus,[(int(maximus.x*thumb),int(maximus.y*thumb))]
 
 def _gridcoordscircle(n,maximus,gridlist,thumb):
@@ -237,7 +237,7 @@ def _histcoordspolar(n,binlabel,binmax,nbins,thumb):
     xycoords = [_pol2cart(rho,phi) for rho in rhos]
     x = [int((item[0]+binmax)*thumb) for item in xycoords]
     y = [int((binmax-item[1])*thumb) for item in xycoords]
-    return zip(x,y),phis
+    return list(zip(x,y)),phis # py3 zip
 
 def _scalecart(xcol,ycol,xdomain,ydomain,side,thumb):
     xcolpct = _pct(xcol,xdomain)
@@ -256,7 +256,8 @@ def _scalepol(xcol,ycol,xdomain,ydomain,side,thumb):
     phis = [item*float(360) for item in ycolpct]
     phiradians = [radians(item) for item in phis]
     # convert these to xy coordinates in (-1,1) range
-    xycoords = [_pol2cart(item[0],item[1]) for item in zip(rhos,phiradians)]
+    polcoords = list(zip(rhos,phiradians))
+    xycoords = [_pol2cart(item[0],item[1]) for item in polcoords]
     # convert to canvas coordinates
     pasterange = side - thumb # otherwise will cut off extremes
     radius = float(pasterange)/2
