@@ -13,7 +13,7 @@ pandas, numpy, Pillow, Shapely, jupyter (if using inside notebook)
 
 ### Dependencies for Feature Extraction
 
-TensorFlow, scipy, scikit-image, Keras (which itself may require a separate h5py install)
+TensorFlow, scipy, scikit-image, scikit-learn, Keras (which itself may require a separate h5py install)
 
 ### Install & Run
 
