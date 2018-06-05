@@ -52,7 +52,9 @@ note: The reason I recommend starting a server inside the ivpy/src is that the t
 The above sequence will enable you to run the tutorial notebooks. If you start your own notebooks, it is easiest to simply keep them in ivpy/src. If you don't, you'll need the following Python code to import ivpy:
 
 `import sys`
+
 `sys.path.append("/Users/damoncrockett/ivpy/src/")` (You'll need to change this to reflect the path on your machine)
+
 `from ivpy import attach,show,compose,montage,histogram,scatter,extract` (or whichever functions you want)
 
 I should also point out a potential danger with keeping notebooks inside ivpy/src. If they happen to have the same filename as one of the tutorial notebooks---if, for example, you started adding your own code cells to a tutorial notebook instead of opening a new notebook---then running `$ git pull` in the ivpy directory will re-write those files with the original tutorial notebooks. I want users to be able to easily pull any new changes to the software (and there are lots of those changes being made right now), but I don't want anyone to lose any work! So make sure you give your notebooks new names, and try to avoid doing any serious work inside the tutorial notebooks.
