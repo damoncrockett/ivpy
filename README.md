@@ -1,6 +1,10 @@
 # ivpy
 Iconographic Visualization in Python
 
+### Tutorial Dataset
+
+To avoid data access issues, I've written the tutorials using the publicly available [http://www.robots.ox.ac.uk/~vgg/data/flowers/17/](Oxford Flower 17 dataset). It contains 80 images each of 17 different flower types. I've included a data table, 'oxfordflower.csv', in the ivpy repo, but you'll need to download the images themselves [http://www.robots.ox.ac.uk/~vgg/data/flowers/17/17flowers.tgz](here). The 'filename' column in 'oxfordflower.csv' corresponds to the filenames in the linked archive.
+
 ### A word about Python versions and virtual environments:
 
 I officially recommend using Python 3. I recently was unable to install the dependencies using pip in Python 2.7, and the problem has to do with lack of support for new SSL/TSL protocols. See [this thread](https://github.com/pypa/get-pip/issues/26) for more information. 
