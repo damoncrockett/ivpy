@@ -71,30 +71,36 @@ def _iterextract(pathcol,outstructure,breaks,pct,func,**kwargs):
 #------------------------------------------------------------------------------
 
 def _imgprocess(imgpath,scale):
-    """Returns (possibly scaled) HSV array."""
+    """Returns (possibly scaled) HSV array"""
     img = imread(imgpath)
-
     if scale==True:
-        h,w = img.shape[0],img.shape[1] # note weird order
-        if any([h>256,w>256]):
-            if h>w:
-                ratio = 256 / float(h)
-                newh = 256
-                neww = int( w * ratio )
-            elif w>h:
-                ratio = 256 / float(w)
-                neww = 256
-                newh = int( h * ratio )
-            elif w==h:
-                newh = 256
-                neww = 256
-
-            img = resize(img,(newh,neww))
-
+        img = _scale(img)
     if len(img.shape)==3:
         return color.rgb2hsv(img)
     elif len(img.shape)==2:
         return color.rgb2hsv(color.gray2rgb(img))
+
+def _scale(img):
+    """Scales images to 256px max side for feature extraction. This
+       function is distinct from resize() in data.py and does not save any
+       images to file."""
+
+    h,w = img.shape[0],img.shape[1] # note weird order
+    if any([h>256,w>256]):
+        if h>w:
+            ratio = 256 / float(h)
+            newh = 256
+            neww = int( w * ratio )
+        elif w>h:
+            ratio = 256 / float(w)
+            neww = 256
+            newh = int( h * ratio )
+        elif w==h:
+            newh = 256
+            neww = 256
+        return resize(img,(newh,neww))
+    else:
+        return img
 
 def _brightness(pathcol,aggregate,scale):
     """Returns either average brightness or 10-bin distribution"""
@@ -247,7 +253,24 @@ def _std(imgpath,scale,axis=None):
 
 def _glcm(pathcol,scale,prop):
     """Returns gray-level co-occurrence matrix property"""
-    return None
+
+    if isinstance(pathcol,string_types):
+       return _greycoprops(pathcol,scale,prop)
+
+    elif isinstance(pathcol,pd.Series):
+       featcol = pd.Series(index=pathcol.index)
+       breaks,pct = _progressBar(pathcol)
+       return _iterextract(pathcol,featcol,breaks,pct,_greycoprops,
+                           scale=scale,prop=prop)
+
+def _greycoprops(imgpath,scale,prop):
+    """Note that _imgprocess is not used; here we need int img"""
+    img = imread(imgpath)
+    if scale==True:
+        img = _scale(img)
+    imgray = color.rgb2gray(img)
+    glcmat = greycomatrix(imgray,[1],[0],levels=256,symmetric=True,normed=True)
+    return greycoprops(glcmat, prop)[0][0]
 
 #------------------------------------------------------------------------------
 
