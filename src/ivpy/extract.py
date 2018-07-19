@@ -11,11 +11,12 @@ from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
 
 from keras.applications import imagenet_utils
-from keras.applications.inception_v3 import preprocess_input
+#from keras.applications.inception_v3 import preprocess_input
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from keras.models import Model
-from keras.applications import InceptionV3
+# for now, only ResNet is used, but could change
+from keras.applications import ResNet50,InceptionV3,Xception,VGG16,VGG19
 
 from .data import _typecheck,_colfilter
 from .plottools import _progressBar
@@ -51,9 +52,7 @@ def extract(feature=None,pathcol=None,aggregate=True,scale=True):
     elif feature=='correlation':
         return _glcm(pathcol,scale,prop='correlation')
     elif feature=='neural':
-        return _neural(pathcol,tags=False)
-    elif feature=='tags':
-        return _neural(pathcol,tags=True)
+        return _neural(pathcol)
 
 #------------------------------------------------------------------------------
 
@@ -274,6 +273,30 @@ def _greycoprops(imgpath,scale,prop):
 
 #------------------------------------------------------------------------------
 
-def _neural(pathcol,tags):
-    """Returns Inception v3 tags or penultimate vector"""
-    return None
+def _neural(pathcol):
+    """Returns ResNet50 penultimate vector"""
+
+    preprocess = imagenet_utils.preprocess_input
+    base_model = ResNet50(weights='imagenet')
+    penlayer = base_model.layers[-2].name # unpredictable
+    model = Model(inputs=base_model.input,
+                  outputs=base_model.get_layer(penlayer).output)
+
+    if isinstance(pathcol,string_types):
+        return _featvector(pathcol,preprocess,model)
+
+    elif isinstance(pathcol,pd.Series):
+        breaks,pct = _progressBar(pathcol)
+        featdf = pd.DataFrame(index=pathcol.index,columns=range(2048))
+        featdf = _iterextract(pathcol,featdf,breaks,pct,_featvector,
+                              preprocess=preprocess,
+                              model=model)
+        return featdf
+
+def _featvector(imgpath,preprocess,model):
+    inputShape = (224,224)
+    image = load_img(imgpath,target_size=inputShape)
+    image = img_to_array(image)
+    image = np.expand_dims(image,axis=0)
+    image = preprocess(image)
+    return model.predict(image)[0]
