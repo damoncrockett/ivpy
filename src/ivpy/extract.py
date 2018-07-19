@@ -11,12 +11,10 @@ from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
 
 from keras.applications import imagenet_utils
-#from keras.applications.inception_v3 import preprocess_input
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from keras.models import Model
-# for now, only ResNet is used, but could change
-from keras.applications import ResNet50,InceptionV3,Xception,VGG16,VGG19
+from keras.applications import ResNet50
 
 from .data import _typecheck,_colfilter
 from .plottools import _progressBar
