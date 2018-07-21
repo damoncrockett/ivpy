@@ -19,6 +19,10 @@ pandas, numpy, Pillow, Shapely, jupyter (if using inside notebook)
 
 TensorFlow, scipy, scikit-image, scikit-learn, Keras (which itself may require a separate h5py install)
 
+### Additional Dependencies
+
+umap-learn (for umap embedding, found [here](https://github.com/lmcinnes/umap))
+
 ### Install & Run
 
 0. Clone this repo:
