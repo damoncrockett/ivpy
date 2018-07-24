@@ -6,4 +6,3 @@ __version__ = '0.0.1'
 
 from ivpy.data import attach,detach,resize
 from ivpy.plot import show,montage,histogram,scatter,compose
-from ivpy.extract import extract
