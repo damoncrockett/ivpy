@@ -22,14 +22,15 @@ def _typecheck(**kwargs):
             raise TypeError("""'pathcol' must be an integer or
                                a pandas Series""")
     if xcol is not None:
-        if not isinstance(xcol,(string_types,pd.Series)):
-            raise TypeError("'xcol' must be a string or a pandas Series")
+        if not isinstance(xcol,(string_types,int,pd.Series)):
+            raise TypeError("'xcol' must be a string, int, or a pandas Series")
     if ycol is not None:
-        if not isinstance(ycol,(string_types,pd.Series)):
-            raise TypeError("'ycol' must be a string or a pandas Series")
+        if not isinstance(ycol,(string_types,int,pd.Series)):
+            raise TypeError("'ycol' must be a string, int, or a pandas Series")
     if facetcol is not None:
-        if not isinstance(facetcol,(string_types,pd.Series)):
-            raise TypeError("'facetcol' must be a string or a pandas Series")
+        if not isinstance(facetcol,(string_types,int,pd.Series)):
+            raise TypeError("""'facetcol' must be a string, int, or
+                               a pandas Series""")
 
     """plot settings"""
     thumb = kwargs.get('thumb')
@@ -122,8 +123,8 @@ def attach(df,pathcol=None):
 
     if pathcol is None:
         raise ValueError("""Must supply variable 'pathcol', either as a string
-            that names a column of image paths in the supplied DataFrame, or
-            as a pandas Series of image paths
+            or integer that names a column of image paths in the supplied
+            DataFrame, or as a pandas Series of image paths
             """)
 
     global ATTACHED_DATAFRAME
@@ -133,11 +134,18 @@ def attach(df,pathcol=None):
 
     if isinstance(pathcol, string_types):
         ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
+    elif isinstance(pathcol, int):
+        try:
+            ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
+        except:
+            ATTACHED_PATHCOL = ATTACHED_DATAFRAME.iloc[:,pathcol]
     elif isinstance(pathcol, pd.Series):
         if pathcol.index.equals(ATTACHED_DATAFRAME.index):
             ATTACHED_PATHCOL = copy.deepcopy(pathcol)
         else:
             raise ValueError("""'pathcol' must have same indices as 'df'""")
+    else:
+        raise TypeError("'pathcol' must be a string, integer, or pandas Series")
 
 def detach(df):
     """Resets global variables to None. Not likely to be used often, since
@@ -208,13 +216,16 @@ def _featfilter(pathcol,col):
             if not col.index.equals(pathcol.index): # too strong a criterion?
                 raise ValueError("""Image paths and image features must have
                                     same indices""")
-        elif isinstance(col, string_types):
+        elif isinstance(col, (string_types, int)):
             if ATTACHED_DATAFRAME is None:
                 raise TypeError("""No DataFrame attached. Feature variable
                                     must be a pandas Series""")
             else:
                 tmp = copy.deepcopy(ATTACHED_DATAFRAME)
-                col = tmp[col]
+                try:
+                    col = tmp[col] # if col a str or df column labels are ints
+                except:
+                    col = tmp.iloc[:,col] # if col is int and df col labels not
                 if not col.index.equals(pathcol.index): # too strong criterion?
                     raise ValueError("""Image paths and image features must
                                         have same indices""")
