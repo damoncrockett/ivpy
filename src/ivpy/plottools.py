@@ -3,6 +3,7 @@ from PIL import Image,ImageDraw,ImageFont
 from numpy import repeat,sqrt,arange,radians,cos,sin
 from math import ceil
 from shapely.geometry import Point
+from six import string_types
 
 from .data import _bin
 
@@ -303,6 +304,9 @@ def _placeholder(thumb):
     return im
 
 def _paste(pathcol,thumb,idx,canvas,coords,coordinates=None,phis=None):
+    if isinstance(pathcol, string_types): # bc this is allowable in _typecheck
+        raise TypeError("'pathcol' must be a pandas Series")
+
     counter=-1
     for i in pathcol.index:
         counter+=1
