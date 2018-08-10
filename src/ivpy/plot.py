@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
-from .plottools import _montage,_histogram,_scatter,_mat
+from .plottools import _montage,_histogram,_scatter,_mat,_outline
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -70,13 +70,13 @@ def compose(*args,**kwargs):
         rounding (str) --- when ncols is None, round ncols 'up' or 'down'
         thumb (int) --- pixel value for thumbnail side
         bg (color) --- background color
+        outline (Boolean) --- whether to outline plots
 
         Currently, an issue needing fixing is that when 'compose' is called
         by a plotting function, the user cannot directly control facet size.
         Indirectly, the user can crank up 'thumb' in the original plot call.
     """
 
-    _typecheck(**locals()) # won't typecheck args
     # can be (canvas,matdict) tuples if called within a plotting function
     typelist = [isinstance(item,(Image.Image,tuple)) for item in args]
     if not all(typelist):
@@ -86,6 +86,9 @@ def compose(*args,**kwargs):
     rounding = kwargs.get('rounding', 'up')
     ncols = kwargs.get('ncols',_round(sqrt(n),direction=rounding))
     bg = kwargs.get('bg', '#4a4a4a')
+    outline = kwargs.get('outline',False)
+
+    _typecheck(**locals()) # won't typecheck args
 
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
@@ -100,6 +103,8 @@ def compose(*args,**kwargs):
             canvas = args[i]
             tmp = deepcopy(canvas) # copy because thumbnail always inplace
             tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
+            if outline==True:
+                tmp = _outline(tmp)
             metacanvas.paste(tmp,coords[i])
 
     # if called by plotting function

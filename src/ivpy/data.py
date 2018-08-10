@@ -50,6 +50,7 @@ def _typecheck(**kwargs):
     feature = kwargs.get('feature')
     aggregate = kwargs.get('aggregate')
     scale = kwargs.get('scale')
+    outline = kwargs.get('outline')
 
     """type checking"""
     if thumb is not None:
@@ -111,8 +112,11 @@ def _typecheck(**kwargs):
         if not isinstance(aggregate,bool):
             raise TypeError("'aggregate' must be True or False")
     if scale is not None:
-        if not isinstance(aggregate,bool):
+        if not isinstance(scale,bool):
             raise TypeError("'scale' must be True or False")
+    if outline is not None:
+        if not isinstance(outline,bool):
+            raise TypeError("'outline' must be True or False")
 
 def attach(df,pathcol=None):
 
