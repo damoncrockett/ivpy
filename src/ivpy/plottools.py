@@ -7,11 +7,18 @@ from six import string_types
 
 from .data import _bin
 
+"""
+The underscored plotting functions take a raft of kwargs, most of which are idle
+because they were used to sort, sample, etc., which determines what the cols
+look like. But they need to be listed here because the underscore functions are
+called using locals(), which will include all kwargs passed to the user funcs.
+"""
+
 def _montage(pathcol=None,
              xcol=None,
              xdomain=None,
-             ycol=None, # idle
-             ydomain=None, # idle
+             ycol=None,
+             ydomain=None,
              thumb=None,
              sample=None,
              idx=None,

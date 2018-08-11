@@ -9,6 +9,11 @@ ATTACHED_DATAFRAME = None
 ATTACHED_PATHCOL = None
 
 def _typecheck(**kwargs):
+    """
+    This function is called before plotting, as a way to control the error
+    messages users receive when they pass invalid arguments. All of the 'col'
+    arguments can be None; many other arguments cannot.
+    """
 
     """data table columns"""
     pathcol = kwargs.get('pathcol')
@@ -32,92 +37,90 @@ def _typecheck(**kwargs):
             raise TypeError("""'facetcol' must be a string, int, or
                                a pandas Series""")
 
-    """plot settings"""
-    thumb = kwargs.get('thumb')
-    sample = kwargs.get('sample')
-    idx = kwargs.get('idx')
-    bg = kwargs.get('bg')
-    ascending = kwargs.get('ascending')
-    shape = kwargs.get('shape')
-    ncols = kwargs.get('ncols')
-    rounding = kwargs.get('rounding')
-    bins = kwargs.get('bins')
-    coordinates = kwargs.get('coordinates')
-    side = kwargs.get('side')
-    xdomain = kwargs.get('xdomain')
-    ydomain = kwargs.get('ydomain')
-    xbins = kwargs.get('xbins')
-    ybins = kwargs.get('ybins')
-    feature = kwargs.get('feature')
-    aggregate = kwargs.get('aggregate')
-    scale = kwargs.get('scale')
-    outline = kwargs.get('outline')
+    """
+    plot settings: since None is often not allowable, we default to some
+    allowable value instead of to None. This allows us to prevent user-passed
+    None without raising error on default None.
+    """
+    thumb = kwargs.get('thumb',100)
+    sample = kwargs.get('sample',100)
+    idx = kwargs.get('idx',False)
+    bg = kwargs.get('bg','#4a4a4a')
+    ascending = kwargs.get('ascending',False)
+    shape = kwargs.get('shape','square')
+    ncols = kwargs.get('ncols',2)
+    rounding = kwargs.get('rounding','up')
+    bins = kwargs.get('bins',35)
+    coordinates = kwargs.get('coordinates','cartesian')
+    side = kwargs.get('side',500)
+    xdomain = kwargs.get('xdomain') # needs to be None sometimes
+    ydomain = kwargs.get('ydomain') # needs to be None sometimes
+    xbins = kwargs.get('xbins') # needs to be None sometimes
+    ybins = kwargs.get('ybins') # needs to be None sometimes
+    feature = kwargs.get('feature','brightness')
+    aggregate = kwargs.get('aggregate',True)
+    scale = kwargs.get('scale',True)
+    outline = kwargs.get('outline',False)
 
     """type checking"""
-    if thumb is not None:
+    if thumb!=False: # can only be false in show()
         if not isinstance(thumb,int):
             raise TypeError("'thumb' must be an integer")
-    if sample is not None:
-        if not isinstance(sample,int):
-            raise TypeError("'sample' must be an integer")
-    if idx is not None:
-        if not isinstance(idx,bool):
-            raise TypeError("'idx' must be True or False")
-    if bg is not None:
-        if not isinstance(bg,(tuple,string_types)):
-            raise TypeError("'bg' must be an RGB triplet or a string")
-    if ascending is not None:
-        if not isinstance(ascending,bool):
-            raise TypeError("'ascending' must be True or False")
-    if shape is not None:
-        if not any([shape=='square',shape=='circle']):
-            raise ValueError("'shape' must be 'circle' or 'square'")
-    if ncols is not None:
-        if not isinstance(ncols,int):
-            raise TypeError("'ncols' must be an integer")
-    if rounding is not None:
-        if not any([rounding=='up',rounding=='down']):
-            raise ValueError("'rounding' must be 'up' or 'down'")
-    if bins is not None:
-        if not isinstance(bins,(int,list,tuple,np.ndarray)):
-            raise TypeError("'bins' must be an integer or a sequence")
-    if coordinates is not None:
-        if not any([coordinates=='cartesian',coordinates=='polar']):
-            raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
-    if side is not None:
-        if not isinstance(side,int):
-            raise TypeError("'side' must be an integer")
+    if not isinstance(sample,int):
+        raise TypeError("'sample' must be an integer")
+    elif sample==True: # necessary bc True counts as int for some reason
+        raise TypeError("'sample' must be an integer")
+    if not isinstance(idx,bool):
+        raise TypeError("'idx' must be True or False")
+    if not isinstance(bg,(tuple,string_types)):
+        raise TypeError("'bg' must be an RGB triplet or a string")
+    if not isinstance(ascending,bool):
+        raise TypeError("'ascending' must be True or False")
+    if not any([shape=='square',shape=='circle']):
+        raise ValueError("'shape' must be 'circle' or 'square'")
+    if not isinstance(ncols,int):
+        raise TypeError("'ncols' must be an integer")
+    if not any([rounding=='up',rounding=='down']):
+        raise ValueError("'rounding' must be 'up' or 'down'")
+    if not isinstance(bins,(int,list,tuple,np.ndarray)):
+        raise TypeError("'bins' must be an integer or a sequence")
+    if not any([coordinates=='cartesian',coordinates=='polar']):
+        raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
+    if not isinstance(side,int):
+        raise TypeError("'side' must be an integer")
     if xdomain is not None:
-        if not all([isinstance(xdomain,(list,tuple)),len(xdomain)==2]):
-            raise TypeError("'xdomain' must be a two-item list or tuple")
+        if not isinstance(xdomain,(list,tuple)):
+            raise TypeError("'xdomain' must be a list or tuple")
+        if not len(xdomain)==2:
+            raise ValueError("'xdomain' must be a two-item list or tuple")
     if ydomain is not None:
-        if not all([isinstance(ydomain,(list,tuple)),len(ydomain)==2]):
-            raise TypeError("'ydomain' must be a two-item list or tuple")
+        if not isinstance(ydomain,(list,tuple)):
+            raise TypeError("'xdomain' must be a list or tuple")
+        if not len(ydomain)==2:
+            raise ValueError("'xdomain' must be a two-item list or tuple")
     if xbins is not None:
         if not isinstance(xbins,(np.ndarray,list,tuple,int)):
             raise TypeError("'xbins' must be an integer or a sequence")
     if ybins is not None:
         if not isinstance(ybins,(np.ndarray,list,tuple,int)):
             raise TypeError("'ybins' must be an integer or a sequence")
-    if feature is not None:
-        feats = [
-        'brightness','saturation','hue','entropy','std','contrast',
-        'dissimilarity','homogeneity','ASM','energy','correlation',
-        'neural','tags'
-        ]
-        if feature not in feats:
-            raise ValueError("""'feature' must be one of 'brightness',
-            'saturation','hue','entropy','std','contrast','dissimilarity',
-            'homogeneity','ASM','energy','correlation','neural', or 'tags'.""")
-    if aggregate is not None:
-        if not isinstance(aggregate,bool):
-            raise TypeError("'aggregate' must be True or False")
-    if scale is not None:
-        if not isinstance(scale,bool):
-            raise TypeError("'scale' must be True or False")
-    if outline is not None:
-        if not isinstance(outline,bool):
-            raise TypeError("'outline' must be True or False")
+
+    feats = [
+    'brightness','saturation','hue','entropy','std','contrast',
+    'dissimilarity','homogeneity','ASM','energy','correlation',
+    'neural','tags'
+    ]
+    if feature not in feats:
+        raise ValueError("""'feature' must be one of 'brightness',
+        'saturation','hue','entropy','std','contrast','dissimilarity',
+        'homogeneity','ASM','energy','correlation','neural', or 'tags'.""")
+
+    if not isinstance(aggregate,bool):
+        raise TypeError("'aggregate' must be True or False")
+    if not isinstance(scale,bool):
+        raise TypeError("'scale' must be True or False")
+    if not isinstance(outline,bool):
+        raise TypeError("'outline' must be True or False")
 
 def attach(df,pathcol=None):
 

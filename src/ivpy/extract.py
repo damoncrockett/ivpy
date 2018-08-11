@@ -21,13 +21,11 @@ from .plottools import _progressBar
 
 #------------------------------------------------------------------------------
 
-def extract(feature=None,pathcol=None,aggregate=True,scale=True):
+def extract(feature,pathcol=None,aggregate=True,scale=True):
     _typecheck(**locals())
     pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
 
-    if feature==None:
-        raise ValueError("Must supply 'feature'")
-    elif feature=='brightness':
+    if feature=='brightness':
         return _brightness(pathcol,aggregate,scale)
     elif feature=='saturation':
         return _saturation(pathcol,aggregate,scale)
