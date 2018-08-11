@@ -96,6 +96,8 @@ def compose(*args,**kwargs):
     # if user-called
     if isinstance(args[0],Image.Image):
         thumb = kwargs.get('thumb',min(_getsizes(args)))
+        if not isinstance(thumb, int): # main typecheck already done
+            raise TypeError("'thumb' must be an integer")
         w,h,coords = _gridcoords(n,ncols,thumb)
         metacanvas = Image.new('RGB',(w,h),bg)
 
@@ -110,6 +112,7 @@ def compose(*args,**kwargs):
     # if called by plotting function
     elif isinstance(args[0],tuple):
         # need user control here
+        # item[0] in each arg is the Image; item[1] is matdict
         thumb = kwargs.get('thumb',min(_getsizes([item[0] for item in args])))
 
         mattedfacets = []
