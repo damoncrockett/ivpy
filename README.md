@@ -23,6 +23,8 @@ TensorFlow, scipy, scikit-image, scikit-learn, Keras (which itself may require a
 
 umap-learn (for umap embedding, found [here](https://github.com/lmcinnes/umap))
 
+annoy, nose (for nearest neighbor search)
+
 ### Install & Run
 
 0. Clone this repo:
