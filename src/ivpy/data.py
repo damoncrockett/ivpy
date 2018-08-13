@@ -61,6 +61,10 @@ def _typecheck(**kwargs):
     aggregate = kwargs.get('aggregate',True)
     scale = kwargs.get('scale',True)
     outline = kwargs.get('outline',False)
+    X = kwargs.get('X',pd.DataFrame())
+    method = kwargs.get('method','kmeans')
+    k = kwargs.get('k',10)
+    i = kwargs.get('i',0)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -121,6 +125,14 @@ def _typecheck(**kwargs):
         raise TypeError("'scale' must be True or False")
     if not isinstance(outline,bool):
         raise TypeError("'outline' must be True or False")
+    if not isinstance(X,(pd.Series,pd.DataFrame)):
+        raise TypeError("Feature matrix X must be a pandas Series or DataFrame")
+    if not any([method=='kmeans',method=='hierarchical']):
+        raise TypeError("'method' must be 'kmeans' or 'hierarchical'")
+    if not isinstance(k,int):
+        raise TypeError("'k' must be an integer")
+    if not isinstance(i,int):
+        raise TypeError("'i' must be an integer")
 
 def attach(df,pathcol=None):
 
