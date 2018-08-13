@@ -10,6 +10,8 @@ quick (and approximate) visual analysis tool.
 """
 
 def nearest(pathcol=None,X=None,i=None,k=None):
+    if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
+        raise TypeError("'pathcol' must be a pandas Series")
     if X is None:
         raise ValueError("Must supply feature matrix 'X'")
     if i is None:
@@ -18,7 +20,7 @@ def nearest(pathcol=None,X=None,i=None,k=None):
         raise ValueError("Must supply number of neighbors 'k'")
 
     _typecheck(**locals())
-    pathcol = _pathfilter(pathcol) # need to address user-passed int issue
+    pathcol = _pathfilter(pathcol)
 
     f = X.shape[1] # number of columns in X
     t = AnnoyIndex(f)  # Length of item vector that will be indexed
