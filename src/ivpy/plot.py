@@ -11,6 +11,7 @@ from .plottools import _montage,_histogram,_scatter,_mat,_outline
 
 def show(pathcol=None,
          xcol=None,
+         notecol=None,
          xdomain=None,
          thumb=False,
          sample=False,
@@ -25,15 +26,19 @@ def show(pathcol=None,
     Args:
         pathcol (int,Series) --- single index or col of image paths to be shown
         xcol (str,Series) --- sorting column
+        notecol (str,Series) --- annotation column
         xdomain (list,tuple) --- xmin and xmax; defaults to data extremes
         thumb (int) --- pixel value for thumbnail side
         sample (int) --- integer size of sample
+        idx (Boolean) --- whether to print indices on images
+        bg (color) --- background color
         ascending (Boolean) --- sorting order
     """
 
     _typecheck(**locals())
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+    pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                             xcol=xcol,
+                                            notecol=notecol,
                                             xdomain=xdomain,
                                             sample=sample,
                                             ascending=ascending)
@@ -53,7 +58,7 @@ def show(pathcol=None,
         n = len(pathcol)
         w,h,coords = _gridcoords(n,ncols,thumb)
         canvas = Image.new('RGB',(w,h),bg)
-        _paste(pathcol,thumb,idx,canvas,coords)
+        _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
 
         return canvas
 
@@ -143,7 +148,8 @@ def montage(pathcol=None,
             bg='#4a4a4a',
             shape='square',
             ascending=False,
-            facetcol=None):
+            facetcol=None,
+            notecol=None):
 
     """
     Square or circular montage of images
@@ -159,15 +165,17 @@ def montage(pathcol=None,
         shape (str) --- square or circular montage
         ascending (Boolean) --- sorting order
         facetcol (str,Series) --- col to split data into plot facets
+        notecol (str,Series) --- annotation column
     """
 
     _typecheck(**locals())
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+    pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
                                                sample=sample,
                                                ascending=ascending,
-                                               facetcol=facetcol)
+                                               facetcol=facetcol,
+                                               notecol=notecol)
 
     if facetcol is None:
         return _montage(**locals())
@@ -191,6 +199,7 @@ def histogram(xcol,
               bg="#4a4a4a",
               coordinates='cartesian',
               facetcol=None,
+              notecol=None,
               xlabel=None):
 
     """
@@ -211,17 +220,19 @@ def histogram(xcol,
         bg (color) --- background color
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
+        notecol (str,Series) --- annotation column
         xlabel (Boolean) --- whether to include bin labels
     """
 
     _typecheck(**locals())
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+    pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
                                                ycol=ycol,
                                                ydomain=ydomain,
                                                sample=sample,
-                                               facetcol=facetcol)
+                                               facetcol=facetcol,
+                                               notecol=notecol)
 
     if facetcol is None:
         return _histogram(**locals())
@@ -246,6 +257,7 @@ def scatter(xcol,
             bg="#4a4a4a",
             coordinates='cartesian',
             facetcol=None,
+            notecol=None,
             xlabel=None,
             ylabel=None):
 
@@ -267,18 +279,20 @@ def scatter(xcol,
         bg (color) --- background color
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
+        notecol (str,Series) --- annotation column
         xlabel (Boolean) --- whether to include x-axis labels
         ylabel (Boolean) --- whether to include y-axis labels
     """
 
     _typecheck(**locals())
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol,
+    pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
                                                ycol=ycol,
                                                ydomain=ydomain,
                                                sample=sample,
-                                               facetcol=facetcol)
+                                               facetcol=facetcol,
+                                               notecol=notecol)
 
     if facetcol is None:
         return _scatter(**locals())

@@ -26,7 +26,8 @@ def _montage(pathcol=None,
              shape=None,
              ascending=None,
              facetcol=None,
-             facettitle=None):
+             facettitle=None,
+             notecol=None):
 
     n = len(pathcol)
 
@@ -34,19 +35,19 @@ def _montage(pathcol=None,
         ncols = int(sqrt(n))
         w,h,coords = _gridcoords(n,ncols,thumb)
         canvas = Image.new('RGB',(w,h),bg)
-        _paste(pathcol,thumb,idx,canvas,coords)
+        _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
     elif shape=='circle':
         side = int(sqrt(n)) + 5 # may have to tweak this
         canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
 
         # center image
         gridlist,maximus,coords = _gridcoordscirclemax(side,thumb)
-        _paste(pathcol[:1],thumb,idx,canvas,coords)
+        _paste(pathcol[:1],thumb,idx,canvas,coords,notecol=notecol)
         gridlist.remove(maximus)
 
         # remaining images
         coords = _gridcoordscircle(n,maximus,gridlist,thumb)
-        _paste(pathcol[1:],thumb,idx,canvas,coords)
+        _paste(pathcol[1:],thumb,idx,canvas,coords,notecol=notecol)
 
     if facetcol is None:
         return canvas
@@ -72,7 +73,8 @@ def _histogram(xcol=None,
                coordinates=None,
                facetcol=None,
                facettitle=None,
-               xlabel=None):
+               xlabel=None,
+               notecol=None):
 
     """
     This is domain expansion. The histogram ydomain can be contracted; it simply
@@ -116,10 +118,12 @@ def _histogram(xcol=None,
 
         if coordinates=='cartesian':
             coords = _histcoordscart(n,binlabel,plotheight,thumb)
-            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates)
+            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,
+                   notecol=notecol)
         elif coordinates=='polar':
             coords,phis = _histcoordspolar(n,binlabel,binmax,nbins,thumb)
-            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis)
+            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis,
+                   notecol=notecol)
 
     if facetcol is None:
         if xlabel is not None:
@@ -155,7 +159,8 @@ def _scatter(xcol=None,
              facetcol=None,
              facettitle=None,
              xlabel=None,
-             ylabel=None):
+             ylabel=None,
+             notecol=None):
 
     if xbins is not None:
         xcol = _bin(xcol,xbins)
@@ -168,11 +173,11 @@ def _scatter(xcol=None,
     if coordinates=='cartesian':
         x,y = _scalecart(xcol,ycol,xdomain,ydomain,side,thumb)
         coords = list(zip(x,y)) # py3 zip
-        _paste(pathcol,thumb,idx,canvas,coords,coordinates)
+        _paste(pathcol,thumb,idx,canvas,coords,coordinates,notecol=notecol)
     elif coordinates=='polar':
         x,y,phis = _scalepol(xcol,ycol,xdomain,ydomain,side,thumb)
         coords = list(zip(x,y)) # py3 zip
-        _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis)
+        _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis,notecol=notecol)
 
     if facetcol is None:
         if any([xlabel is not None,ylabel is not None]):
@@ -292,17 +297,29 @@ def _idx(im,i):
     font = ImageFont.truetype('../fonts/VeraMono.ttf',12)
     fontWidth, fontHeight = font.getsize(text)
 
-    try:
-        draw.rectangle(
-            [(pos,pos),(pos+fontWidth,pos+fontHeight)],
-            fill='#282828',
-            outline=None
-        )
+    draw.rectangle(
+        [(pos,pos),(pos+fontWidth,pos+fontHeight)],
+        fill='#282828',
+        outline=None
+    )
 
-        draw.text((pos,pos),text,font=font,fill='#efefef')
+    draw.text((pos,pos),text,font=font,fill='#efefef')
 
-    except Exception as e:
-        print(e)
+def _annote(im,note):
+    draw = ImageDraw.Draw(im)
+    text = str(note)
+    font = ImageFont.truetype('../fonts/VeraMono.ttf',12)
+    fontWidth, fontHeight = font.getsize(text)
+    imHeight = im.height
+    pos = imHeight - fontHeight
+
+    draw.rectangle(
+        [(0,pos),(fontWidth,imHeight)],
+        fill='#282828',
+        outline=None
+    )
+
+    draw.text((0,pos),text,font=font,fill='#efefef')
 
 def _placeholder(thumb):
     im = Image.new('RGB',(thumb,thumb),'#969696')
@@ -310,7 +327,8 @@ def _placeholder(thumb):
     draw.line([(0,0),(thumb,thumb)],'#dddddd')
     return im
 
-def _paste(pathcol,thumb,idx,canvas,coords,coordinates=None,phis=None):
+def _paste(pathcol,thumb,idx,canvas,coords,
+           coordinates=None,phis=None,notecol=None):
     if isinstance(pathcol, string_types): # bc this is allowable in _typecheck
         raise TypeError("'pathcol' must be a pandas Series")
 
@@ -324,6 +342,9 @@ def _paste(pathcol,thumb,idx,canvas,coords,coordinates=None,phis=None):
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         if idx==True: # idx labels placed after thumbnail
             _idx(im,i)
+        if notecol is not None:
+            note = notecol.loc[i]
+            _annote(im,note)
         if coordinates=='polar':
             phi = phis[counter]
             if 90 < phi < 270:
