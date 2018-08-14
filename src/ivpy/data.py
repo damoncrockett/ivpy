@@ -19,6 +19,7 @@ def _typecheck(**kwargs):
     xcol = kwargs.get('xcol')
     ycol = kwargs.get('ycol')
     facetcol = kwargs.get('facetcol')
+    notecol = kwargs.get('notecol')
 
     """type checking"""
     if pathcol is not None:
@@ -34,6 +35,10 @@ def _typecheck(**kwargs):
     if facetcol is not None:
         if not isinstance(facetcol,(string_types,int,pd.Series)):
             raise TypeError("""'facetcol' must be a string, int, or
+                               a pandas Series""")
+    if notecol is not None:
+        if not isinstance(notecol,(string_types,int,pd.Series)):
+            raise TypeError("""'notecol' must be a string, int, or
                                a pandas Series""")
 
     """
@@ -181,21 +186,23 @@ def _colfilter(pathcol,
                ascending=False,
                xdomain=None,
                ydomain=None,
-               facetcol=None):
+               facetcol=None,
+               notecol=None):
 
     pathcol = _pathfilter(pathcol)
     xcol = _featfilter(pathcol,xcol)
     ycol = _featfilter(pathcol,ycol)
     facetcol = _featfilter(pathcol,facetcol)
+    notecol = _featfilter(pathcol,notecol)
 
-    pathcol,xcol,ycol,facetcol = _sample(pathcol,xcol,ycol,
-                                            sample,facetcol)
-    pathcol,xcol,ycol,facetcol = _sort(pathcol,xcol,ycol,
-                                          ascending,facetcol)
-    pathcol,xcol,ycol,facetcol = _subset(pathcol,xcol,ycol,
-                                            xdomain,ydomain,facetcol)
+    pathcol,xcol,ycol,facetcol,notecol = _sample(pathcol,xcol,ycol,
+                                            sample,facetcol,notecol)
+    pathcol,xcol,ycol,facetcol,notecol = _sort(pathcol,xcol,ycol,
+                                          ascending,facetcol,notecol)
+    pathcol,xcol,ycol,facetcol,notecol = _subset(pathcol,xcol,ycol,
+                                            xdomain,ydomain,facetcol,notecol)
 
-    return pathcol,xcol,ycol,facetcol
+    return pathcol,xcol,ycol,facetcol,notecol
 
 def _pathfilter(pathcol):
 
@@ -249,7 +256,7 @@ def _featfilter(pathcol,col):
 
     return col
 
-def _sample(pathcol,xcol,ycol,sample,facetcol):
+def _sample(pathcol,xcol,ycol,sample,facetcol,notecol):
 
     """
     If user supplies a number for 'sample', we sample pathcol and subset
@@ -266,10 +273,12 @@ def _sample(pathcol,xcol,ycol,sample,facetcol):
             ycol = ycol.loc[pathcol.index]
         if facetcol is not None:
             facetcol = facetcol.loc[pathcol.index]
+        if notecol is not None:
+            notecol = notecol.loc[pathcol.index]
 
-    return pathcol,xcol,ycol,facetcol
+    return pathcol,xcol,ycol,facetcol,notecol
 
-def _sort(pathcol,xcol,ycol,ascending,facetcol):
+def _sort(pathcol,xcol,ycol,ascending,facetcol,notecol):
 
     """
     If user supplies xcol, we sort xcol and apply to path/ycol.
@@ -292,9 +301,12 @@ def _sort(pathcol,xcol,ycol,ascending,facetcol):
         if facetcol is not None:
             facetcol = facetcol.loc[xcol.index]
 
-    return pathcol,xcol,ycol,facetcol
+        if notecol is not None:
+            notecol = notecol.loc[xcol.index]
 
-def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol):
+    return pathcol,xcol,ycol,facetcol,notecol
+
+def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol,notecol):
     """
     Because this function runs after pathfilter, featfilter, sample and sort,
     many checks have already taken place. If xcol and ycol are not None, we
@@ -314,10 +326,14 @@ def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol):
         if facetcol is not None:
             facetcol = facetcol.loc[xcol.index]
 
+        if notecol is not None:
+            notecol = notecol.loc[xcol.index]
+
     if ydomain is not None:
         if ycol is None:
             raise ValueError("""If 'ydomain' is supplied, 'ycol' must be
                                 supplied as well""")
+
         ycol = ycol[(ycol>=ydomain[0])&(ycol<=ydomain[1])]
         pathcol = pathcol.loc[ycol.index]
         xcol = xcol.loc[ycol.index] # if ycol is not None, ditto xcol
@@ -325,7 +341,10 @@ def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol):
         if facetcol is not None:
             facetcol = facetcol.loc[ycol.index]
 
-    return pathcol,xcol,ycol,facetcol
+        if notecol is not None:
+            notecol = notecol.loc[ycol.index]
+
+    return pathcol,xcol,ycol,facetcol,notecol
 
 def _bin(col,bins):
     col = pd.cut(col,bins)
@@ -341,6 +360,7 @@ def _facet(**kwargs):
     ycol = kwargs.get('ycol')
     xdomain = kwargs.get('xdomain')
     ydomain = kwargs.get('ydomain')
+    notecol = kwargs.get('notecol')
 
     # if user passes 'xdomain' or 'ydomain', these assignments change nothing
     if xcol is not None:
@@ -365,6 +385,8 @@ def _facet(**kwargs):
             tmp['xcol'] = xcol.loc[facetedcol.index]
         if ycol is not None:
             tmp['ycol'] = ycol.loc[facetedcol.index]
+        if notecol is not None:
+            tmp['notecol'] = notecol.loc[facetedcol.index]
 
         facetlist.append(tmp)
 
