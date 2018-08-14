@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import copy
 from PIL import Image
-import os
 from six import string_types
 
 ATTACHED_DATAFRAME = None
@@ -57,6 +56,7 @@ def _typecheck(**kwargs):
     ydomain = kwargs.get('ydomain') # needs to be None sometimes
     xbins = kwargs.get('xbins') # needs to be None sometimes
     ybins = kwargs.get('ybins') # needs to be None sometimes
+    savedir = kwargs.get('savedir','foo') # any string
     feature = kwargs.get('feature','brightness')
     aggregate = kwargs.get('aggregate',True)
     scale = kwargs.get('scale',True)
@@ -108,6 +108,8 @@ def _typecheck(**kwargs):
     if ybins is not None:
         if not isinstance(ybins,(np.ndarray,list,tuple,int)):
             raise TypeError("'ybins' must be an integer or a sequence")
+    if not isinstance(savedir,string_types):
+        raise TypeError("'savedir' must be a directory string")
 
     feats = [
     'brightness','saturation','hue','entropy','std','contrast',
@@ -367,36 +369,3 @@ def _facet(**kwargs):
         facetlist.append(tmp)
 
     return facetlist
-
-def resize(savedir=None,pathcol=None,thumb=256):
-    """Creates thumbnails of images, saves to 'savedir'. Had considered default
-       'savedir', but decided user should always supply 'savedir', putting
-       the write responsibility on them. Could be dissuaded here."""
-
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
-
-    if savedir==None:
-        raise ValueError("Must supply 'savedir'")
-    elif savedir is not None:
-        try:
-            os.mkdir(savedir)
-        except:
-            pass
-
-    if isinstance(pathcol,string_types):
-        return _resize(pathcol,savedir,thumb)
-
-    elif isinstance(pathcol,pd.Series):
-        pathcol_resized = pd.Series(index=pathcol.index)
-        for i in pathcol.index:
-            impath = pathcol.loc[i]
-            pathcol_resized.loc[i] = _resize(impath,savedir,thumb)
-        return pathcol_resized
-
-def _resize(impath,savedir,thumb):
-    im = Image.open(impath)
-    im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-    basename = os.path.basename(impath)
-    savestring = savedir + "/" + basename
-    im.save(savestring)
-    return savestring
