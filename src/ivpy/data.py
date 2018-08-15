@@ -189,18 +189,23 @@ def _colfilter(pathcol,
                facetcol=None,
                notecol=None):
 
+    """Index matching and working with attach()"""
     pathcol = _pathfilter(pathcol)
     xcol = _featfilter(pathcol,xcol)
     ycol = _featfilter(pathcol,ycol)
     facetcol = _featfilter(pathcol,facetcol)
     notecol = _featfilter(pathcol,notecol)
 
+    """Selecting and sorting"""
+    pathcol,xcol,ycol,facetcol,notecol = _dropna(pathcol,xcol,ycol,facetcol,
+                                                 notecol)
     pathcol,xcol,ycol,facetcol,notecol = _sample(pathcol,xcol,ycol,
-                                            sample,facetcol,notecol)
+                                                 sample,facetcol,notecol)
     pathcol,xcol,ycol,facetcol,notecol = _sort(pathcol,xcol,ycol,
-                                          ascending,facetcol,notecol)
+                                               ascending,facetcol,notecol)
     pathcol,xcol,ycol,facetcol,notecol = _subset(pathcol,xcol,ycol,
-                                            xdomain,ydomain,facetcol,notecol)
+                                                 xdomain,ydomain,facetcol,
+                                                 notecol)
 
     return pathcol,xcol,ycol,facetcol,notecol
 
@@ -255,6 +260,49 @@ def _featfilter(pathcol,col):
                                         have same indices""")
 
     return col
+
+def _dropna(pathcol,xcol,ycol,facetcol,notecol):
+    """
+    At time this function is called, all cols have same indices. We drop any
+    rows with null values in each column, except notecol, which is not a
+    plotting position column and so isn't strictly necessary.
+    """
+    setlist = []
+    if xcol is not None:
+        if np.mean(xcol.isnull()) > 0:
+            xcol = xcol.dropna()
+            setlist.append(set(xcol.index))
+        else:
+            setlist.append(set(xcol.index))
+    if ycol is not None:
+        if np.mean(ycol.isnull()) > 0:
+            ycol = ycol.dropna()
+            setlist.append(set(ycol.index))
+        else:
+            setlist.append(set(ycol.index))
+    if facetcol is not None:
+        if np.mean(facetcol.isnull()) > 0:
+            facetcol = facetcol.dropna()
+            setlist.append(set(facetcol.index))
+        else:
+            setlist.append(set(facetcol.index))
+
+    if len(setlist) > 0:
+        indices = set.intersection(*setlist)
+        ndiff = len(pathcol.index) - len(indices)
+        if ndiff > 0:
+            print("removed " + str(ndiff) + " rows with missing data")
+            pathcol = pathcol.loc[indices]
+            if xcol is not None:
+                xcol = xcol.loc[indices]
+            if ycol is not None:
+                ycol = ycol.loc[indices]
+            if facetcol is not None:
+                facetcol = facetcol.loc[indices]
+            if notecol is not None:
+                notecol = notecol.loc[indices]
+
+    return pathcol,xcol,ycol,facetcol,notecol
 
 def _sample(pathcol,xcol,ycol,sample,facetcol,notecol):
 
