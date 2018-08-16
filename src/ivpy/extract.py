@@ -16,14 +16,14 @@ from keras.preprocessing.image import load_img
 from keras.models import Model
 from keras.applications import ResNet50
 
-from .data import _typecheck,_colfilter
+from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
 
 #------------------------------------------------------------------------------
 
 def extract(feature,pathcol=None,aggregate=True,scale=True):
     _typecheck(**locals())
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
+    pathcol = _pathfilter(pathcol)
 
     if feature=='brightness':
         return _brightness(pathcol,aggregate,scale)
