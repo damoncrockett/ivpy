@@ -82,9 +82,10 @@ def _histogram(xcol=None,
     argument, because data subsetting not allowable this late in the process.
     """
     if isinstance(bins,(list,tuple,np.ndarray)):
-        if xcol.max() > bins[-1]: # the rightmost bin edge
+        if any([xcol.max()>bins[-1],xcol.min()<bins[0]]):
             raise ValueError("""Submitted bin edges do not capture all the data.
-                                Domain contraction requires 'xdomain' argument.
+                                Domain contraction requires 'xdomain' argument,
+                                and bin edges must span the domain.
                                 """)
 
     """
