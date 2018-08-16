@@ -1,5 +1,5 @@
 from annoy import AnnoyIndex
-from .data import _typecheck,_pathfilter
+from .data import _typecheck,_pathfilter,_featfilter
 from .plot import show
 
 """
@@ -9,7 +9,7 @@ return some of this data for use in other processes, but for now it's merely a
 quick (and approximate) visual analysis tool.
 """
 
-def nearest(pathcol=None,X=None,i=None,k=None):
+def nearest(pathcol=None,X=None,i=None,k=None,notecol=None):
     if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
         raise TypeError("'pathcol' must be a pandas Series")
     if X is None:
@@ -21,6 +21,7 @@ def nearest(pathcol=None,X=None,i=None,k=None):
 
     _typecheck(**locals())
     pathcol = _pathfilter(pathcol)
+    notecol = _featfilter(pathcol,notecol)
 
     f = X.shape[1] # number of columns in X
     t = AnnoyIndex(f)  # Length of item vector that will be indexed
@@ -30,4 +31,5 @@ def nearest(pathcol=None,X=None,i=None,k=None):
     t.build(10) # 10 trees
     nns = t.get_nns_by_item(i,k,include_distances=False) # could use dists
     print(nns)
-    return show(pathcol=pathcol.loc[nns],idx=True)
+
+    return show(pathcol=pathcol.loc[nns],idx=True,notecol=notecol.loc[nns])
