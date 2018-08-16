@@ -342,13 +342,10 @@ def _sort(pathcol,xcol,ycol,ascending,facetcol,notecol):
     if xcol is not None:
         xcol = xcol.sort_values(ascending=ascending)
         pathcol = pathcol.loc[xcol.index]
-
         if ycol is not None: # nb sorting by ycol not possible globally
             ycol = ycol.loc[xcol.index]
-
         if facetcol is not None:
             facetcol = facetcol.loc[xcol.index]
-
         if notecol is not None:
             notecol = notecol.loc[xcol.index]
 
@@ -367,16 +364,12 @@ def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol,notecol):
                                 supplied as well""")
         xcol = xcol[(xcol>=xdomain[0])&(xcol<=xdomain[1])]
         pathcol = pathcol.loc[xcol.index]
-
         if ycol is not None:
             ycol = ycol.loc[xcol.index]
-
         if facetcol is not None:
             facetcol = facetcol.loc[xcol.index]
-
         if notecol is not None:
             notecol = notecol.loc[xcol.index]
-
     if ydomain is not None:
         if ycol is None:
             raise ValueError("""If 'ydomain' is supplied, 'ycol' must be
@@ -385,10 +378,8 @@ def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol,notecol):
         ycol = ycol[(ycol>=ydomain[0])&(ycol<=ydomain[1])]
         pathcol = pathcol.loc[ycol.index]
         xcol = xcol.loc[ycol.index] # if ycol is not None, ditto xcol
-
         if facetcol is not None:
             facetcol = facetcol.loc[ycol.index]
-
         if notecol is not None:
             notecol = notecol.loc[ycol.index]
 
@@ -410,11 +401,17 @@ def _facet(**kwargs):
     ydomain = kwargs.get('ydomain')
     notecol = kwargs.get('notecol')
 
-    # if user passes 'xdomain' or 'ydomain', these assignments change nothing
+    """
+    If we have xcol and ycol, but no user-passed domains, then we set them to
+    the data extremes so that each facet can use the same domain. Conversely, if
+    we do have user-passed domains, they need to dictate the plotting ranges.
+    """
     if xcol is not None:
-        xdomain = (xcol.min(),xcol.max())
+        if xdomain is None:
+            xdomain = (xcol.min(),xcol.max())
     if ycol is not None:
-        ydomain = (ycol.min(),ycol.max())
+        if ydomain is None:
+            ydomain = (ycol.min(),ycol.max())
 
     facetlist = []
     for val in facetcol.unique():

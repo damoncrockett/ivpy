@@ -1,6 +1,7 @@
 import pandas as pd
 from PIL import Image,ImageDraw,ImageFont
 from numpy import repeat,sqrt,arange,radians,cos,sin
+import numpy as np
 from math import ceil
 from shapely.geometry import Point
 from six import string_types
@@ -77,15 +78,25 @@ def _histogram(xcol=None,
                notecol=None):
 
     """
-    This is domain expansion. The histogram ydomain can be contracted; it simply
-    removes data points. But it cannot be expanded, since y in a histogram is
-    not a proper axis. The user can expand the xdomain either using that kwarg
-    or by submitting a set of domain-expanding bin edges. If user gives xdomain
-    and an integer 'bins' argument, that xdomain is split into equal-width bins.
-    If the user submits other bin edges, those are the edges, regardless of
-    whether they match the submitted xdomain. This makes it possible, for
-    example, to restrict the domain using 'xdomain' and expand the plotting
-    space using 'bins'.
+    If user submitted bin sequence leaves out some rows, user must pass xdomain
+    argument, because data subsetting not allowable this late in the process.
+    """
+    if isinstance(bins,(list,tuple,np.ndarray)):
+        if xcol.max() > bins[-1]: # the rightmost bin edge
+            raise ValueError("""Submitted bin edges do not capture all the data.
+                                Domain contraction requires 'xdomain' argument.
+                                """)
+
+    """
+    This (below) is domain expansion. The histogram ydomain can be contracted;
+    it simply removes data points. But it cannot be expanded, since y in a
+    histogram is not a proper axis. The user can expand the xdomain either using
+    that kwarg or by submitting a set of domain-expanding bin edges. If user
+    gives xdomain and an integer 'bins' argument, that xdomain is split into
+    equal-width bins. If the user submits other bin edges, those are the edges,
+    regardless of whether they match the submitted xdomain. This makes it
+    possible, for example, to restrict the domain using 'xdomain' and expand the
+    plotting space using 'bins'.
     """
     if xdomain is not None:
         xrange = xdomain[1]-xdomain[0]
@@ -93,6 +104,7 @@ def _histogram(xcol=None,
             # n.b.: this is slightly different than giving int to pd.cut
             increment = float(xrange)/bins
             # range is overkill but don't have great way to always avoid NaNs
+            # will probably need to revisit this in the future
             bins = arange(xdomain[0],xdomain[1]+increment*2,increment)
 
     xbin = pd.cut(xcol,bins,labels=False,include_lowest=True)
