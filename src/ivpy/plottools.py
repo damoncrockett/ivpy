@@ -3,7 +3,6 @@ from PIL import Image,ImageDraw,ImageFont
 from numpy import repeat,sqrt,arange,radians,cos,sin
 import numpy as np
 from math import ceil
-from shapely.geometry import Point
 from six import string_types
 
 from .data import _bin
@@ -225,17 +224,18 @@ def _gridcoords(n,ncols,thumb):
 
 def _gridcoordscirclemax(side,thumb):
     x,y = list(range(side))*side,repeat(range(side),side) # py3 range
-    gridlist = [Point(item) for item in list(zip(x,y))]
-    maximus = Point(int(side/2),int(side/2)) # py3 defaults to float
-    return gridlist,maximus,[(int(maximus.x*thumb),int(maximus.y*thumb))]
+    gridlist = list(zip(x,y))
+    maximus = (int(side/2),int(side/2)) # py3 defaults to float
+    return gridlist,maximus,[(int(maximus[0]*thumb),int(maximus[1]*thumb))]
 
 def _gridcoordscircle(n,maximus,gridlist,thumb):
     # compute distances from center; sort by distance
-    dists = [maximus.distance(item) for item in gridlist]
+    maximusarray = np.array(maximus) # for computing distance
+    dists = [np.linalg.norm(maximusarray-np.array(item)) for item in gridlist]
     tmp = pd.DataFrame({"gridlist":gridlist,"dists":dists})
     tmp.sort_values(by='dists',inplace=True) # ascending
     gridlist = tmp.gridlist.iloc[:n-1] # n-1 bc we removed maximus
-    return [(int(item.x*thumb),int(item.y*thumb)) for item in gridlist]
+    return [(int(item[0]*thumb),int(item[1]*thumb)) for item in gridlist]
 
 def _pol2cart(rho,phi):
     x = rho * cos(phi)
