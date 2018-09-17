@@ -13,7 +13,7 @@ Best thing to do, in my opinion, is to install Python 3, if you haven't already,
 
 ### Dependencies 
 
-pandas, numpy, Pillow, Shapely, jupyter (if using inside notebook)
+pandas, numpy, Pillow, jupyter (if using inside notebook)
 
 ### Dependencies for Feature Extraction
 
