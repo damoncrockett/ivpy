@@ -9,7 +9,7 @@ To avoid data access issues, I've written the tutorials using the publicly avail
 
 I officially recommend using Python 3. I recently was unable to install the dependencies using pip in Python 2.7, and the problem has to do with lack of support for new SSL/TSL protocols. See [this thread](https://github.com/pypa/get-pip/issues/26) for more information. 
 
-Best thing to do, in my opinion, is to install Python 3, if you haven't already, and use `venv` to create a virtual environment. The dependencies can all be installed using the requirements.txt file, as described below. It is not strictly necessary that you use a virtual environment, but it's the failsafe approach.
+Best thing to do, in my opinion, is to install Python 3, if you haven't already, and use `venv` to create a virtual environment. It is not strictly necessary that you use a virtual environment, but it's the failsafe approach. Originally, I had a requirements.txt file containing all dependencies, but updates to various packages make such a file nearly impossible to maintain over time. I recommend installing the dependencies one by one using pip3.
 
 ### Dependencies 
 
@@ -17,13 +17,13 @@ pandas, numpy, Pillow, jupyter (if using inside notebook)
 
 ### Dependencies for Feature Extraction
 
-TensorFlow, scipy, scikit-image, scikit-learn, Keras (which itself may require a separate h5py install)
+tensorflow (may need to specify version, e.g., tensorflow==1.3.0), scipy, scikit-image, scikit-learn, keras (install h5py first)
 
 ### Additional Dependencies
 
 umap-learn (for umap embedding, found [here](https://github.com/lmcinnes/umap))
 
-annoy, nose (for nearest neighbor search)
+annoy (install nose first) (for nearest neighbor search)
 
 ### Install & Run
 
@@ -43,9 +43,7 @@ note: this will create a virtual environment directory called 'myEnv' inside wha
 
 3. Install requirements:
 
-`$ cd ivpy`
-
-`$ pip install -r requirements.txt`
+`$ pip3 install [package name]`
 
 4. Create .jupyter/custom/ in your home folder, and copy ivpy/style/custom.css there
 
