@@ -16,18 +16,31 @@ Best thing to do, in my opinion, is to install Python 3, if you haven't already,
 When you have---as we do here---a module that depends on lots of other modules, stuff breaks over time as things get updated. For example, tensorflow is not currently compatbile with Python 3.7 (as of Sep 21, 2018). So I will describe here my current configuration, which works. If it breaks, I'll fix it and update this part of the README.
 
 iMac Retina 5K, 27-inch, 2017
+
 macOS High Sierra 10.13.6
+
 Python 3.6.5 (remember to run Install Certificates.command after installing)
+
 pandas==0.23.4
+
 Pillow==5.2.0
+
 jupyter==1.0.0
+
 tensorflow==1.3.0 (this is pretty old)
+
 scipy==1.1.0
+
 scikit-image==0.14.0
+
 scikit-learn==0.19.2
+
 Keras==2.1.0 (install tensorflow and h5py first)
+
 umap-learn==0.3.2
+
 annoy==1.13.0 (install nose first)
+
 
 ### Dependencies 
 
