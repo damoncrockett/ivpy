@@ -11,6 +11,24 @@ I officially recommend using Python 3. I recently was unable to install the depe
 
 Best thing to do, in my opinion, is to install Python 3, if you haven't already, and use `venv` to create a virtual environment. It is not strictly necessary that you use a virtual environment, but it's the failsafe approach. Originally, I had a requirements.txt file containing all dependencies, but updates to various packages make such a file nearly impossible to maintain over time. I recommend installing the dependencies one by one using pip3.
 
+### My current working configuration
+
+When you have---as we do here---a module that depends on lots of other modules, stuff breaks over time as things get updated. For example, tensorflow is not currently compatbile with Python 3.7 (as of Sep 21, 2018). So I will describe here my current configuration, which works. If it breaks, I'll fix it and update this part of the README.
+
+iMac Retina 5K, 27-inch, 2017
+macOS High Sierra 10.13.6
+Python 3.6.5 (remember to run Install Certificates.command after installing)
+pandas==0.23.4
+Pillow==5.2.0
+jupyter==1.0.0
+tensorflow==1.3.0 (this is pretty old)
+scipy==1.1.0
+scikit-image==0.14.0
+scikit-learn==0.19.2
+Keras==2.1.0 (install tensorflow and h5py first)
+umap-learn==0.3.2
+annoy==1.13.0 (install nose first)
+
 ### Dependencies 
 
 pandas, numpy, Pillow, jupyter (if using inside notebook)
@@ -64,5 +82,9 @@ The above sequence will enable you to run the tutorial notebooks. If you start y
 `sys.path.append("/Users/damoncrockett/ivpy/src/")` (You'll need to change this to reflect the path on your machine)
 
 `from ivpy import attach,show,compose,montage,histogram,scatter` (or whichever functions you want)
+
+You will also need to move the 'fonts' folder into the parent directory of your working directory.
+
+### Pulling new changes to ivpy
 
 I should also point out a potential danger with keeping notebooks inside ivpy/src. If they happen to have the same filename as one of the tutorial notebooks---if, for example, you started adding your own code cells to a tutorial notebook instead of opening a new notebook---then running `$ git pull` in the ivpy directory will re-write those files with the original tutorial notebooks. I want users to be able to easily pull any new changes to the software (and there are lots of those changes being made right now), but I don't want anyone to lose any work! So make sure you give your notebooks new names, and try to avoid doing any serious work inside the tutorial notebooks.
