@@ -7,15 +7,15 @@ To avoid data access issues, I've written the tutorials using the publicly avail
 
 ### A word about Python versions and virtual environments:
 
-I officially recommend using Python 3. I recently was unable to install the dependencies using pip in Python 2.7, and the problem has to do with lack of support for new SSL/TSL protocols. See [this thread](https://github.com/pypa/get-pip/issues/26) for more information. 
+I officially recommend using Python 3. I recently was unable to install the dependencies using pip in Python 2.7, and the problem has to do with lack of support for new SSL/TSL protocols. See [this thread](https://github.com/pypa/get-pip/issues/26) for more information. I'm sure there are workarounds, but it seems not worth it, since Python 2 is nearing [the end of its life](https://legacy.python.org/dev/peps/pep-0373/).
 
-Best thing to do, in my opinion, is to install Python 3, if you haven't already, and use `venv` to create a virtual environment. It is not strictly necessary that you use a virtual environment, but it's the failsafe approach. Originally, I had a requirements.txt file containing all dependencies, but updates to various packages make such a file nearly impossible to maintain over time. I recommend installing the dependencies one by one using pip3.
+Best thing to do, in my opinion, is to install Python 3, if you haven't already, and use `venv` to create a virtual environment (see below). It is not strictly necessary that you use a virtual environment, but it's the failsafe approach.
 
-### My current working configuration
+### My current working configuration (September 21, 2018)
 
-When you have---as we do here---a module that depends on lots of other modules, stuff breaks over time as things get updated. For example, tensorflow is not currently compatbile with Python 3.7 (as of Sep 21, 2018). So I will describe here my current configuration, which works. If it breaks, I'll fix it and update this part of the README.
+When you have---as we do here---a module that depends on lots of other modules, stuff breaks over time as things get updated. For example, tensorflow is not currently compatbile with Python 3.7. So I will describe here my current configuration, which works. If it breaks, I'll fix it and update this part of the README.
 
-iMac Retina 5K, 27-inch, 2017
+All package versions are the newest unless otherwise indicated. So, if you install using pip (see below), these will install automatically if no version is specified. 
 
 macOS High Sierra 10.13.6
 
@@ -27,7 +27,7 @@ Pillow==5.2.0
 
 jupyter==1.0.0
 
-tensorflow==1.3.0 (this is pretty old)
+tensorflow==1.3.0 (this is pretty old, but I'm sure newer versions are okay too)
 
 scipy==1.1.0
 
@@ -35,12 +35,11 @@ scikit-image==0.14.0
 
 scikit-learn==0.19.2
 
-Keras==2.1.0 (install tensorflow and h5py first)
+Keras==2.1.0 (not the newest version; also, install tensorflow and h5py first)
 
 umap-learn==0.3.2
 
 annoy==1.13.0 (install nose first)
-
 
 ### Dependencies 
 
