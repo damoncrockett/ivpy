@@ -15,7 +15,7 @@ Best thing to do, in my opinion, is to install Python 3, if you haven't already,
 
 When you have---as we do here---a module that depends on lots of other modules, stuff breaks over time as things get updated. For example, tensorflow is not currently compatbile with Python 3.7. So I will describe here my current configuration, which works. If it breaks, I'll fix it and update this part of the README.
 
-All package versions are the newest unless otherwise indicated. So, if you install using pip (see below), these will install automatically if no version is specified. 
+All package versions are the newest unless otherwise indicated. So, if you install using pip (see below), these will install if no version is specified. 
 
 macOS High Sierra 10.13.6
 
