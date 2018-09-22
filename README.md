@@ -95,7 +95,7 @@ The above sequence will enable you to run the tutorial notebooks. If you start y
 
 `from ivpy import attach,show,compose,montage,histogram,scatter` (or whichever functions you want)
 
-You will also need to move the 'fonts' folder into the parent directory of your working directory.
+You will also need to copy the 'fonts' folder to the parent directory of your working directory.
 
 ### Pulling new changes to ivpy
 
