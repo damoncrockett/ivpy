@@ -5,6 +5,7 @@ from six import string_types
 
 from skimage.io import imread
 from skimage import color
+from skimage import img_as_ubyte
 from skimage.transform import resize
 from scipy.stats import entropy
 from skimage.feature import greycomatrix, greycoprops
@@ -259,11 +260,12 @@ def _glcm(pathcol,scale,prop):
                            scale=scale,prop=prop)
 
 def _greycoprops(imgpath,scale,prop):
-    """Note that _imgprocess is not used; here we need int img"""
+    """Note that _imgprocess is not used; here we need gray integer img"""
     img = imread(imgpath)
     if scale==True:
         img = _scale(img)
     imgray = color.rgb2gray(img)
+    imgray = img_as_ubyte(imgray)
     glcmat = greycomatrix(imgray,[1],[0],levels=256,symmetric=True,normed=True)
     return greycoprops(glcmat, prop)[0][0]
 
