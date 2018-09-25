@@ -1,5 +1,11 @@
 import os
-from .data import _colfilter,_typecheck
+import pandas as pd
+from PIL import Image
+from six import string_types
+
+from .data import _pathfilter,_typecheck
+
+#------------------------------------------------------------------------------
 
 def resize(savedir=None,pathcol=None,thumb=256):
     """Creates thumbnails of images, saves to 'savedir'. Had considered default
@@ -18,7 +24,7 @@ def resize(savedir=None,pathcol=None,thumb=256):
                 raise ValueError("'savedir' must be a valid filepath")
 
     _typecheck(**locals())
-    pathcol,xcol,ycol,facetcol = _colfilter(pathcol)
+    pathcol = _pathfilter(pathcol)
 
     if isinstance(pathcol,string_types):
         return _resize(pathcol,savedir,thumb)
