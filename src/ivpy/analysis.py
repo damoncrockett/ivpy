@@ -32,4 +32,7 @@ def nearest(pathcol=None,X=None,i=None,k=None,notecol=None):
     nns = t.get_nns_by_item(i,k,include_distances=False) # could use dists
     print(nns)
 
-    return show(pathcol=pathcol.loc[nns],idx=True,notecol=notecol.loc[nns])
+    if notecol is None:
+        return show(pathcol=pathcol.loc[nns],idx=True)
+    elif notecol is not None:
+        return show(pathcol=pathcol.loc[nns],idx=True,notecol=notecol.loc[nns])
