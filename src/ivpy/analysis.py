@@ -9,7 +9,7 @@ return some of this data for use in other processes, but for now it's merely a
 quick (and approximate) visual analysis tool.
 """
 
-def nearest(pathcol=None,X=None,i=None,k=None,notecol=None):
+def nearest(pathcol=None,X=None,i=None,k=None,notecol=None,thumb=False):
     if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
         raise TypeError("'pathcol' must be a pandas Series")
     if X is None:
@@ -33,6 +33,9 @@ def nearest(pathcol=None,X=None,i=None,k=None,notecol=None):
     print(nns)
 
     if notecol is None:
-        return show(pathcol=pathcol.loc[nns],idx=True)
+        return show(pathcol=pathcol.loc[nns],idx=True,thumb=thumb)
     elif notecol is not None:
-        return show(pathcol=pathcol.loc[nns],idx=True,notecol=notecol.loc[nns])
+        return show(pathcol=pathcol.loc[nns],
+                    idx=True,
+                    notecol=notecol.loc[nns],
+                    thumb=thumb)
