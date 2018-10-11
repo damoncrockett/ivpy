@@ -25,17 +25,24 @@ def nearest(pathcol=None,X=None,i=None,k=None,notecol=None,thumb=False):
 
     f = X.shape[1] # number of columns in X
     t = AnnoyIndex(f)  # Length of item vector that will be indexed
-    for j in range(len(X)):
-        t.add_item(j,list(X.loc[j]))
+
+    counter = -1
+    for j in X.index:
+        counter+=1
+        t.add_item(counter,list(X.loc[j]))
+
+    idmap = dict(zip(X.index,list(range(len(X)))))
+    idmapReverse = dict(zip(list(range(len(X))),X.index))
 
     t.build(10) # 10 trees
-    nns = t.get_nns_by_item(i,k,include_distances=False) # could use dists
-    print(nns)
+    nnsAnnoy = t.get_nns_by_item(idmap[i],k,include_distances=False) # dists?
+    nnsNative = [idmapReverse[item] for item in nnsAnnoy]
+    print(nnsNative)
 
     if notecol is None:
-        return show(pathcol=pathcol.loc[nns],idx=True,thumb=thumb)
+        return show(pathcol=pathcol.loc[nnsNative],idx=True,thumb=thumb)
     elif notecol is not None:
-        return show(pathcol=pathcol.loc[nns],
+        return show(pathcol=pathcol.loc[nnsNative],
                     idx=True,
-                    notecol=notecol.loc[nns],
+                    notecol=notecol.loc[nnsNative],
                     thumb=thumb)
