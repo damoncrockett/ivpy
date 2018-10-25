@@ -146,7 +146,8 @@ def _hsv_mean(imgpath,scale,axis):
 
 def _hsv_10bin(imgpath,scale,axis):
     img = _imgprocess(imgpath,scale)
-    return np.histogram(img[:,:,axis],bins=10)[0]
+    binedges = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0] # fixed bin edges
+    return np.histogram(img[:,:,axis],bins=binedges)[0]
 
 def _hue(pathcol,aggregate,scale):
     """Returns either huepeak or 8-bin perceptual hue distribution"""
@@ -197,7 +198,7 @@ def _huepeak(imgpath,scale):
 
 def _hue_8bin(imgpath,scale):
     # nonuniform width hue bins
-    huebreaks = [0.0,
+    binedges = [0.0,
                  0.05555555555555555,
                  0.1388888888888889,
                  0.19444444444444445,
@@ -209,7 +210,7 @@ def _hue_8bin(imgpath,scale):
                  1.0]
 
     img = _imgprocess(imgpath,scale)
-    return np.histogram(img[:,:,0],bins=huebreaks)[0]
+    return np.histogram(img[:,:,0],bins=binedges)[0]
 
 #------------------------------------------------------------------------------
 
