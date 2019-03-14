@@ -49,7 +49,7 @@ def _typecheck(**kwargs):
     thumb = kwargs.get('thumb',100)
     sample = kwargs.get('sample',100)
     idx = kwargs.get('idx',False)
-    bg = kwargs.get('bg','#4a4a4a')
+    bg = kwargs.get('bg')
     ascending = kwargs.get('ascending',False)
     shape = kwargs.get('shape','square')
     ncols = kwargs.get('ncols',2)
@@ -70,6 +70,7 @@ def _typecheck(**kwargs):
     method = kwargs.get('method','kmeans')
     k = kwargs.get('k',10)
     i = kwargs.get('i',0)
+    centroids = kwargs.get('centroids') # will be None sometimes
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -81,8 +82,9 @@ def _typecheck(**kwargs):
         raise TypeError("'sample' must be an integer")
     if not isinstance(idx,bool):
         raise TypeError("'idx' must be True or False")
-    if not isinstance(bg,(tuple,string_types)):
-        raise TypeError("'bg' must be an RGB triplet or a string")
+    if bg is not None:
+        if not isinstance(bg,(tuple,string_types)):
+            raise TypeError("'bg' must be an RGB triplet or a string")
     if not isinstance(ascending,bool):
         raise TypeError("'ascending' must be True or False")
     if not any([shape=='square',shape=='circle']):
@@ -140,6 +142,9 @@ def _typecheck(**kwargs):
         raise TypeError("'k' must be an integer")
     if not isinstance(i,int):
         raise TypeError("'i' must be an integer")
+    if centroids is not None:
+        if not isinstance(centroids,(list,tuple,np.ndarray)):
+            raise TypeError("If passed, 'centroids' must be a sequence")
 
 def attach(df,pathcol=None):
 
