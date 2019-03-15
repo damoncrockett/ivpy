@@ -68,7 +68,7 @@ def _typecheck(**kwargs):
     outline = kwargs.get('outline',False)
     X = kwargs.get('X',pd.DataFrame())
     method = kwargs.get('method','kmeans')
-    k = kwargs.get('k',10)
+    k = kwargs.get('k',4)
     i = kwargs.get('i',0)
     centroids = kwargs.get('centroids') # will be None sometimes
 
@@ -126,7 +126,7 @@ def _typecheck(**kwargs):
     if feature not in feats:
         raise ValueError("""'feature' must be one of 'brightness',
         'saturation','hue','entropy','std','contrast','dissimilarity',
-        'homogeneity','ASM','energy','correlation','neural', or 'tags'.""")
+        'homogeneity','ASM','energy','correlation','neural', or 'tags'""")
 
     if not isinstance(aggregate,bool):
         raise TypeError("'aggregate' must be True or False")
@@ -136,8 +136,16 @@ def _typecheck(**kwargs):
         raise TypeError("'outline' must be True or False")
     if not isinstance(X,(pd.Series,pd.DataFrame)):
         raise TypeError("Feature matrix X must be a pandas Series or DataFrame")
-    if not any([method=='kmeans',method=='hierarchical']):
-        raise TypeError("'method' must be 'kmeans' or 'hierarchical'")
+
+    methods = [
+    'kmeans','hierarchical','affinity','birch',
+    'dbscan','minibatch','meanshift','spectral'
+    ]
+
+    if method not in methods:
+        raise TypeError("""'method' must be one of 'kmeans', 'hierarchical',
+        'affinity','birch','dbscan','minibatch','meanshift', or 'spectral'""")
+
     if not isinstance(k,int):
         raise TypeError("'k' must be an integer")
     if not isinstance(i,int):
