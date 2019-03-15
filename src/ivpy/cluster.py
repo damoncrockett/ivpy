@@ -1,5 +1,7 @@
 import pandas as pd
-from sklearn.cluster import KMeans,AgglomerativeClustering
+from sklearn.cluster import AffinityPropagation,AgglomerativeClustering,Birch
+from sklearn.cluster import DBSCAN,FeatureAgglomeration,KMeans,MiniBatchKMeans
+from sklearn.cluster import MeanShift,SpectralClustering
 from .data import _typecheck
 
 #------------------------------------------------------------------------------
@@ -31,6 +33,51 @@ def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
         print("method:",method,"\nnumber of clusters:",str(k))
         return _cluster(X,
                         AgglomerativeClustering,
+                        n_clusters=k,
+                        **kwargs)
+
+    elif method=='affinity':
+        print("method:",method)
+        return _cluster(X,
+                        AffinityPropagation,
+                        **kwargs)
+
+    elif method=='birch':
+        print("method:",method,"\nnumber of clusters:",str(k))
+        return _cluster(X,
+                        Birch,
+                        n_clusters=k,
+                        **kwargs)
+
+    elif method=='dbscan':
+        print("method:",method)
+        return _cluster(X,
+                        DBSCAN,
+                        **kwargs)
+
+    elif method=='minibatch':
+        if centroids is not None:
+            k = len(centroids)
+            print("method:",method,"\nnumber of clusters:",str(k))
+            return _cluster(X,
+                            MiniBatchKMeans,
+                            n_clusters=k,
+                            init=X.loc[centroids],
+                            **kwargs)
+        elif centroids is None:
+            print("method:",method,"\nnumber of clusters:",str(k))
+            return _cluster(X,MiniBatchKMeans,n_clusters=k,**kwargs)
+
+    elif method=='meanshift':
+        print("method:",method)
+        return _cluster(X,
+                        MeanShift,
+                        **kwargs)
+
+    elif method=='spectral':
+        print("method:",method,"\nnumber of clusters:",str(k))
+        return _cluster(X,
+                        SpectralClustering,
                         n_clusters=k,
                         **kwargs)
 
