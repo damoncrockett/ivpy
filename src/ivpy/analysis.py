@@ -1,6 +1,7 @@
 from annoy import AnnoyIndex
 from .data import _typecheck,_pathfilter,_featfilter
 from .plot import show
+import numpy as np
 
 """
 Currently this function will use show() to display k nearest neighbors of i,
@@ -9,15 +10,13 @@ return some of this data for use in other processes, but for now it's merely a
 quick (and approximate) visual analysis tool.
 """
 
-def nearest(pathcol=None,X=None,i=None,k=None,notecol=None,thumb=False):
+def nearest(pathcol=None,X=None,i=None,k=4,notecol=None,thumb=False):
     if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
         raise TypeError("'pathcol' must be a pandas Series")
     if X is None:
         raise ValueError("Must supply feature matrix 'X'")
     if i is None:
-        raise ValueError("Must supply query point 'i'")
-    if k is None:
-        raise ValueError("Must supply number of neighbors 'k'")
+        i = np.random.choice(X.index)
 
     _typecheck(**locals())
     pathcol = _pathfilter(pathcol)
