@@ -10,7 +10,7 @@ return some of this data for use in other processes, but for now it's merely a
 quick (and approximate) visual analysis tool.
 """
 
-def nearest(pathcol=None,X=None,i=None,k=4,notecol=None,thumb=False):
+def nearest(X=None,pathcol=None,i=None,k=4,notecol=None,thumb=False):
     if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
         raise TypeError("'pathcol' must be a pandas Series")
     if X is None:

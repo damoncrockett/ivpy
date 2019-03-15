@@ -23,21 +23,21 @@ def _typecheck(**kwargs):
 
     """type checking"""
     if pathcol is not None:
-        if not isinstance(pathcol,(int,pd.Series)):
+        if not isinstance(pathcol,(int,np.int64,pd.Series)):
             raise TypeError("""'pathcol' must be an integer or
                                a pandas Series""")
     if xcol is not None:
-        if not isinstance(xcol,(string_types,int,pd.Series)):
+        if not isinstance(xcol,(string_types,int,np.int64,pd.Series)):
             raise TypeError("'xcol' must be a string, int, or a pandas Series")
     if ycol is not None:
-        if not isinstance(ycol,(string_types,int,pd.Series)):
+        if not isinstance(ycol,(string_types,int,np.int64,pd.Series)):
             raise TypeError("'ycol' must be a string, int, or a pandas Series")
     if facetcol is not None:
-        if not isinstance(facetcol,(string_types,int,pd.Series)):
+        if not isinstance(facetcol,(string_types,int,np.int64,pd.Series)):
             raise TypeError("""'facetcol' must be a string, int, or
                                a pandas Series""")
     if notecol is not None:
-        if not isinstance(notecol,(string_types,int,pd.Series)):
+        if not isinstance(notecol,(string_types,int,np.int64,pd.Series)):
             raise TypeError("""'notecol' must be a string, int, or
                                a pandas Series""")
 
@@ -74,9 +74,9 @@ def _typecheck(**kwargs):
 
     """type checking"""
     if thumb!=False: # can only be false in show()
-        if not isinstance(thumb,int):
+        if not isinstance(thumb,(int,np.int64)):
             raise TypeError("'thumb' must be an integer")
-    if not isinstance(sample,int):
+    if not isinstance(sample,(int,np.int64)):
         raise TypeError("'sample' must be an integer")
     elif sample==True: # necessary bc True counts as int for some reason
         raise TypeError("'sample' must be an integer")
@@ -89,15 +89,15 @@ def _typecheck(**kwargs):
         raise TypeError("'ascending' must be True or False")
     if not any([shape=='square',shape=='circle']):
         raise ValueError("'shape' must be 'circle' or 'square'")
-    if not isinstance(ncols,int):
+    if not isinstance(ncols,(int,np.int64)):
         raise TypeError("'ncols' must be an integer")
     if not any([rounding=='up',rounding=='down']):
         raise ValueError("'rounding' must be 'up' or 'down'")
-    if not isinstance(bins,(int,list,tuple,np.ndarray)):
+    if not isinstance(bins,(int,np.int64,list,tuple,np.ndarray)):
         raise TypeError("'bins' must be an integer or a sequence")
     if not any([coordinates=='cartesian',coordinates=='polar']):
         raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
-    if not isinstance(side,int):
+    if not isinstance(side,(int,np.int64)):
         raise TypeError("'side' must be an integer")
     if xdomain is not None:
         if not isinstance(xdomain,(list,tuple)):
@@ -110,10 +110,10 @@ def _typecheck(**kwargs):
         if not len(ydomain)==2:
             raise ValueError("'xdomain' must be a two-item list or tuple")
     if xbins is not None:
-        if not isinstance(xbins,(np.ndarray,list,tuple,int)):
+        if not isinstance(xbins,(np.ndarray,list,tuple,int,np.int64)):
             raise TypeError("'xbins' must be an integer or a sequence")
     if ybins is not None:
-        if not isinstance(ybins,(np.ndarray,list,tuple,int)):
+        if not isinstance(ybins,(np.ndarray,list,tuple,int,np.int64)):
             raise TypeError("'ybins' must be an integer or a sequence")
     if not isinstance(savedir,string_types):
         raise TypeError("'savedir' must be a directory string")
@@ -146,9 +146,9 @@ def _typecheck(**kwargs):
         raise TypeError("""'method' must be one of 'kmeans', 'hierarchical',
         'affinity','birch','dbscan','minibatch','meanshift', or 'spectral'""")
 
-    if not isinstance(k,int):
+    if not isinstance(k,(int,np.int64)):
         raise TypeError("'k' must be an integer")
-    if not isinstance(i,int):
+    if not isinstance(i,(int,np.int64)):
         raise TypeError("'i' must be an integer")
     if centroids is not None:
         if not isinstance(centroids,(list,tuple,np.ndarray)):
