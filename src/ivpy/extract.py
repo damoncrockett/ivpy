@@ -12,6 +12,12 @@ from scipy.stats import percentileofscore as pct
 from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
 
+from keras.applications import imagenet_utils
+from keras.preprocessing.image import img_to_array
+from keras.preprocessing.image import load_img
+from keras.models import Model
+from keras.applications import ResNet50
+
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
 
@@ -44,17 +50,6 @@ def extract(feature,pathcol=None,aggregate=True,scale=True):
     elif feature=='correlation':
         return _glcm(pathcol,scale,prop='correlation')
     elif feature=='neural':
-        """
-        We import all Keras functions here so that the entire module doesn't
-        depend on the user having a successful TensorFlow and Keras install
-        """
-
-        from keras.applications import imagenet_utils
-        from keras.preprocessing.image import img_to_array
-        from keras.preprocessing.image import load_img
-        from keras.models import Model
-        from keras.applications import ResNet50
-
         return _neural(pathcol)
 
 #------------------------------------------------------------------------------

@@ -72,6 +72,7 @@ def _typecheck(**kwargs):
     i = kwargs.get('i',0)
     centroids = kwargs.get('centroids') # will be None sometimes
     normtype = kwargs.get('normtype','featscale')
+    C = kwargs.get('C',0)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -149,19 +150,18 @@ def _typecheck(**kwargs):
 
     if not isinstance(k,(int,np.int64)):
         raise TypeError("'k' must be an integer")
-    if not isinstance(i,(int,np.int64)):
-        raise TypeError("'i' must be an integer")
+    if not isinstance(i,(int,np.int64,pd.Series,list,tuple,np.ndarray)):
+        raise TypeError("'i' must be an integer or sequence")
     if centroids is not None:
         if not isinstance(centroids,(list,tuple,np.ndarray)):
             raise TypeError("If passed, 'centroids' must be a sequence")
 
-    normtypes = [
-    'featscale','pct'
-    ]
+    normtypes = ['featscale','pct']
 
     if normtype not in normtypes:
-        raise TypeError("""'normtype' must be one of 'featscale',
-        'pct'""")
+        raise TypeError("""'normtype' must be one of 'featscale','pct'""")
+    if not isinstance(C,(int,np.int64,pd.Series,list,tuple,np.ndarray)):
+        raise TypeError("'C' must be an integer or sequence")
 
 def attach(df,pathcol=None):
 

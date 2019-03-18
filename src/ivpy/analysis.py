@@ -17,6 +17,8 @@ def nearest(X=None,pathcol=None,i=None,k=4,notecol=None,thumb=False):
         raise ValueError("Must supply feature matrix 'X'")
     if i is None:
         i = np.random.choice(X.index)
+    if isinstance(i,(pd.Series,list,tuple,np.ndarray)): # can be seq in cut()
+        raise ValueError("Must choose a single 'i' as target")
 
     _typecheck(**locals())
     pathcol = _pathfilter(pathcol)
