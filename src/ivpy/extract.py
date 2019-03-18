@@ -8,14 +8,9 @@ from skimage import color
 from skimage import img_as_ubyte
 from skimage.transform import resize
 from scipy.stats import entropy
+from scipy.stats import percentileofscore as pct
 from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
-
-from keras.applications import imagenet_utils
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import load_img
-from keras.models import Model
-from keras.applications import ResNet50
 
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
@@ -49,6 +44,17 @@ def extract(feature,pathcol=None,aggregate=True,scale=True):
     elif feature=='correlation':
         return _glcm(pathcol,scale,prop='correlation')
     elif feature=='neural':
+        """
+        We import all Keras functions here so that the entire module doesn't
+        depend on the user having a successful TensorFlow and Keras install
+        """
+
+        from keras.applications import imagenet_utils
+        from keras.preprocessing.image import img_to_array
+        from keras.preprocessing.image import load_img
+        from keras.models import Model
+        from keras.applications import ResNet50
+
         return _neural(pathcol)
 
 #------------------------------------------------------------------------------
@@ -97,6 +103,44 @@ def _scale(img):
         return resize(img,(newh,neww))
     else:
         return img
+
+def _featscale(ser):
+    init_min = min(ser[ser.notnull()])
+    ser_adj = ser.map(lambda x:x-init_min)
+    adj_max = max(ser[ser.notnull()]) - init_min
+
+    try:
+        ser_adj = ser_adj.map(lambda x:x/adj_max)
+    except:
+        raise ValueError("Min and max are the same, causing division by zero")
+
+    return ser_adj
+
+def _pct(ser):
+    ser_notnull = ser[ser.notnull()]
+    ser = ser.map(lambda x: pct(ser_notnull,x)/100) # pct returns 0-100
+
+    return ser
+
+def norm(mat, normtype='featscale'):
+    _typecheck(**locals())
+
+    if isinstance(mat,pd.DataFrame):
+        if normtype=='featscale':
+            return mat.apply(_featscale, axis=0)
+        elif normtype=='pct':
+            return mat.apply(_pct, axis=0)
+
+    elif isinstance(mat,pd.Series):
+        if normtype=='featscale':
+            return _featscale(mat)
+        elif normtype=='pct':
+            return _pct(mat)
+
+    elif not isinstance(mat,(pd.DataFrame,pd.Series)):
+        raise TypeError("""Data must be either a pandas DataFrame or Series""")
+
+#------------------------------------------------------------------------------
 
 def _brightness(pathcol,aggregate,scale):
     """Returns either average brightness or 10-bin distribution"""
