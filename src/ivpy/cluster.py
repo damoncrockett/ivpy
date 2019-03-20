@@ -1,9 +1,10 @@
 import pandas as pd
+import numpy as np
 from sklearn.cluster import AffinityPropagation,AgglomerativeClustering,Birch
 from sklearn.cluster import DBSCAN,FeatureAgglomeration,KMeans,MiniBatchKMeans
 from sklearn.cluster import MeanShift,SpectralClustering
 from .data import _typecheck
-import copy
+from six import string_types
 
 #------------------------------------------------------------------------------
 
@@ -20,7 +21,7 @@ def correct(df,clustercol=None):
     global ATTACHED_CLUSTERCOL
     global ATTACHED_CLUSTERFRAME
 
-    ATTACHED_CLUSTERFRAME = copy.deepcopy(df) # deep to avoid change bleed
+    ATTACHED_CLUSTERFRAME = df # no deep copy bc we want df to change
 
     if isinstance(clustercol, string_types):
         ATTACHED_CLUSTERCOL = ATTACHED_CLUSTERFRAME[clustercol]
@@ -31,7 +32,7 @@ def correct(df,clustercol=None):
             ATTACHED_CLUSTERCOL = ATTACHED_CLUSTERFRAME.iloc[:,clustercol]
     elif isinstance(clustercol, pd.Series):
         if clustercol.index.equals(ATTACHED_CLUSTERFRAME.index):
-            ATTACHED_CLUSTERCOL = copy.deepcopy(clustercol)
+            ATTACHED_CLUSTERCOL = clustercol
         else:
             raise ValueError("'clustercol' must have same indices as 'df'")
     else:
@@ -45,7 +46,7 @@ def _clusterfilter(clustercol):
         if ATTACHED_CLUSTERCOL is None:
             raise ValueError("Must call correct() first or supply 'clustercol'")
         else:
-            clustercol = copy.deepcopy(ATTACHED_CLUSTERCOL)
+            clustercol = ATTACHED_CLUSTERCOL
 
     return clustercol
 

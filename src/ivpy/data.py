@@ -44,7 +44,7 @@ def _typecheck(**kwargs):
     """
     plot settings: since None is often not allowable, we default to some
     allowable value instead of to None. This allows us to prevent user-passed
-    None without raising error on default None.
+    None without raising error when the keyword simply isn't passed at all.
     """
     thumb = kwargs.get('thumb',100)
     sample = kwargs.get('sample',100)
@@ -69,7 +69,7 @@ def _typecheck(**kwargs):
     X = kwargs.get('X',pd.DataFrame())
     method = kwargs.get('method','kmeans')
     k = kwargs.get('k',4)
-    i = kwargs.get('i',0)
+    i = kwargs.get('i')
     centroids = kwargs.get('centroids') # will be None sometimes
     normtype = kwargs.get('normtype','featscale')
     C = kwargs.get('C',0)
@@ -150,8 +150,9 @@ def _typecheck(**kwargs):
 
     if not isinstance(k,(int,np.int64)):
         raise TypeError("'k' must be an integer")
-    if not isinstance(i,(int,np.int64,pd.Series,list,tuple,np.ndarray)):
-        raise TypeError("'i' must be an integer or sequence")
+    if i is not None:
+        if not isinstance(i,(int,np.int64,pd.Series,list,tuple,np.ndarray)):
+            raise TypeError("'i' must be an integer or sequence")
     if centroids is not None:
         if not isinstance(centroids,(list,tuple,np.ndarray)):
             raise TypeError("If passed, 'centroids' must be a sequence")
