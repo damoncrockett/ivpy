@@ -3,8 +3,22 @@ import numpy as np
 from sklearn.cluster import AffinityPropagation,AgglomerativeClustering,Birch
 from sklearn.cluster import DBSCAN,FeatureAgglomeration,KMeans,MiniBatchKMeans
 from sklearn.cluster import MeanShift,SpectralClustering
-from .data import _typecheck
+from .data import _typecheck,_pathfilter,_featfilter,int_types,seq_types
 from six import string_types
+from .plot import show
+
+#------------------------------------------------------------------------------
+
+def check_nan(cell):
+    """
+    This function checks whether a single value is NaN. I have no clue why this
+    is not natively possible in pandas.
+    """
+
+    if pd.isnull(pd.Series(cell)[0]):
+        return True
+    else:
+        return False
 
 #------------------------------------------------------------------------------
 
@@ -23,14 +37,14 @@ def correct(df,clustercol=None):
 
     ATTACHED_CLUSTERFRAME = df # no deep copy bc we want df to change
 
-    if isinstance(clustercol, string_types):
+    if isinstance(clustercol,string_types):
         ATTACHED_CLUSTERCOL = ATTACHED_CLUSTERFRAME[clustercol]
-    elif isinstance(clustercol, int):
+    elif isinstance(clustercol,int_types):
         try:
             ATTACHED_CLUSTERCOL = ATTACHED_CLUSTERFRAME[clustercol]
         except:
             ATTACHED_CLUSTERCOL = ATTACHED_CLUSTERFRAME.iloc[:,clustercol]
-    elif isinstance(clustercol, pd.Series):
+    elif isinstance(clustercol,pd.Series):
         if clustercol.index.equals(ATTACHED_CLUSTERFRAME.index):
             ATTACHED_CLUSTERCOL = clustercol
         else:
@@ -54,10 +68,10 @@ def _clusterfilter(clustercol):
 
 def _reassign_i(item,dst,clustercol):
     affiliation = clustercol.loc[item]
-    if affiliation is None:
+    if check_nan(affiliation):
         print("Item at index",str(item),"has no cluster assignment")
-    elif affiliation is not None:
-        clustercol.loc[i] = dst
+    elif not check_nan(affiliation):
+        clustercol.loc[item] = dst
         if dst is None:
             print("Removed",str(item),"from cluster",str(int(affiliation)))
         elif dst is not None:
@@ -94,16 +108,16 @@ def cut(i=None,C=None,clustercol=None):
         raise ValueError("Must supply either 'i' or 'C' or both")
 
     if i is not None:
-        if isinstance(i,(int.np.int64)):
+        if isinstance(i,int_types):
             _reassign_i(i,None,clustercol)
-        elif isinstance(i,(pd.Series,list,tuple,np.ndarray)):
+        elif isinstance(i,seq_types):
             for item in i:
                 _reassign_i(item,None,clustercol)
 
     if C is not None:
-        if isinstance(C,(int,np.int64)):
+        if isinstance(C,int_types):
             _reassign_C(C,None,clustercol)
-        elif isinstance(C,(pd.Series,list,tuple,np.ndarray)):
+        elif isinstance(C,seq_types):
             for clusternum in C:
                 _reassign_C(clusternum,None,clustercol)
 
@@ -113,20 +127,24 @@ def to(i,C,clustercol=None):
     _typecheck(**locals())
     clustercol = _clusterfilter(clustercol)
 
-    if isinstance(C,(pd.Series,list,tuple,np.ndarray)):
+    if isinstance(C,seq_types):
         raise ValueError("Must choose a single destination cluster 'C'")
-    elif isinstance(C,(int,np.int64)):
-        if isinstance(i,(int,np.int64)):
+    elif isinstance(C,int_types):
+        if isinstance(i,int_types):
             _reassign_i(i,C,clustercol)
-        elif isinstance(i,(pd.Series,list,tuple,np.ndarray)):
+        elif isinstance(i,seq_types):
             for item in i:
                 _reassign_i(item,C,clustercol)
+    elif C is None:
+        cut(i)
+
+#------------------------------------------------------------------------------
 
 def merge(*args,clustercol=None):
     _typecheck(**locals())
     clustercol = _clusterfilter(clustercol)
 
-    typelist = [isinstance(item,(int,np.int64)) for item in args]
+    typelist = [isinstance(item,int_types) for item in args]
     if not all(typelist):
         raise TypeError("Arguments passed to 'merge' must be integers")
 
@@ -135,6 +153,100 @@ def merge(*args,clustercol=None):
 
     for arg in to_reassign:
         _reassign_C(arg,dst,clustercol)
+
+#------------------------------------------------------------------------------
+
+def new(*args,clustercol=None):
+    _typecheck(**locals())
+    clustercol = _clusterfilter(clustercol)
+    typelist = [isinstance(item,(list,int_types)) for item in args]
+    if not all(typelist):
+        raise TypeError("""Arguments passed to 'new' must be integers or lists
+        of integers""")
+
+    args = [[item] if not isinstance(item,list) else item for item in args]
+    args = [item for sublist in args for item in sublist]
+    args = list(set(args)) # eliminate repeats
+    typelist = [isinstance(item,int_types) for item in args]
+    if not all(typelist):
+        raise TypeError("""Arguments passed to 'new' must be integers or
+        sequences of integers""")
+
+    extant = [int(item) for item in clustercol.unique() if not check_nan(item)]
+
+    n = 0
+    while n in extant:
+        n+=1
+
+    clustercol.loc[args] = n
+    print(str(len(args)),"items moved to new cluster",str(n))
+
+#------------------------------------------------------------------------------
+
+def swap(i,j,clustercol=None):
+    _typecheck(**locals())
+    clustercol = _clusterfilter(clustercol)
+
+    if isinstance(i,seq_types):
+        affiliation_i = set(clustercol.loc[i])
+        if len(affiliation_i) > 1:
+            raise ValueError("""Indices passed to 'i' must belong to same
+            cluster""")
+    if isinstance(j,seq_types):
+        affiliation_j = set(clustercol.loc[j])
+        if len(affiliation_j) > 1:
+            raise ValueError("""Indices passed to 'j' must belong to same
+            cluster""")
+    try:
+        affiliation_i = int(list(affiliation_i)[0])
+    except:
+        affiliation_i = int(clustercol.loc[i])
+    try:
+        affiliation_j = int(list(affiliation_j)[0])
+    except:
+        affiliation_j = int(clustercol.loc[j])
+
+    if affiliation_i==affiliation_j:
+        raise ValueError("Items belong to same cluster")
+
+    to(i,affiliation_j)
+    to(j,affiliation_i)
+
+#------------------------------------------------------------------------------
+
+def roster(C,clustercol=None,pathcol=None,notecol=None,thumb=False):
+    if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
+        raise TypeError("'pathcol' must be a pandas Series")
+    _typecheck(**locals())
+
+    pathcol = _pathfilter(pathcol)
+    notecol = _featfilter(pathcol,notecol)
+    clustercol = _clusterfilter(clustercol)
+
+    if not isinstance(C,int_types):
+        raise TypeError("Can only pass a single cluster number to 'roster'")
+
+    idxs = clustercol.index[clustercol==C]
+
+    if notecol is None:
+        return show(pathcol=pathcol.loc[idxs],idx=True,thumb=thumb)
+    elif notecol is not None:
+        return show(pathcol=pathcol.loc[idxs],
+                    idx=True,
+                    notecol=notecol.loc[idxs],
+                    thumb=thumb)
+
+#------------------------------------------------------------------------------
+
+def idx(C,clustercol=None):
+    _typecheck(**locals())
+    clustercol = _clusterfilter(clustercol)
+
+    if not isinstance(C,int_types):
+        raise TypeError("Can only pass a single cluster number to 'roster'")
+
+    idxs = clustercol.index[clustercol==C]
+    return list(idxs)
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
