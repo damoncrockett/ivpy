@@ -7,6 +7,11 @@ from six import string_types
 ATTACHED_DATAFRAME = None
 ATTACHED_PATHCOL = None
 
+int_types = (int,np.int8,np.int16,np.int32,np.int64,
+             np.uint8,np.uint16,np.uint32,np.uint64)
+seq_types = (list,tuple,np.ndarray,pd.Series)
+float_types = (float,np.float16,np.float32,np.float64) # currently idle
+
 def _typecheck(**kwargs):
     """
     This function is called before plotting, as a way to control the error
@@ -20,31 +25,37 @@ def _typecheck(**kwargs):
     ycol = kwargs.get('ycol')
     facetcol = kwargs.get('facetcol')
     notecol = kwargs.get('notecol')
+    clustercol = kwargs.get('clustercol')
 
     """type checking"""
     if pathcol is not None:
-        if not isinstance(pathcol,(int,np.int64,pd.Series)):
+        if not isinstance(pathcol,(int_types,pd.Series)):
             raise TypeError("""'pathcol' must be an integer or
                                a pandas Series""")
     if xcol is not None:
-        if not isinstance(xcol,(string_types,int,np.int64,pd.Series)):
+        if not isinstance(xcol,(string_types,int_types,pd.Series)):
             raise TypeError("'xcol' must be a string, int, or a pandas Series")
     if ycol is not None:
-        if not isinstance(ycol,(string_types,int,np.int64,pd.Series)):
+        if not isinstance(ycol,(string_types,int_types,pd.Series)):
             raise TypeError("'ycol' must be a string, int, or a pandas Series")
     if facetcol is not None:
-        if not isinstance(facetcol,(string_types,int,np.int64,pd.Series)):
+        if not isinstance(facetcol,(string_types,int_types,pd.Series)):
             raise TypeError("""'facetcol' must be a string, int, or
                                a pandas Series""")
     if notecol is not None:
-        if not isinstance(notecol,(string_types,int,np.int64,pd.Series)):
+        if not isinstance(notecol,(string_types,int_types,pd.Series)):
             raise TypeError("""'notecol' must be a string, int, or
+                               a pandas Series""")
+    if clustercol is not None:
+        if not isinstance(clustercol,(string_types,int_types,pd.Series)):
+            raise TypeError("""'clustercol' must be a string, int, or
                                a pandas Series""")
 
     """
-    plot settings: since None is often not allowable, we default to some
-    allowable value instead of to None. This allows us to prevent user-passed
-    None without raising error when the keyword simply isn't passed at all.
+    plot settings: We add default values to avoid error when kwarg is not
+    passed. When None is passed as a default value, or the user passes None,
+    the get() call will return None, and then None will have to face the
+    tribunal below. Sometimes it's okay, sometimes not.
     """
     thumb = kwargs.get('thumb',100)
     sample = kwargs.get('sample',100)
@@ -73,12 +84,13 @@ def _typecheck(**kwargs):
     centroids = kwargs.get('centroids') # will be None sometimes
     normtype = kwargs.get('normtype','featscale')
     C = kwargs.get('C',0)
+    j = kwargs.get('j')
 
     """type checking"""
     if thumb!=False: # can only be false in show()
-        if not isinstance(thumb,(int,np.int64)):
+        if not isinstance(thumb,int_types):
             raise TypeError("'thumb' must be an integer")
-    if not isinstance(sample,(int,np.int64)):
+    if not isinstance(sample,int_types):
         raise TypeError("'sample' must be an integer")
     elif sample==True: # necessary bc True counts as int for some reason
         raise TypeError("'sample' must be an integer")
@@ -91,15 +103,15 @@ def _typecheck(**kwargs):
         raise TypeError("'ascending' must be True or False")
     if not any([shape=='square',shape=='circle']):
         raise ValueError("'shape' must be 'circle' or 'square'")
-    if not isinstance(ncols,(int,np.int64)):
+    if not isinstance(ncols,int_types):
         raise TypeError("'ncols' must be an integer")
     if not any([rounding=='up',rounding=='down']):
         raise ValueError("'rounding' must be 'up' or 'down'")
-    if not isinstance(bins,(int,np.int64,list,tuple,np.ndarray)):
+    if not isinstance(bins,(int_types,seq_types)):
         raise TypeError("'bins' must be an integer or a sequence")
     if not any([coordinates=='cartesian',coordinates=='polar']):
         raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
-    if not isinstance(side,(int,np.int64)):
+    if not isinstance(side,int_types):
         raise TypeError("'side' must be an integer")
     if xdomain is not None:
         if not isinstance(xdomain,(list,tuple)):
@@ -112,10 +124,10 @@ def _typecheck(**kwargs):
         if not len(ydomain)==2:
             raise ValueError("'xdomain' must be a two-item list or tuple")
     if xbins is not None:
-        if not isinstance(xbins,(np.ndarray,list,tuple,int,np.int64)):
+        if not isinstance(xbins,(int_types,seq_types)):
             raise TypeError("'xbins' must be an integer or a sequence")
     if ybins is not None:
-        if not isinstance(ybins,(np.ndarray,list,tuple,int,np.int64)):
+        if not isinstance(ybins,(int_types,seq_types)):
             raise TypeError("'ybins' must be an integer or a sequence")
     if not isinstance(savedir,string_types):
         raise TypeError("'savedir' must be a directory string")
@@ -148,21 +160,25 @@ def _typecheck(**kwargs):
         raise TypeError("""'method' must be one of 'kmeans', 'hierarchical',
         'affinity','birch','dbscan','minibatch','meanshift', or 'spectral'""")
 
-    if not isinstance(k,(int,np.int64)):
+    if not isinstance(k,int_types):
         raise TypeError("'k' must be an integer")
     if i is not None:
-        if not isinstance(i,(int,np.int64,pd.Series,list,tuple,np.ndarray)):
+        if not isinstance(i,(int_types,seq_types)):
             raise TypeError("'i' must be an integer or sequence")
     if centroids is not None:
-        if not isinstance(centroids,(list,tuple,np.ndarray)):
+        if not isinstance(centroids,seq_types):
             raise TypeError("If passed, 'centroids' must be a sequence")
 
     normtypes = ['featscale','pct']
 
     if normtype not in normtypes:
         raise TypeError("""'normtype' must be one of 'featscale','pct'""")
-    if not isinstance(C,(int,np.int64,pd.Series,list,tuple,np.ndarray)):
-        raise TypeError("'C' must be an integer or sequence")
+    if C is not None:
+        if not isinstance(C,(int_types,seq_types)):
+            raise TypeError("'C' must be an integer or sequence")
+    if j is not None:
+        if not isinstance(j,(int_types,seq_types)):
+            raise TypeError("'j' must be an integer or sequence")
 
 def attach(df,pathcol=None):
 
@@ -177,14 +193,14 @@ def attach(df,pathcol=None):
 
     ATTACHED_DATAFRAME = copy.deepcopy(df) # deep to avoid change bleed
 
-    if isinstance(pathcol, string_types):
+    if isinstance(pathcol,string_types):
         ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
-    elif isinstance(pathcol, int):
+    elif isinstance(pathcol,int_types):
         try:
             ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
         except:
             ATTACHED_PATHCOL = ATTACHED_DATAFRAME.iloc[:,pathcol]
-    elif isinstance(pathcol, pd.Series):
+    elif isinstance(pathcol,pd.Series):
         if pathcol.index.equals(ATTACHED_DATAFRAME.index):
             ATTACHED_PATHCOL = copy.deepcopy(pathcol)
         else:
