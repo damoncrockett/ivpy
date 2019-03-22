@@ -3,23 +3,16 @@ import numpy as np
 from sklearn.cluster import AffinityPropagation,AgglomerativeClustering,Birch
 from sklearn.cluster import DBSCAN,FeatureAgglomeration,KMeans,MiniBatchKMeans
 from sklearn.cluster import MeanShift,SpectralClustering
-from .data import _typecheck,_pathfilter,_featfilter,int_types,seq_types
 from six import string_types
 from .plot import show
+from .data import _typecheck,
+                  _pathfilter,
+                  _featfilter,
+                  int_types,
+                  seq_types,
+                  check_nan
 
 #------------------------------------------------------------------------------
-
-def check_nan(cell):
-    """
-    This function checks whether a single value is NaN. I have no clue why this
-    is not natively possible in pandas.
-    """
-
-    if pd.isnull(pd.Series(cell)[0]):
-        return True
-    else:
-        return False
-
 #------------------------------------------------------------------------------
 
 ATTACHED_CLUSTERFRAME = None

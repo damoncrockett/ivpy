@@ -475,3 +475,14 @@ def _facet(**kwargs):
         facetlist.append(tmp)
 
     return facetlist
+
+def check_nan(cell):
+    """
+    This function checks whether a single value is NaN. I have no clue why this
+    is not natively possible in pandas.
+    """
+
+    if pd.isnull(pd.Series(cell)[0]):
+        return True
+    else:
+        return False
