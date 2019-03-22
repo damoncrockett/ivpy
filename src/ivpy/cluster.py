@@ -252,6 +252,36 @@ def idx(C,clustercol=None):
 #------------------------------------------------------------------------------
 
 """
+usage:
+
+df['centrality'] = centrality(X)
+montage(xcol='centrality',facetcol='cluster',shape='circle')
+"""
+
+def _centrality(centroid,pt):
+    return np.linalg.norm(centroid-pt)
+
+def centrality(X,clustercol=None):
+    _typecheck(**locals())
+    clustercol = _clusterfilter(clustercol)
+
+    distcol = pd.Series(index=clustercol.index)
+    clusternums = list(clustercol.value_counts().index)
+    for clusternum in clusternums:
+        idxs = clustercol.index[clustercol==clusternum]
+        tmp = X.loc[idxs]
+        centroid = np.array(tmp.apply(np.mean))
+        for idx in idxs:
+            row = np.array(tmp.loc[idx])
+            dst = _centrality(centroid,row)
+            distcol.loc[idx] = dst
+
+    return distcol
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+"""
 Note: it's possible that if the user passes an X whose index doesn't match
 the pathcol they'll ultimately use to plot, you could have an indexing issue.
 Not really any way to prevent that, but it's unlikely to happen because X will
