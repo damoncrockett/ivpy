@@ -200,7 +200,7 @@ def histogram(xcol,
               coordinates='cartesian',
               facetcol=None,
               notecol=None,
-              xlabel=None):
+              xaxis=None):
 
     """
     Cartesian or polar histogram of images
@@ -221,7 +221,7 @@ def histogram(xcol,
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
-        xlabel (Boolean) --- whether to include bin labels
+        xaxis (Boolean) --- whether to include bin labels
     """
 
     _typecheck(**locals())
@@ -258,8 +258,8 @@ def scatter(xcol,
             coordinates='cartesian',
             facetcol=None,
             notecol=None,
-            xlabel=None,
-            ylabel=None):
+            xaxis=None,
+            yaxis=None):
 
     """
     Cartesian or polar scatterplot of images
@@ -280,8 +280,8 @@ def scatter(xcol,
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
-        xlabel (Boolean) --- whether to include x-axis labels
-        ylabel (Boolean) --- whether to include y-axis labels
+        xaxis (Boolean) --- whether to include x-axis labels
+        yaxis (Boolean) --- whether to include y-axis labels
     """
 
     _typecheck(**locals())
