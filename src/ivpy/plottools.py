@@ -353,6 +353,7 @@ def _paste(pathcol,thumb,idx,canvas,coords,
         except:
             im = _placeholder(thumb)
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        im = im.convert('RGBA') # often unnecessary but for rotation and glyphs
         if idx==True: # idx labels placed after thumbnail
             _idx(im,i)
         if notecol is not None:
@@ -362,11 +363,9 @@ def _paste(pathcol,thumb,idx,canvas,coords,
             phi = phis[counter]
             if 90 < phi < 270:
                 phi = phi + 180 # avoids upside down images
-            im = im.convert('RGBA') # need alpha layer to make rotation work
             im = im.rotate(phi,expand=1) # expand so it won't clip the corners
-            canvas.paste(im,coords[counter],im) # im is a mask for itself
-        else:
-            canvas.paste(im,coords[counter])
+
+        canvas.paste(im,coords[counter],im) # im is a mask for itself
 
 def _round(x,direction='down'):
     if direction=='down':

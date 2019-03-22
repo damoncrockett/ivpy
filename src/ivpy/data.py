@@ -453,7 +453,7 @@ def _facet(**kwargs):
             ydomain = (ycol.min(),ycol.max())
 
     facetlist = []
-    for val in facetcol.unique():
+    for val in facetcol.unique(): # this includes NaN but NaNs probably removed
         tmp = copy.deepcopy(kwargdict)
         tmp['facettitle'] = str(val)
 

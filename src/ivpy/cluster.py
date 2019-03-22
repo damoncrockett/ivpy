@@ -66,37 +66,37 @@ def _clusterfilter(clustercol):
 
 #------------------------------------------------------------------------------
 
-def _reassign_i(item,dst,clustercol):
-    affiliation = clustercol.loc[item]
-    if check_nan(affiliation):
+def _reassign_i(item,reassignment,clustercol):
+    assignment = clustercol.loc[item]
+    if check_nan(assignment):
         print("Item at index",str(item),"has no cluster assignment")
-    elif not check_nan(affiliation):
-        clustercol.loc[item] = dst
-        if dst is None:
-            print("Removed",str(item),"from cluster",str(int(affiliation)))
-        elif dst is not None:
+    elif not check_nan(assignment):
+        clustercol.loc[item] = reassignment
+        if reassignment is None:
+            print("Removed",str(item),"from cluster",str(int(assignment)))
+        elif reassignment is not None:
             print("Moved",
                   str(item),
                   "from cluster",
-                  str(int(affiliation)),
+                  str(int(assignment)),
                   "to cluster",
-                  str(dst))
+                  str(reassignment))
 
-def _reassign_C(clusternum,dst,clustercol):
+def _reassign_C(clusternum,reassignment,clustercol):
     n = len(clustercol[clustercol==clusternum])
     if n==0:
         print("Cluster",str(clusternum),"is empty")
     elif n > 0:
-        clustercol[clustercol==clusternum] = dst
-        if dst is None:
+        clustercol[clustercol==clusternum] = reassignment
+        if reassignment is None:
             print("Removed all",str(n),"members of cluster",str(clusternum))
-        elif dst is not None:
+        elif reassignment is not None:
             print("Moved all",
                   str(n),
                   "members of cluster",
                   str(clusternum),
                   "to cluster",
-                  str(dst))
+                  str(reassignment))
 
 #------------------------------------------------------------------------------
 
@@ -148,11 +148,11 @@ def merge(*args,clustercol=None):
     if not all(typelist):
         raise TypeError("Arguments passed to 'merge' must be integers")
 
-    dst = args[-1]
+    reassignment = args[-1]
     to_reassign = args[:-1]
 
     for arg in to_reassign:
-        _reassign_C(arg,dst,clustercol)
+        _reassign_C(arg,reassignment,clustercol)
 
 #------------------------------------------------------------------------------
 
@@ -174,12 +174,12 @@ def new(*args,clustercol=None):
 
     extant = [int(item) for item in clustercol.unique() if not check_nan(item)]
 
-    n = 0
-    while n in extant:
-        n+=1
+    clusternum = 0
+    while clusternum in extant:
+        clusternum+=1
 
-    clustercol.loc[args] = n
-    print(str(len(args)),"items moved to new cluster",str(n))
+    clustercol.loc[args] = clusternum
+    print(str(len(args)),"items moved to new cluster",str(clusternum))
 
 #------------------------------------------------------------------------------
 
@@ -188,29 +188,29 @@ def swap(i,j,clustercol=None):
     clustercol = _clusterfilter(clustercol)
 
     if isinstance(i,seq_types):
-        affiliation_i = set(clustercol.loc[i])
-        if len(affiliation_i) > 1:
+        assignment_i = set(clustercol.loc[i])
+        if len(assignment_i) > 1:
             raise ValueError("""Indices passed to 'i' must belong to same
             cluster""")
     if isinstance(j,seq_types):
-        affiliation_j = set(clustercol.loc[j])
-        if len(affiliation_j) > 1:
+        assignment_j = set(clustercol.loc[j])
+        if len(assignment_j) > 1:
             raise ValueError("""Indices passed to 'j' must belong to same
             cluster""")
     try:
-        affiliation_i = int(list(affiliation_i)[0])
+        assignment_i = int(list(assignment_i)[0])
     except:
-        affiliation_i = int(clustercol.loc[i])
+        assignment_i = int(clustercol.loc[i])
     try:
-        affiliation_j = int(list(affiliation_j)[0])
+        assignment_j = int(list(assignment_j)[0])
     except:
-        affiliation_j = int(clustercol.loc[j])
+        assignment_j = int(clustercol.loc[j])
 
-    if affiliation_i==affiliation_j:
+    if assignment_i==assignment_j:
         raise ValueError("Items belong to same cluster")
 
-    to(i,affiliation_j)
-    to(j,affiliation_i)
+    to(i,assignment_j)
+    to(j,assignment_i)
 
 #------------------------------------------------------------------------------
 
@@ -273,8 +273,8 @@ def centrality(X,clustercol=None):
         centroid = np.array(tmp.apply(np.mean))
         for idx in idxs:
             row = np.array(tmp.loc[idx])
-            dst = _centrality(centroid,row)
-            distcol.loc[idx] = dst
+            dist = _centrality(centroid,row)
+            distcol.loc[idx] = dist
 
     return distcol
 
