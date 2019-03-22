@@ -73,7 +73,7 @@ def _histogram(xcol=None,
                coordinates=None,
                facetcol=None,
                facettitle=None,
-               xlabel=None,
+               xaxis=None,
                notecol=None):
 
     """
@@ -138,11 +138,11 @@ def _histogram(xcol=None,
                    notecol=notecol)
 
     if facetcol is None:
-        if xlabel is not None:
+        if xaxis is not None:
             canvas = _mat(canvas,
                           bg=bg,
                           facetcol=facetcol,
-                          xlabel=xlabel,
+                          xaxis=xaxis,
                           plottype='histogram')
 
         return canvas
@@ -150,7 +150,7 @@ def _histogram(xcol=None,
     elif facetcol is not None:
         matdict = {'bg':bg,
                    'facettitle':facettitle,
-                   'xlabel':xlabel,
+                   'xaxis':xaxis,
                    'plottype':'histogram'}
 
         return canvas,matdict
@@ -170,8 +170,8 @@ def _scatter(xcol=None,
              coordinates=None,
              facetcol=None,
              facettitle=None,
-             xlabel=None,
-             ylabel=None,
+             xaxis=None,
+             yaxis=None,
              notecol=None):
 
     if xbins is not None:
@@ -192,20 +192,20 @@ def _scatter(xcol=None,
         _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis,notecol=notecol)
 
     if facetcol is None:
-        if any([xlabel is not None,ylabel is not None]):
+        if any([xaxis is not None,yaxis is not None]):
             canvas = _mat(canvas,
                           bg=bg,
                           facetcol=facetcol,
-                          xlabel=xlabel,
-                          ylabel=ylabel)
+                          xaxis=xaxis,
+                          yaxis=yaxis)
 
         return canvas
 
     elif facetcol is not None:
         matdict = {'bg':bg,
                    'facettitle':facettitle,
-                   'xlabel':xlabel,
-                   'ylabel':ylabel}
+                   'xaxis':xaxis,
+                   'yaxis':yaxis}
 
         return canvas,matdict
 
@@ -390,14 +390,14 @@ def _outline(im):
 def _mat(im,
          bg=None,
          facettitle=None,
-         xlabel=None,
-         ylabel=None,
+         xaxis=None,
+         yaxis=None,
          plottype=None):
 
     if im.width!=im.height:
         im = _premat(im,bg,plottype)
-        im = _outline(im)
-    else:
+
+    if plottype!='montage': # bc montages do not have axis boundaries
         im = _outline(im)
 
     # we want a 9-letter word to span half the plot width
@@ -416,8 +416,8 @@ def _mat(im,
     mat.paste(im,(halfwdiff,halfhdiff))
     draw = ImageDraw.Draw(mat)
 
-    if any([xlabel is not None, ylabel is not None]):
-        mat = _axislabels(mat,draw,xlabel,ylabel)
+    if any([xaxis is not None, yaxis is not None]):
+        mat = _axes(mat,draw,xaxis,yaxis)
 
     if facettitle is not None:
         text = facettitle
@@ -439,7 +439,7 @@ def _premat(im,bg,plottype):
 
     return premat
 
-def _axislabels(mat,draw,xlabel,ylabel):
+def _axes(mat,draw,xaxis,yaxis):
     return None
 
 def _progressBar(pathcol):
