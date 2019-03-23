@@ -63,7 +63,7 @@ def _draw_radar(df,aes,savedir,border,mat,side):
         glyph = radar(polypts,side,fill=c)
 
         if border:
-            glyph = _border(glyph)
+            glyph = _border(glyph,width=round(side/200))
         if mat:
             glyph = _mat(glyph)
 
@@ -131,8 +131,12 @@ def radar(polypts,
         draw.polygon(list(coords), fill=fill, outline=outline)
 
     if crosshairs:
-        draw.line([(halfside,0),(halfside,side)], fill=crosshairfill, width=1)
-        draw.line([(0,halfside),(side,halfside)], fill=crosshairfill, width=1)
+        draw.line([(halfside,0),(halfside,side)],
+                  fill=crosshairfill, 
+                  width=round(side/200))
+        draw.line([(0,halfside),(side,halfside)],
+                  fill=crosshairfill,
+                  width=round(side/200))
 
     return im
 
