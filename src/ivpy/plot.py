@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
-from .plottools import _montage,_histogram,_scatter,_mat,_outline
+from .plottools import _border,_montage,_histogram,_scatter,_plotmat
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ def compose(*args,**kwargs):
         rounding (str) --- when ncols is None, round ncols 'up' or 'down'
         thumb (int) --- pixel value for thumbnail side
         bg (color) --- background color
-        outline (Boolean) --- whether to outline plots
+        border (Boolean) --- whether to border plots
 
         Currently, an issue needing fixing is that when 'compose' is called
         by a plotting function, the user cannot directly control facet size.
@@ -91,7 +91,7 @@ def compose(*args,**kwargs):
     rounding = kwargs.get('rounding', 'up')
     ncols = kwargs.get('ncols',_round(sqrt(n),direction=rounding))
     bg = kwargs.get('bg', '#4a4a4a')
-    outline = kwargs.get('outline',False)
+    border = kwargs.get('border',False)
 
     _typecheck(**locals()) # won't typecheck args
 
@@ -110,8 +110,8 @@ def compose(*args,**kwargs):
             canvas = args[i]
             tmp = deepcopy(canvas) # copy because thumbnail always inplace
             tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            if outline==True:
-                tmp = _outline(tmp)
+            if border==True:
+                tmp = _border(tmp)
             metacanvas.paste(tmp,coords[i])
 
     # if called by plotting function
@@ -125,7 +125,7 @@ def compose(*args,**kwargs):
             canvas = arg[0]
             matdict = arg[1]
             canvas.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            mattedfacets.append(_mat(canvas,**matdict))
+            mattedfacets.append(_plotmat(canvas,**matdict))
 
         side = mattedfacets[0].width # any side in the list is fine, all same
         w,h,coords = _gridcoords(n,ncols,side)

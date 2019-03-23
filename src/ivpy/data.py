@@ -76,7 +76,7 @@ def _typecheck(**kwargs):
     feature = kwargs.get('feature','brightness')
     aggregate = kwargs.get('aggregate',True)
     scale = kwargs.get('scale',True)
-    outline = kwargs.get('outline',False)
+    outline = kwargs.get('outline')
     X = kwargs.get('X',pd.DataFrame())
     method = kwargs.get('method','kmeans')
     k = kwargs.get('k',4)
@@ -85,6 +85,8 @@ def _typecheck(**kwargs):
     normtype = kwargs.get('normtype','featscale')
     C = kwargs.get('C',0)
     j = kwargs.get('j')
+    fill = kwargs.get('fill')
+    glyphtype = kwargs.get('glyphtype','radar')
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -146,8 +148,9 @@ def _typecheck(**kwargs):
         raise TypeError("'aggregate' must be True or False")
     if not isinstance(scale,bool):
         raise TypeError("'scale' must be True or False")
-    if not isinstance(outline,bool):
-        raise TypeError("'outline' must be True or False")
+    if outline is not None:
+        if not isinstance(outline,(tuple,string_types)):
+            raise TypeError("'outline' must be an RGB triplet or a string")
     if not isinstance(X,(pd.Series,pd.DataFrame)):
         raise TypeError("Feature matrix X must be a pandas Series or DataFrame")
 
@@ -179,6 +182,14 @@ def _typecheck(**kwargs):
     if j is not None:
         if not isinstance(j,(int_types,seq_types)):
             raise TypeError("'j' must be an integer or sequence")
+    if fill is not None:
+        if not isinstance(fill,(tuple,string_types)):
+            raise TypeError("'fill' must be an RGB triplet or a string")
+
+    glyphtypes = ['radar']
+
+    if glyphtype not in glyphtypes:
+        raise TypeError("""'glyphtype' must be one of 'radar'""")
 
 def attach(df,pathcol=None):
 

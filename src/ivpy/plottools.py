@@ -5,7 +5,25 @@ import numpy as np
 from math import ceil
 from six import string_types
 
-from .data import _bin
+from .data import _bin, _typecheck
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+def _border(im,fill='black',width=1):
+    _typecheck(**locals())
+
+    draw = ImageDraw.Draw(im)
+    # n.b.: lines are drawn under and to the right of the starting pixel
+    draw.line([(0,0),(im.width,0)],fill=fill,width=width)
+    draw.line([(im.width-1,0),(im.width-1,im.height)],fill=fill,width=width)
+    draw.line([(im.width,im.height-1),(0,im.height-1)],fill=fill,width=width)
+    draw.line([(0,im.height),(0,0)],fill=fill,width=width)
+
+    return im
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 """
 The underscored plotting functions take a raft of kwargs, most of which are idle
@@ -58,6 +76,8 @@ def _montage(pathcol=None,
                    'plottype':'montage'}
 
         return canvas,matdict
+
+#-------------------------------------------------------------------------------
 
 def _histogram(xcol=None,
                xdomain=None,
@@ -139,7 +159,7 @@ def _histogram(xcol=None,
 
     if facetcol is None:
         if xaxis is not None:
-            canvas = _mat(canvas,
+            canvas = _plotmat(canvas,
                           bg=bg,
                           facetcol=facetcol,
                           xaxis=xaxis,
@@ -154,6 +174,8 @@ def _histogram(xcol=None,
                    'plottype':'histogram'}
 
         return canvas,matdict
+
+#-------------------------------------------------------------------------------
 
 def _scatter(xcol=None,
              ycol=None,
@@ -193,7 +215,7 @@ def _scatter(xcol=None,
 
     if facetcol is None:
         if any([xaxis is not None,yaxis is not None]):
-            canvas = _mat(canvas,
+            canvas = _plotmat(canvas,
                           bg=bg,
                           facetcol=facetcol,
                           xaxis=xaxis,
@@ -208,6 +230,9 @@ def _scatter(xcol=None,
                    'yaxis':yaxis}
 
         return canvas,matdict
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
@@ -377,17 +402,7 @@ def _getsizes(args):
     plotsizes = [item.size for item in args]
     return [item for sublist in plotsizes for item in sublist]
 
-def _outline(im):
-    draw = ImageDraw.Draw(im)
-    # n.b.: lines are drawn under and to the right of the starting pixel
-    draw.line([(0,0),(im.width,0)],'#dddddd',width=1)
-    draw.line([(im.width-1,0),(im.width-1,im.height)],'#dddddd',width=1)
-    draw.line([(im.width,im.height-1),(0,im.height-1)],'#dddddd',width=1)
-    draw.line([(0,im.height),(0,0)],'#dddddd',width=1)
-
-    return im
-
-def _mat(im,
+def _plotmat(im,
          bg=None,
          facettitle=None,
          xaxis=None,
@@ -398,7 +413,7 @@ def _mat(im,
         im = _premat(im,bg,plottype)
 
     if plottype!='montage': # bc montages do not have axis boundaries
-        im = _outline(im)
+        im = _border(im)
 
     # we want a 9-letter word to span half the plot width
     pt = 0
