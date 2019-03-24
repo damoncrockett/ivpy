@@ -7,6 +7,14 @@ from .plottools import _border
 #-------------------------------------------------------------------------------
 
 def draw_glyphs(df,aes,savedir,glyphtype='radar',border=True,mat=True,side=200):
+    """
+    User-called glyph drawing function. Really just a wrapper for all of the
+    constituent glyph drawing functions, of which there is currently only one.
+    Currently requires 'df' as an argument, although I will probably make it
+    possible to use the attached dataframe as well. That will require a new
+    'filter' function, '_framefilter'.
+    """
+
     _typecheck(**locals())
 
     if glyphtype=='radar':
@@ -60,7 +68,7 @@ def _draw_radar(df,aes,savedir,border,mat,side):
         except:
             c = colors[0]
 
-        glyph = radar(polypts,side,fill=c)
+        glyph = _radar(polypts,side,fill=c)
 
         if border:
             glyph = _border(glyph,width=round(side/200))
@@ -104,18 +112,23 @@ def _draw_radar(df,aes,savedir,border,mat,side):
 
         glyph.save(savedir + str(basename_i) + ".png")
 
-def radar(polypts,
+def _radar(polypts,
           side=200,
           fill=(0,0,128),
-          outline='black', # not user-settable when called by draw_glyphs
-          crosshairs=True, # not user-settable when called by draw_glyphs
-          crosshairfill='black'): # not user-settable when called by draw_glyphs
+          outline='black',
+          crosshairs=True,
+          crosshairfill='black'):
+
+    """
+    Function where the basic radar glyph is drawn. Not meant to be user-called,
+    though that could change as the glyph module develops.
+    """
 
     im = Image.new('RGBA', (side,side), None)
     draw = ImageDraw.Draw(im)
     adj = int( side / 20 )
     halfside = int( side / 2 )
-    coords = radarcoords(polypts,halfside)
+    coords = _radarcoords(polypts,halfside)
 
     if len(coords)==1:
         x,y = list(coords)[0][0], list(coords)[0][1]
@@ -132,7 +145,7 @@ def radar(polypts,
 
     if crosshairs:
         draw.line([(halfside,0),(halfside,side)],
-                  fill=crosshairfill, 
+                  fill=crosshairfill,
                   width=round(side/200))
         draw.line([(0,halfside),(side,halfside)],
                   fill=crosshairfill,
@@ -140,20 +153,20 @@ def radar(polypts,
 
     return im
 
-def radarcoords(polypts,halfside):
+def _radarcoords(polypts,halfside):
     assert len(polypts) > 2
 
-    left = _radarcoords(False,False,polypts[0],halfside)
-    top = _radarcoords(True,False,polypts[1],halfside)
-    right = _radarcoords(False,True,1-polypts[2],halfside)
-    bottom = _radarcoords(True,True,polypts[3],halfside)
+    left = _radar_axis_position(False,False,polypts[0],halfside)
+    top = _radar_axis_position(True,False,polypts[1],halfside)
+    right = _radar_axis_position(False,True,1-polypts[2],halfside)
+    bottom = _radar_axis_position(True,True,polypts[3],halfside)
 
     coords = pd.Series([left,top,right,bottom])
     coords = coords[coords.notnull()]
 
     return coords
 
-def _radarcoords(vert,pos,val,halfside):
+def _radar_axis_position(vert,pos,val,halfside):
     if check_nan(val):
         return None
     elif not check_nan(val):

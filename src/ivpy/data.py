@@ -87,6 +87,10 @@ def _typecheck(**kwargs):
     j = kwargs.get('j')
     fill = kwargs.get('fill')
     glyphtype = kwargs.get('glyphtype','radar')
+    df = kwargs.get('df',pd.DataFrame())
+    aes = kwargs.get('aes',{})
+    border = kwargs.get('border',True)
+    mat = kwargs.get('mat',True)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -190,6 +194,14 @@ def _typecheck(**kwargs):
 
     if glyphtype not in glyphtypes:
         raise TypeError("""'glyphtype' must be one of 'radar'""")
+    if not isinstance(df,pd.DataFrame):
+        raise TypeError("'df' must be a pandas DataFrame")
+    if not isinstance(aes,dict):
+        raise TypeError("'aes' must be a dictionary")
+    if not isinstance(border,bool):
+        raise TypeError("'border' must be True or False")
+    if not isinstance(mat,bool):
+        raise TypeError("'mat' must be True or False")
 
 def attach(df,pathcol=None):
 
