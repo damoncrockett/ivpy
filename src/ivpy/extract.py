@@ -117,22 +117,22 @@ def _pct(ser):
 
     return ser
 
-def norm(mat, normtype='featscale'):
+def norm(arr, normtype='featscale'):
     _typecheck(**locals())
 
-    if isinstance(mat,pd.DataFrame):
+    if isinstance(arr,pd.DataFrame):
         if normtype=='featscale':
-            return mat.apply(_featscale, axis=0)
+            return arr.apply(_featscale, axis=0)
         elif normtype=='pct':
-            return mat.apply(_pct, axis=0)
+            return arr.apply(_pct, axis=0)
 
-    elif isinstance(mat,pd.Series):
+    elif isinstance(arr,pd.Series):
         if normtype=='featscale':
-            return _featscale(mat)
+            return _featscale(arr)
         elif normtype=='pct':
-            return _pct(mat)
+            return _pct(arr)
 
-    elif not isinstance(mat,(pd.DataFrame,pd.Series)):
+    elif not isinstance(arr,(pd.DataFrame,pd.Series)):
         raise TypeError("""Data must be either a pandas DataFrame or Series""")
 
 #------------------------------------------------------------------------------
