@@ -2,6 +2,7 @@ import pandas as pd
 from PIL import Image,ImageDraw
 from .data import check_nan, _typecheck
 from .plottools import _border
+import os
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -16,6 +17,11 @@ def draw_glyphs(df,aes,savedir,glyphtype='radar',border=True,mat=True,side=200):
     """
 
     _typecheck(**locals())
+
+    try:
+        os.mkdir(savedir)
+    except:
+        pass
 
     if glyphtype=='radar':
         _draw_radar(df,aes,savedir,border,mat,side)
