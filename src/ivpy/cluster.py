@@ -5,12 +5,8 @@ from sklearn.cluster import DBSCAN,FeatureAgglomeration,KMeans,MiniBatchKMeans
 from sklearn.cluster import MeanShift,SpectralClustering
 from six import string_types
 from .plot import show
-from .data import _typecheck,
-                  _pathfilter,
-                  _featfilter,
-                  int_types,
-                  seq_types,
-                  check_nan
+from .data import _typecheck,_pathfilter,_featfilter,int_types,seq_types
+from .data import check_nan
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
