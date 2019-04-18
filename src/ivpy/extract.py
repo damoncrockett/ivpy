@@ -62,7 +62,10 @@ def _iterextract(pathcol,outstructure,breaks,pct,func,**kwargs):
             pctstring = pct[breaks.index(counter)]
             print(pctstring,end=" ")
         imgpath = pathcol.loc[i]
-        outstructure.loc[i] = func(imgpath,**kwargs)
+        try:
+            outstructure.loc[i] = func(imgpath,**kwargs)
+        except:
+            outstructure.loc[i] = None
     return outstructure
 
 #------------------------------------------------------------------------------
