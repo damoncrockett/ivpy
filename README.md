@@ -55,6 +55,8 @@ umap-learn (for umap embedding, found [here](https://github.com/lmcinnes/umap))
 
 annoy (install nose first) (for nearest neighbor search)
 
+image_slicer (for using utils.shatter)
+
 ### Install & Run
 
 0. Clone this repo:
