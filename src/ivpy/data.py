@@ -214,7 +214,7 @@ def attach(df,pathcol=None):
     global ATTACHED_DATAFRAME
     global ATTACHED_PATHCOL
 
-    ATTACHED_DATAFRAME = copy.deepcopy(df) # deep to avoid change bleed
+    ATTACHED_DATAFRAME = df
 
     if isinstance(pathcol,string_types):
         ATTACHED_PATHCOL = ATTACHED_DATAFRAME[pathcol]
@@ -225,7 +225,7 @@ def attach(df,pathcol=None):
             ATTACHED_PATHCOL = ATTACHED_DATAFRAME.iloc[:,pathcol]
     elif isinstance(pathcol,pd.Series):
         if pathcol.index.equals(ATTACHED_DATAFRAME.index):
-            ATTACHED_PATHCOL = copy.deepcopy(pathcol)
+            ATTACHED_PATHCOL = pathcol
         else:
             raise ValueError("""'pathcol' must have same indices as 'df'""")
     else:
