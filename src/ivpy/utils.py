@@ -39,13 +39,15 @@ def resize(savedir=None,pathcol=None,thumb=256):
         return pathcol_resized
 
 def _resize(impath,savedir,thumb):
-    im = Image.open(impath)
-    im.thumbnail((thumb,thumb),Image.ANTIALIAS)
-    basename = os.path.basename(impath)
-    savestring = savedir + "/" + basename
-    im.save(savestring)
-    return savestring
-
+    try:
+        im = Image.open(impath)
+        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        basename = os.path.basename(impath)
+        savestring = savedir + "/" + basename
+        im.save(savestring)
+        return savestring
+    except:
+        return None
 #-------------------------------------------------------------------------------
 
 def shatter(savedir=None,pathcol=None,k=64):
