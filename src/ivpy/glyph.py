@@ -24,7 +24,9 @@ def draw_glyphs(df,aes,savedir,glyphtype='radar',border=True,mat=True,side=200):
         pass
 
     if glyphtype=='radar':
-        _draw_radar(df,aes,savedir,border,mat,side)
+        gpaths = _draw_radar(df,aes,savedir,border,mat,side)
+
+    return gpaths
 
 #-------------------------------------------------------------------------------
 
@@ -50,6 +52,7 @@ def _draw_radar(df,aes,savedir,border,mat,side):
     topflag = aes.get('topflag')
     rightflag = aes.get('rightflag')
 
+    gpaths = []
     for i in df.index:
         try:
             basename_i = df[basename].loc[i]
@@ -116,7 +119,11 @@ def _draw_radar(df,aes,savedir,border,mat,side):
                     fill = 'black'
                 glyph = add_flag(glyph,'right',outline=None,fill=fill)
 
-        glyph.save(savedir + str(basename_i) + ".png")
+        savestring = savedir + str(basename_i) + ".png"
+        glyph.save(savestring)
+        gpaths.append(savestring)
+
+    return gpaths
 
 def _radar(polypts,
           side=200,
