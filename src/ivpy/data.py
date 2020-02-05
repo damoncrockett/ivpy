@@ -91,6 +91,7 @@ def _typecheck(**kwargs):
     aes = kwargs.get('aes',{})
     border = kwargs.get('border',True)
     mat = kwargs.get('mat',True)
+    verbose = kwargs.get('versbose',False)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -141,12 +142,12 @@ def _typecheck(**kwargs):
     feats = [
     'brightness','saturation','hue','entropy','std','contrast',
     'dissimilarity','homogeneity','ASM','energy','correlation',
-    'neural','tags'
+    'neural','tags','dmax'
     ]
     if feature not in feats:
         raise ValueError("""'feature' must be one of 'brightness',
         'saturation','hue','entropy','std','contrast','dissimilarity',
-        'homogeneity','ASM','energy','correlation','neural', or 'tags'""")
+        'homogeneity','ASM','energy','correlation','neural', 'tags', or 'dmax'""")
 
     if not isinstance(aggregate,bool):
         raise TypeError("'aggregate' must be True or False")
@@ -202,6 +203,8 @@ def _typecheck(**kwargs):
         raise TypeError("'border' must be True or False")
     if not isinstance(mat,bool):
         raise TypeError("'mat' must be True or False")
+    if not isinstance(verbose,bool):
+        raise TypeError("'aggregate' must be True or False")
 
 def attach(df,pathcol=None):
 
@@ -476,7 +479,7 @@ def _facet(**kwargs):
             ydomain = (ycol.min(),ycol.max())
 
     facetlist = []
-    for val in facetcol.unique(): # this includes NaN but NaNs probably removed
+    for val in np.sort(facetcol.unique()): # incl NaN but NaNs probably removed
         tmp = copy.deepcopy(kwargdict)
         tmp['facettitle'] = str(val)
 

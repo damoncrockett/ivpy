@@ -3,6 +3,7 @@ from PIL import Image,ImageDraw
 from .data import check_nan, _typecheck
 from .plottools import _border
 import os
+import numpy as np
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -32,6 +33,11 @@ def draw_glyphs(df,aes,savedir,glyphtype='radar',border=True,mat=True,side=200):
 
 def _draw_radar(df,aes,savedir,border,mat,side):
     colors = ['#286dc0','#8da843','#bd5319','#63aaff','#ffbf00'] # ivpy colors
+
+    for i in range(5):
+        c = tuple(np.random.choice(range(256),3))
+        colors.append(c)
+
     color = aes.get('color')
     if color is not None:
         numcolors = len(df[color].value_counts().keys())

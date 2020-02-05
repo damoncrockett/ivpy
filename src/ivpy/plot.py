@@ -16,7 +16,7 @@ def show(pathcol=None,
          thumb=False,
          sample=False,
          idx=False,
-         bg='#4a4a4a',
+         bg='#212121',
          ascending=False):
 
     """
@@ -90,7 +90,7 @@ def compose(*args,**kwargs):
     n = len(args)
     rounding = kwargs.get('rounding', 'up')
     ncols = kwargs.get('ncols',_round(sqrt(n),direction=rounding))
-    bg = kwargs.get('bg', '#4a4a4a')
+    bg = kwargs.get('bg', '#212121')
     border = kwargs.get('border',False)
 
     _typecheck(**locals()) # won't typecheck args
@@ -145,7 +145,7 @@ def montage(pathcol=None,
             thumb=100,
             sample=False,
             idx=False,
-            bg='#4a4a4a',
+            bg='#212121',
             shape='square',
             ascending=False,
             facetcol=None,
@@ -196,7 +196,7 @@ def histogram(xcol,
               sample=False,
               idx=False,
               ascending=False,
-              bg="#4a4a4a",
+              bg="#212121",
               coordinates='cartesian',
               facetcol=None,
               notecol=None,
@@ -254,7 +254,7 @@ def scatter(xcol,
             ydomain=None,
             xbins=None,
             ybins=None,
-            bg="#4a4a4a",
+            bg="#212121",
             coordinates='cartesian',
             facetcol=None,
             notecol=None,

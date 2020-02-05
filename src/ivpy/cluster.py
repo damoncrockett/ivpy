@@ -232,7 +232,7 @@ def idx(C,clustercol=None):
     clustercol = _clusterfilter(clustercol)
 
     if not isinstance(C,int_types):
-        raise TypeError("Can only pass a single cluster number to 'roster'")
+        raise TypeError("Can only pass a single cluster number to 'idx'")
 
     idxs = clustercol.index[clustercol==C]
     return list(idxs)

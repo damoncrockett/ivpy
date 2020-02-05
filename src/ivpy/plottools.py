@@ -10,9 +10,8 @@ from .data import _bin, _typecheck
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-def _border(im,fill='black',width=1):
+def _border(im,fill='#4a4a4a',width=1):
     _typecheck(**locals())
-
     draw = ImageDraw.Draw(im)
     # n.b.: lines are drawn under and to the right of the starting pixel
     draw.line([(0,0),(im.width,0)],fill=fill,width=width)
@@ -412,8 +411,8 @@ def _plotmat(im,
     if im.width!=im.height:
         im = _premat(im,bg,plottype)
 
-    if plottype!='montage': # bc montages do not have axis boundaries
-        im = _border(im)
+    #if plottype!='montage': # bc montages do not have axis boundaries
+    #    im = _border(im)
 
     # we want a 9-letter word to span half the plot width
     pt = 0
