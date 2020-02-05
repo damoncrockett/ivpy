@@ -23,48 +23,56 @@ from .plottools import _progressBar
 
 #------------------------------------------------------------------------------
 
-def extract(feature,pathcol=None,aggregate=True,scale=True):
+def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
     _typecheck(**locals())
     pathcol = _pathfilter(pathcol)
 
     if feature=='brightness':
-        return _brightness(pathcol,aggregate,scale)
+        return _brightness(pathcol,aggregate,scale,verbose)
     elif feature=='saturation':
-        return _saturation(pathcol,aggregate,scale)
+        return _saturation(pathcol,aggregate,scale,verbose)
     elif feature=='hue':
-        return _hue(pathcol,aggregate,scale)
+        return _hue(pathcol,aggregate,scale,verbose)
     elif feature=='entropy':
-        return _entropy_brightness(pathcol,scale)
+        return _entropy_brightness(pathcol,scale,verbose)
     elif feature=='std':
-        return _std_brightness(pathcol,scale)
+        return _std_brightness(pathcol,scale,verbose)
     elif feature=='contrast':
-        return _glcm(pathcol,scale,prop='contrast')
+        return _glcm(pathcol,scale,verbose,prop='contrast')
     elif feature=='dissimilarity':
-        return _glcm(pathcol,scale,prop='dissimilarity')
+        return _glcm(pathcol,scale,verbose,prop='dissimilarity')
     elif feature=='homogeneity':
-        return _glcm(pathcol,scale,prop='homogeneity')
+        return _glcm(pathcol,scale,verbose,prop='homogeneity')
     elif feature=='ASM':
-        return _glcm(pathcol,scale,prop='ASM')
+        return _glcm(pathcol,scale,verbose,prop='ASM')
     elif feature=='energy':
-        return _glcm(pathcol,scale,prop='energy')
+        return _glcm(pathcol,scale,verbose,prop='energy')
     elif feature=='correlation':
-        return _glcm(pathcol,scale,prop='correlation')
+        return _glcm(pathcol,scale,verbose,prop='correlation')
     elif feature=='neural':
-        return _neural(pathcol)
+        return _neural(pathcol,verbose)
+    elif feature=='dmax':
+        return _dmax(pathcol,scale,verbose)
 
 #------------------------------------------------------------------------------
 
-def _iterextract(pathcol,outstructure,breaks,pct,func,**kwargs):
+def _iterextract(pathcol,outstructure,breaks,pct,func,verbose=False,**kwargs):
+    n = len(pathcol)
     counter=-1
     for i in pathcol.index:
         counter+=1
-        if counter in breaks:
-            pctstring = pct[breaks.index(counter)]
-            print(pctstring,end=" ")
         imgpath = pathcol.loc[i]
+
+        if verbose==False:
+            if counter in breaks:
+                pctstring = pct[breaks.index(counter)]
+                print(pctstring,end=" ")
+        elif verbose==True:
+            print(str(counter),'of',str(n),imgpath)
         try:
             outstructure.loc[i] = func(imgpath,**kwargs)
-        except:
+        except Exception as e:
+            print(e)
             outstructure.loc[i] = None
     return outstructure
 
@@ -140,7 +148,7 @@ def norm(arr, normtype='featscale'):
 
 #------------------------------------------------------------------------------
 
-def _brightness(pathcol,aggregate,scale):
+def _brightness(pathcol,aggregate,scale,verbose):
     """Returns either average brightness or 10-bin distribution"""
 
     if isinstance(pathcol,string_types):
@@ -153,15 +161,15 @@ def _brightness(pathcol,aggregate,scale):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,
+            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,verbose,
                                 scale=scale,axis=2)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,
+            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,verbose,
                                 scale=scale,axis=2)
 
-def _saturation(pathcol,aggregate,scale):
+def _saturation(pathcol,aggregate,scale,verbose):
     """Returns either average saturation or 10-bin distribution"""
 
     if isinstance(pathcol,string_types):
@@ -174,12 +182,12 @@ def _saturation(pathcol,aggregate,scale):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,
+            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,verbose,
                                 scale=scale,axis=1)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,
+            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,verbose,
                                 scale=scale,axis=1)
 
 def _hsv_mean(imgpath,scale,axis):
@@ -191,7 +199,7 @@ def _hsv_10bin(imgpath,scale,axis):
     binedges = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0] # fixed bin edges
     return np.histogram(img[:,:,axis],bins=binedges)[0]
 
-def _hue(pathcol,aggregate,scale):
+def _hue(pathcol,aggregate,scale,verbose):
     """Returns either huepeak or 8-bin perceptual hue distribution"""
 
     if isinstance(pathcol,string_types):
@@ -204,7 +212,8 @@ def _hue(pathcol,aggregate,scale):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
             featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_huepeak,scale=scale)
+            return _iterextract(pathcol,featcol,breaks,pct,_huepeak,verbose,
+                                scale=scale)
 
         elif aggregate==False:
             featdf = pd.DataFrame(index=pathcol.index,
@@ -212,7 +221,7 @@ def _hue(pathcol,aggregate,scale):
                                            "cyan","blue","purple","magenta",
                                            "highred"])
 
-            featdf = _iterextract(pathcol,featdf,breaks,pct,_hue_8bin,
+            featdf = _iterextract(pathcol,featdf,breaks,pct,_hue_8bin,verbose,
                                   scale=scale)
             featdf['red'] = featdf.red + featdf.highred
             del featdf['highred']
@@ -256,7 +265,7 @@ def _hue_8bin(imgpath,scale):
 
 #------------------------------------------------------------------------------
 
-def _entropy_brightness(pathcol,scale):
+def _entropy_brightness(pathcol,scale,verbose):
     """Returns brightness entropy"""
 
     if isinstance(pathcol,string_types):
@@ -265,14 +274,14 @@ def _entropy_brightness(pathcol,scale):
     elif isinstance(pathcol,pd.Series):
         featcol = pd.Series(index=pathcol.index)
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,featcol,breaks,pct,_entropy,
+        return _iterextract(pathcol,featcol,breaks,pct,_entropy,verbose,
                             scale=scale,axis=2)
 
 def _entropy(imgpath,scale,axis=None):
     img = _imgprocess(imgpath,scale)
     return entropy(np.histogram(img[:,:,axis],bins=10)[0])
 
-def _std_brightness(pathcol,scale):
+def _std_brightness(pathcol,scale,verbose):
     """Returns standard deviation of brightness"""
 
     if isinstance(pathcol,string_types):
@@ -281,7 +290,7 @@ def _std_brightness(pathcol,scale):
     elif isinstance(pathcol,pd.Series):
         featcol = pd.Series(index=pathcol.index)
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,featcol,breaks,pct,_std,
+        return _iterextract(pathcol,featcol,breaks,pct,_std,verbose,
                             scale=scale,axis=2)
 
 def _std(imgpath,scale,axis=None):
@@ -290,7 +299,7 @@ def _std(imgpath,scale,axis=None):
 
 #------------------------------------------------------------------------------
 
-def _glcm(pathcol,scale,prop):
+def _glcm(pathcol,scale,verbose,prop):
     """Returns gray-level co-occurrence matrix property"""
 
     if isinstance(pathcol,string_types):
@@ -299,7 +308,7 @@ def _glcm(pathcol,scale,prop):
     elif isinstance(pathcol,pd.Series):
        featcol = pd.Series(index=pathcol.index)
        breaks,pct = _progressBar(pathcol)
-       return _iterextract(pathcol,featcol,breaks,pct,_greycoprops,
+       return _iterextract(pathcol,featcol,breaks,pct,_greycoprops,verbose,
                            scale=scale,prop=prop)
 
 def _greycoprops(imgpath,scale,prop):
@@ -314,7 +323,7 @@ def _greycoprops(imgpath,scale,prop):
 
 #------------------------------------------------------------------------------
 
-def _neural(pathcol):
+def _neural(pathcol,verbose):
     """Returns ResNet50 penultimate vector"""
 
     preprocess = imagenet_utils.preprocess_input
@@ -329,7 +338,7 @@ def _neural(pathcol):
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         featdf = pd.DataFrame(index=pathcol.index,columns=range(2048))
-        featdf = _iterextract(pathcol,featdf,breaks,pct,_featvector,
+        featdf = _iterextract(pathcol,featdf,breaks,pct,_featvector,verbose,
                               preprocess=preprocess,
                               model=model)
         return featdf
@@ -341,3 +350,91 @@ def _featvector(imgpath,preprocess,model):
     image = np.expand_dims(image,axis=0)
     image = preprocess(image)
     return model.predict(image)[0]
+
+#------------------------------------------------------------------------------
+
+def _dmax(pathcol,scale,verbose):
+    """Returns brightness at 'dmax'; used for measuring photo fading"""
+
+    if isinstance(pathcol,string_types):
+        return _dmax_convolution(pathcol,scale)
+
+    elif isinstance(pathcol,pd.Series):
+        breaks,pct = _progressBar(pathcol)
+        featdf = pd.DataFrame(index=pathcol.index,columns=['dmax','dmin','contrast'])
+
+        return _iterextract(pathcol,featdf,breaks,pct,_dmax_convolution,verbose,
+                            scale=scale)
+
+def _dmax_convolution(imgpath,scale):
+    img = color.rgb2gray(imread(imgpath))
+    if scale==True:
+        img = _scale(img)
+
+    nrows,ncols = img.shape[0],img.shape[1]
+
+    valdict = {}
+
+    for i in range(nrows):
+        for j in range(ncols):
+            pixel = (i,j)
+            neighborhood = neighbors(pixel)
+            neighborhood = [item for item in neighborhood if all([item[0]>-1,
+                                                                  item[1]>-1,
+                                                                  item[0]<nrows,
+                                                                  item[1]<ncols])]
+            vals = [img[item[0]][item[1]] for item in neighborhood]
+            valdict[pixel] = np.mean(vals)
+
+    minpx = min(valdict,key=valdict.get)
+    maxpx = max(valdict,key=valdict.get)
+    dmin = valdict[maxpx] # bc silver density inverts brightness
+    dmax = valdict[minpx] # bc silver density inverts brightness
+
+    return dmax,dmin,dmin-dmax # can modify to return other stuff if necessary
+
+def neighbors(pixel):
+    i = pixel[0]
+    j = pixel[1]
+
+    neighborhood = [
+        (i,j),
+        (i-1,j),
+        (i-2,j),
+        (i-3,j),
+        (i+1,j),
+        (i+2,j),
+        (i+3,j),
+        (i,j-1),
+        (i,j-2),
+        (i,j-3),
+        (i,j+1),
+        (i,j+2),
+        (i,j+3),
+        (i-1,j-1),
+        (i-2,j-1),
+        (i-3,j-1),
+        (i+1,j-1),
+        (i+2,j-1),
+        (i+3,j-1),
+        (i-1,j+1),
+        (i-2,j+1),
+        (i-3,j+1),
+        (i+1,j+1),
+        (i+2,j+1),
+        (i+3,j+1),
+        (i+1,j-2),
+        (i+2,j-2),
+        (i-1,j-2),
+        (i-2,j-2),
+        (i+1,j+2),
+        (i+2,j+2),
+        (i-1,j+2),
+        (i-2,j+2),
+        (i-1,j-3),
+        (i+1,j-3),
+        (i-1,j+3),
+        (i+1,j+3),
+    ]
+
+    return neighborhood
