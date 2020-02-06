@@ -8,12 +8,12 @@ from .data import _typecheck
 
 def pca(X,**kwargs):
     _typecheck(**locals())
-    xy = PCA(n_components=2,**kwargs).fit_transform(X)
+    xy = PCA(**kwargs).fit_transform(X)
     return pd.DataFrame(xy,index=X.index,columns=['x','y'])
 
 def tsne(X,**kwargs):
     _typecheck(**locals())
-    xy = TSNE(n_components=2,**kwargs).fit_transform(X)
+    xy = TSNE(**kwargs).fit_transform(X)
     return pd.DataFrame(xy,index=X.index,columns=['x','y'])
 
 def umap(X,**kwargs):
