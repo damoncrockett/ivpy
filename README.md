@@ -73,32 +73,52 @@ The basic functionality, including everything in the tutorial notebooks, will wo
 
 For feature extraction / dimension reduction, you'll need to install these additional dependencies (I recommend this install order as well):
 
+
 scipy
+
 scikit-image
+
 scikit-learn
+
 tensorflow
+
 h5py
+
 keras
+
 umap-learn
+
+
 
 For nearest neighbor search, you'll need:
 
 nose
+
 annoy
+
 
 For slicing images (utils.shatter):
 
 image_slicer
 
+
 ### Basic Functionality Working Setup
 
 As of March 4, 2021, the following setup will successfully run the tutorial notebooks:
 
+
 macOS Catalina 10.15.7
+
 Python 3.6.5
+
 pip 9.0.3
+
 numpy 1.19.5
+
 jupyter 1.0.0
+
 pandas 1.1.5
+
 Pillow 8.1.1
+
 
