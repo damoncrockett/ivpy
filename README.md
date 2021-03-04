@@ -30,9 +30,13 @@ note: this will create a virtual environment directory called 'myEnv' inside wha
 3. Install requirements:
 
 `$ pip3 install numpy`
+
 `$ pip3 install jupyter`
+
 `$ pip3 install pandas`
+
 `$ pip3 install Pillow`
+
 
 4. Optional (if you want to use my custom jupyter theme): Create .jupyter/custom/ in your home folder, and copy ivpy/style/custom.css there
 
