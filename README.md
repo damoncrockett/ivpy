@@ -57,6 +57,7 @@ The above sequence will enable you to run the tutorial notebooks. If you start y
 `sys.path.append("/Users/damoncrockett/ivpy/src/")` (You'll need to change this to reflect the path on your machine)
 
 `from ivpy import attach,show,compose,montage,histogram,scatter` (or whichever functions you want)
+
 `from ivpy import *` (more concise but less explicit, and perhaps a potential for namespace conflicts)
 
 
