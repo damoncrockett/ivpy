@@ -51,8 +51,8 @@ def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
         return _glcm(pathcol,scale,verbose,prop='correlation')
     elif feature=='neural':
         return _neural(pathcol,verbose)
-    elif feature=='dmax':
-        return _dmax(pathcol,scale,verbose)
+    elif feature=='condition':
+        return _condition(pathcol,scale,verbose)
 
 #------------------------------------------------------------------------------
 
@@ -353,27 +353,31 @@ def _featvector(imgpath,preprocess,model):
 
 #------------------------------------------------------------------------------
 
-def _dmax(pathcol,scale,verbose):
-    """Returns brightness at 'dmax'; used for measuring photo fading"""
+def _condition(pathcol,scale,verbose):
+    """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
+       used for measuring photo fading and yellowing"""
 
     if isinstance(pathcol,string_types):
-        return _dmax_convolution(pathcol,scale)
+        return _condition_convolution(pathcol,scale)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        featdf = pd.DataFrame(index=pathcol.index,columns=['dmax','dmin','contrast'])
+        featdf = pd.DataFrame(index=pathcol.index,
+                              columns=['dmax','dmin','contrast','satdmin'])
 
-        return _iterextract(pathcol,featdf,breaks,pct,_dmax_convolution,verbose,
-                            scale=scale)
+        return _iterextract(pathcol,featdf,breaks,pct,_condition_convolution,
+                            verbose,scale=scale)
 
-def _dmax_convolution(imgpath,scale):
-    img = color.rgb2gray(imread(imgpath))
+def _condition_convolution(imgpath,scale):
+    img = color.rgb2hsv(imread(imgpath))
+
     if scale==True:
         img = _scale(img)
 
     nrows,ncols = img.shape[0],img.shape[1]
 
     valdict = {}
+    satdict = {}
 
     for i in range(nrows):
         for j in range(ncols):
@@ -383,16 +387,27 @@ def _dmax_convolution(imgpath,scale):
                                                                   item[1]>-1,
                                                                   item[0]<nrows,
                                                                   item[1]<ncols])]
-            vals = [img[item[0]][item[1]] for item in neighborhood]
-            valdict[pixel] = np.mean(vals)
 
+            # at each pixel in hood, grab brightness and saturation
+            vals = [img[item[0]][item[1]][2] for item in neighborhood]
+            sats = [img[item[0]][item[1]][1] for item in neighborhood]
+            valdict[pixel] = np.mean(vals)
+            satdict[pixel] = np.mean(sats)
+
+    # the pixel locations of min brightness (minpx) and max brightness (maxpx)
     minpx = min(valdict,key=valdict.get)
     maxpx = max(valdict,key=valdict.get)
+
+    # the actual brightness values at those pixels
     dmin = valdict[maxpx] # bc silver density inverts brightness
     dmax = valdict[minpx] # bc silver density inverts brightness
 
-    return dmax,dmin,dmin-dmax # can modify to return other stuff if necessary
+    # saturation at max brightness
+    satdmin = satdict[maxpx]
 
+    return dmax,dmin,dmin-dmax,satdmin
+
+# eventually will make patch size user-selectable
 def neighbors(pixel):
     i = pixel[0]
     j = pixel[1]

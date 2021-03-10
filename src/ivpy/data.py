@@ -142,12 +142,13 @@ def _typecheck(**kwargs):
     feats = [
     'brightness','saturation','hue','entropy','std','contrast',
     'dissimilarity','homogeneity','ASM','energy','correlation',
-    'neural','tags','dmax'
+    'neural','tags','condition'
     ]
     if feature not in feats:
         raise ValueError("""'feature' must be one of 'brightness',
         'saturation','hue','entropy','std','contrast','dissimilarity',
-        'homogeneity','ASM','energy','correlation','neural', 'tags', or 'dmax'""")
+        'homogeneity','ASM','energy','correlation','neural', 'tags',
+        or 'condition'""")
 
     if not isinstance(aggregate,bool):
         raise TypeError("'aggregate' must be True or False")
