@@ -4,6 +4,7 @@ from numpy import repeat,sqrt,arange,radians,cos,sin
 import numpy as np
 from math import ceil
 from six import string_types
+import requests
 
 from .data import _bin, _typecheck
 
@@ -373,7 +374,11 @@ def _paste(pathcol,thumb,idx,canvas,coords,
     for i in pathcol.index:
         counter+=1
         try:
-            im = Image.open(pathcol.loc[i])
+            if pathcol.loc[i].startswith(("http://", "https://")):
+              response = requests.get(pathcol.loc[i], stream=True)
+              im = Image.open(response.raw)
+            else:
+              im = Image.open(pathcol.loc[i])
         except:
             im = _placeholder(thumb)
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
