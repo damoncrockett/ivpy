@@ -58,7 +58,7 @@ def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
 
 def _iterextract(pathcol,outstructure,breaks,pct,func,verbose=False,**kwargs):
     n = len(pathcol)
-    counter=-1
+    counter=0
     for i in pathcol.index:
         counter+=1
         imgpath = pathcol.loc[i]
