@@ -8,7 +8,12 @@ import numpy as np
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-def draw_glyphs(df,aes,savedir,glyphtype='radar',border=True,mat=True,side=200):
+def draw_glyphs(df,aes,savedir,
+                glyphtype='radar',
+                border=True,
+                mat=True,
+                crosshairs=True,
+                side=200):
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -25,13 +30,13 @@ def draw_glyphs(df,aes,savedir,glyphtype='radar',border=True,mat=True,side=200):
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,border,mat,side)
+        gpaths = _draw_radar(df,aes,savedir,border,mat,crosshairs,side)
 
     return gpaths
 
 #-------------------------------------------------------------------------------
 
-def _draw_radar(df,aes,savedir,border,mat,side):
+def _draw_radar(df,aes,savedir,border,mat,crosshairs,side):
     colors = ['#286dc0','#8da843','#bd5319','#63aaff','#ffbf00'] # ivpy colors
 
     for i in range(5):
@@ -83,7 +88,7 @@ def _draw_radar(df,aes,savedir,border,mat,side):
         except:
             c = colors[0]
 
-        glyph = _radar(polypts,side,fill=c)
+        glyph = _radar(polypts,crosshairs,side,fill=c)
 
         if border:
             glyph = _border(glyph,width=round(side/200))
@@ -131,11 +136,10 @@ def _draw_radar(df,aes,savedir,border,mat,side):
 
     return gpaths
 
-def _radar(polypts,
+def _radar(polypts,crosshairs,
           side=200,
           fill=(0,0,128),
           outline='black',
-          crosshairs=True,
           crosshairfill='black'):
 
     """

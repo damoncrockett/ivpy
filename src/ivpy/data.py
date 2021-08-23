@@ -91,7 +91,8 @@ def _typecheck(**kwargs):
     aes = kwargs.get('aes',{})
     border = kwargs.get('border',True)
     mat = kwargs.get('mat',True)
-    verbose = kwargs.get('versbose',False)
+    verbose = kwargs.get('verbose',False)
+    crosshairs = kwargs.get('crosshairs',True)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -206,6 +207,8 @@ def _typecheck(**kwargs):
         raise TypeError("'mat' must be True or False")
     if not isinstance(verbose,bool):
         raise TypeError("'aggregate' must be True or False")
+    if not isinstance(crosshairs,bool):
+        raise TypeError("'crosshairs' must be True or False")
 
 def attach(df,pathcol=None):
 
