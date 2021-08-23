@@ -10,7 +10,7 @@ ATTACHED_PATHCOL = None
 int_types = (int,np.int8,np.int16,np.int32,np.int64,
              np.uint8,np.uint16,np.uint32,np.uint64)
 seq_types = (list,tuple,np.ndarray,pd.Series)
-float_types = (float,np.float16,np.float32,np.float64) # currently idle
+float_types = (float,np.float16,np.float32,np.float64)
 
 def _typecheck(**kwargs):
     """
@@ -93,6 +93,7 @@ def _typecheck(**kwargs):
     mat = kwargs.get('mat',True)
     verbose = kwargs.get('verbose',False)
     crosshairs = kwargs.get('crosshairs',True)
+    alpha = kwargs.get('alpha',1.0)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -209,6 +210,10 @@ def _typecheck(**kwargs):
         raise TypeError("'aggregate' must be True or False")
     if not isinstance(crosshairs,bool):
         raise TypeError("'crosshairs' must be True or False")
+    if not isinstance(alpha,(int_types,float_types)):
+        raise TypeError("'alpha' must be a number between 0 and 1")
+    if not all([alpha <= 1, alpha >= 0]):
+        raise TypeError("'alpha' must be a number between 0 and 1")
 
 def attach(df,pathcol=None):
 

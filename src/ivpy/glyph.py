@@ -13,7 +13,8 @@ def draw_glyphs(df,aes,savedir,
                 border=True,
                 mat=True,
                 crosshairs=True,
-                side=200):
+                side=200,
+                alpha=1.0):
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -30,24 +31,29 @@ def draw_glyphs(df,aes,savedir,
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,border,mat,crosshairs,side)
+        gpaths = _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha)
 
     return gpaths
 
 #-------------------------------------------------------------------------------
 
-def _draw_radar(df,aes,savedir,border,mat,crosshairs,side):
-    colors = ['#286dc0','#8da843','#bd5319','#63aaff','#ffbf00'] # ivpy colors
+def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
 
-    for i in range(5):
-        c = tuple(np.random.choice(range(256),3))
-        colors.append(c)
+    alphargb = int(alpha*255)
+
+    colors = [(40,109,192,alphargb),
+              (141,168,67,alphargb),
+              (189,83,25,alphargb),
+              (99,170,255,alphargb),
+              (255,191,0,alphargb),
+              (58,14,88,alphargb),
+              (201,240,127,alphargb)]
 
     color = aes.get('color')
     if color is not None:
         numcolors = len(df[color].value_counts().keys())
         if numcolors > len(colors):
-            raise ValueError("Number of color categories cannot exceed 5")
+            raise ValueError("Number of color categories cannot exceed 7")
         else:
             keys = list(df[color].value_counts().keys())
             vals = colors[:len(keys)]
@@ -81,14 +87,16 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side):
 
         try:
             colorval = df[color].loc[i]
-            if not check_nan(colorval):
-                c = cmap[colorval]
+            if colorval is None:
+                c = (51,51,51,alphargb)
             elif check_nan(colorval): # for NaN values in color column
-                c = 'hsl(0,0%,20%)'
+                c = (51,51,51,alphargb)
+            elif not check_nan(colorval):
+                c = cmap[colorval]
         except:
             c = colors[0]
 
-        glyph = _radar(polypts,crosshairs,side,fill=c)
+        glyph = _radar(polypts,crosshairs,c,side)
 
         if border:
             glyph = _border(glyph,width=round(side/200))
@@ -136,9 +144,8 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side):
 
     return gpaths
 
-def _radar(polypts,crosshairs,
+def _radar(polypts,crosshairs,fill,
           side=200,
-          fill=(0,0,128),
           outline='black',
           crosshairfill='black'):
 
