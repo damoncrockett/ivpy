@@ -146,8 +146,8 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
 
 def _radar(polypts,crosshairs,fill,
           side=200,
-          outline='black',
-          crosshairfill='black'):
+          outline='lightgrey',
+          crosshairfill='grey'):
 
     """
     Function where the basic radar glyph is drawn. Not meant to be user-called,

@@ -337,11 +337,11 @@ def _idx(im,i):
 
     draw.rectangle(
         [(pos,pos),(pos+fontWidth,pos+fontHeight)],
-        fill='#282828',
+        fill='white',
         outline=None
     )
 
-    draw.text((pos,pos),text,font=font,fill='#efefef')
+    draw.text((pos,pos),text,font=font,fill='black')
 
 def _annote(im,note):
     draw = ImageDraw.Draw(im)
@@ -353,11 +353,11 @@ def _annote(im,note):
 
     draw.rectangle(
         [(0,pos),(fontWidth,imHeight)],
-        fill='#282828',
+        fill='white',
         outline=None
     )
 
-    draw.text((0,pos),text,font=font,fill='#efefef')
+    draw.text((0,pos),text,font=font,fill='black')
 
 def _placeholder(thumb):
     im = Image.new('RGB',(thumb,thumb),'#969696')
