@@ -56,8 +56,11 @@ def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
 
 #------------------------------------------------------------------------------
 
-def _iterextract(pathcol,outstructure,breaks,pct,func,verbose=False,**kwargs):
+def _iterextract(pathcol,cols,breaks,pct,func,verbose=False,**kwargs):
+
     n = len(pathcol)
+    ncols = len(cols)
+    dictlist = []
     counter=0
     for i in pathcol.index:
         counter+=1
@@ -69,11 +72,30 @@ def _iterextract(pathcol,outstructure,breaks,pct,func,verbose=False,**kwargs):
                 print(pctstring,end=" ")
         elif verbose==True:
             print(str(counter),'of',str(n),imgpath)
+
         try:
-            outstructure.loc[i] = func(imgpath,**kwargs)
+            vals = func(imgpath,**kwargs)
+            if ncols > 1:
+                d = dict(zip(cols,vals))
+            else:
+                d = vals
+
         except Exception as e:
             print(e)
-            outstructure.loc[i] = None
+            vals = [None] * ncols
+            if ncols > 1:
+                d = dict(zip(cols,vals))
+            else:
+                d = vals
+
+        dictlist.append(d)
+
+    if ncols > 1:
+        outstructure = pd.DataFrame.from_dict(dictlist)
+        outstructure.index = pathcol.index
+    else:
+        outstructure = pd.Series(dictlist,index=pathcol.index)
+
     return outstructure
 
 #------------------------------------------------------------------------------
@@ -160,13 +182,13 @@ def _brightness(pathcol,aggregate,scale,verbose):
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
-            featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,verbose,
+            cols = [0]
+            return _iterextract(pathcol,cols,breaks,pct,_hsv_mean,verbose,
                                 scale=scale,axis=2)
 
         elif aggregate==False:
-            featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,verbose,
+            cols = list(range(10))
+            return _iterextract(pathcol,cols,breaks,pct,_hsv_10bin,verbose,
                                 scale=scale,axis=2)
 
 def _saturation(pathcol,aggregate,scale,verbose):
@@ -181,13 +203,13 @@ def _saturation(pathcol,aggregate,scale,verbose):
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
-            featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_hsv_mean,verbose,
+            cols = [0]
+            return _iterextract(pathcol,cols,breaks,pct,_hsv_mean,verbose,
                                 scale=scale,axis=1)
 
         elif aggregate==False:
-            featdf = pd.DataFrame(index=pathcol.index,columns=range(10))
-            return _iterextract(pathcol,featdf,breaks,pct,_hsv_10bin,verbose,
+            cols = list(range(10))
+            return _iterextract(pathcol,cols,breaks,pct,_hsv_10bin,verbose,
                                 scale=scale,axis=1)
 
 def _hsv_mean(imgpath,scale,axis):
@@ -211,18 +233,17 @@ def _hue(pathcol,aggregate,scale,verbose):
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         if aggregate==True:
-            featcol = pd.Series(index=pathcol.index)
-            return _iterextract(pathcol,featcol,breaks,pct,_huepeak,verbose,
+            cols = [0]
+            return _iterextract(pathcol,cols,breaks,pct,_huepeak,verbose,
                                 scale=scale)
 
         elif aggregate==False:
-            featdf = pd.DataFrame(index=pathcol.index,
-                                  columns=["red","orange","yellow","green",
-                                           "cyan","blue","purple","magenta",
-                                           "highred"])
+            cols = ["red","orange","yellow","green","cyan","blue","purple",
+                    "magenta","highred"]
 
-            featdf = _iterextract(pathcol,featdf,breaks,pct,_hue_8bin,verbose,
+            featdf = _iterextract(pathcol,cols,breaks,pct,_hue_8bin,verbose,
                                   scale=scale)
+
             featdf['red'] = featdf.red + featdf.highred
             del featdf['highred']
 
@@ -272,9 +293,9 @@ def _entropy_brightness(pathcol,scale,verbose):
         return _entropy(pathcol,scale,axis=2)
 
     elif isinstance(pathcol,pd.Series):
-        featcol = pd.Series(index=pathcol.index)
+        cols = [0]
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,featcol,breaks,pct,_entropy,verbose,
+        return _iterextract(pathcol,cols,breaks,pct,_entropy,verbose,
                             scale=scale,axis=2)
 
 def _entropy(imgpath,scale,axis=None):
@@ -288,9 +309,9 @@ def _std_brightness(pathcol,scale,verbose):
         return _std(pathcol,scale,axis=2)
 
     elif isinstance(pathcol,pd.Series):
-        featcol = pd.Series(index=pathcol.index)
+        cols = [0]
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,featcol,breaks,pct,_std,verbose,
+        return _iterextract(pathcol,cols,breaks,pct,_std,verbose,
                             scale=scale,axis=2)
 
 def _std(imgpath,scale,axis=None):
@@ -306,9 +327,9 @@ def _glcm(pathcol,scale,verbose,prop):
        return _greycoprops(pathcol,scale,prop)
 
     elif isinstance(pathcol,pd.Series):
-       featcol = pd.Series(index=pathcol.index)
+       cols = [0]
        breaks,pct = _progressBar(pathcol)
-       return _iterextract(pathcol,featcol,breaks,pct,_greycoprops,verbose,
+       return _iterextract(pathcol,cols,breaks,pct,_greycoprops,verbose,
                            scale=scale,prop=prop)
 
 def _greycoprops(imgpath,scale,prop):
@@ -337,8 +358,8 @@ def _neural(pathcol,verbose):
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        featdf = pd.DataFrame(index=pathcol.index,columns=range(2048))
-        featdf = _iterextract(pathcol,featdf,breaks,pct,_featvector,verbose,
+        cols = list(range(2048))
+        featdf = _iterextract(pathcol,cols,breaks,pct,_featvector,verbose,
                               preprocess=preprocess,
                               model=model)
         return featdf
@@ -362,10 +383,9 @@ def _condition(pathcol,scale,verbose):
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        featdf = pd.DataFrame(index=pathcol.index,
-                              columns=['dmax','dmin','contrast','satdmin'])
+        cols = ['dmax','dmin','contrast','satdmin']
 
-        return _iterextract(pathcol,featdf,breaks,pct,_condition_convolution,
+        return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
                             verbose,scale=scale)
 
 def _condition_convolution(imgpath,scale):

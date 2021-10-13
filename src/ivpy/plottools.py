@@ -54,6 +54,11 @@ def _montage(pathcol=None,
         w,h,coords = _gridcoords(n,ncols,thumb)
         canvas = Image.new('RGB',(w,h),bg)
         _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
+    elif shape=='rect':
+        ncols = int( sqrt( n / 0.5625 ) )
+        w,h,coords = _gridcoords(n,ncols,thumb)
+        canvas = Image.new('RGB',(w,h),bg)
+        _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
     elif shape=='circle':
         side = int(sqrt(n)) + 5 # may have to tweak this
         canvas = Image.new('RGB',(side*thumb,side*thumb),bg)

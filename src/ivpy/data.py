@@ -110,8 +110,8 @@ def _typecheck(**kwargs):
             raise TypeError("'bg' must be an RGB triplet or a string")
     if not isinstance(ascending,bool):
         raise TypeError("'ascending' must be True or False")
-    if not any([shape=='square',shape=='circle']):
-        raise ValueError("'shape' must be 'circle' or 'square'")
+    if not any([shape=='square',shape=='circle',shape=='rect']):
+        raise ValueError("'shape' must be 'circle', 'square', or 'rect'")
     if not isinstance(ncols,int_types):
         raise TypeError("'ncols' must be an integer")
     if not any([rounding=='up',rounding=='down']):
