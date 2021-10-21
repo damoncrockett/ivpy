@@ -50,7 +50,7 @@ def _resize(impath,savedir,thumb):
         return None
 #-------------------------------------------------------------------------------
 
-def shatter(savedir=None,pathcol=None,k=64):
+def shatter(savedir=None,pathcol=None,k=64,verbose=False):
 
     if savedir==None:
         raise ValueError("Must supply 'savedir'")
@@ -67,27 +67,71 @@ def shatter(savedir=None,pathcol=None,k=64):
     pathcol = _pathfilter(pathcol)
 
     if isinstance(pathcol,string_types):
-        _shatter(pathcol,savedir,k)
-        return _collect_shatter(savedir)
+        tf = _shatter(pathcol,savedir,k)
+        return tf
 
     elif isinstance(pathcol,pd.Series):
-        for i in pathcol.index:
-            impath = pathcol.loc[i]
-            _shatter(impath,savedir,k)
-        return _collect_shatter(savedir)
 
-def _shatter(impath,savedir,k):
+        counter = 0
+        n = len(pathcol)
+        for i in pathcol.index:
+            counter+=1
+            impath = pathcol.loc[i]
+            if verbose==True:
+                print(counter,'of',n,impath)
+
+            tf = _shatter(impath,savedir,k,verbose)
+            if counter==1:
+                df = tf
+            else:
+                df = df.append(tf)
+
+        return df.reset_index(drop=True)
+
+def _shatter(impath,savedir,k,verbose):
+
     im = Image.open(impath)
     basename = os.path.basename(impath)[:-4]
+
     try:
         tiles = image_slicer.slice(impath,k,save=False)
-        image_slicer.save_tiles(tiles,directory=savedir,prefix=basename)
+        m = len(tiles)
+
+        if verbose==True:
+            print('recovered',m,'tiles from',basename)
+
+        tilelist = []
+        for tile in tiles:
+            savestring = savedir + '/' + basename + '_' + str(tile.number) + '_' + str(tile.position[0]) + '-' + str(tile.position[1]) + '.jpg'
+
+            try:
+                tile.image.save(savestring)
+                if verbose==True:
+                    print(savestring)
+            except Exception as e:
+                print(e)
+
+            d = {}
+            d['sourceimg'] = impath
+            d['sourceimgbase'] = basename
+            d['tilepath'] = savestring
+            d['tilenumber'] = tile.number
+            d['tileposition'] = tile.position
+            d['tilesize'] = tile.image.size
+            d['tilecoords'] = tile.coords
+
+            tilelist.append(d)
+
+        tf = pd.DataFrame.from_dict(tilelist)
+
     except Exception as e:
         print(e)
+        tf = pd.DataFrame(columns=['sourceimg',
+                                   'sourceimgbase',
+                                   'tilecoords',
+                                   'tilenumber',
+                                   'tilepath',
+                                   'tileposition',
+                                   'tilesize'])
 
-def _collect_shatter(savedir):
-    allshatter = glob(os.path.join(savedir,'*.png'))
-    tmp = pd.DataFrame({'localpath':allshatter})
-    basenames = [os.path.basename(item) for item in tmp.localpath]
-    tmp['basename'] = [item.split('_')[0] for item in basenames]
-    return tmp
+    return tf
