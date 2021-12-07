@@ -351,7 +351,10 @@ def _idx(im,i):
 def _annote(im,note):
     draw = ImageDraw.Draw(im)
     text = str(note)
-    font = ImageFont.truetype('../fonts/VeraMono.ttf',12)
+    fontsize = int( im.width / 28 )
+    if fontsize < 10:
+        fontsize = 10
+    font = ImageFont.truetype('../fonts/VeraMono.ttf', fontsize )
     fontWidth, fontHeight = font.getsize(text)
     imHeight = im.height
     pos = imHeight - fontHeight

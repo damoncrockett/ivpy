@@ -47,13 +47,16 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
               (99,170,255,alphargb),
               (255,191,0,alphargb),
               (58,14,88,alphargb),
-              (201,240,127,alphargb)]
+              (201,240,127,alphargb),
+              (124,70,160,alphargb),
+              (58,166,9,alphargb),
+              (223,42,105,alphargb)]
 
     color = aes.get('color')
     if color is not None:
         numcolors = len(df[color].value_counts().keys())
         if numcolors > len(colors):
-            raise ValueError("Number of color categories cannot exceed 7")
+            raise ValueError("Number of color categories cannot exceed 10")
         else:
             keys = list(df[color].value_counts().keys())
             vals = colors[:len(keys)]
@@ -88,9 +91,9 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
         try:
             colorval = df[color].loc[i]
             if colorval is None:
-                c = (51,51,51,alphargb)
+                c = (128,128,128,alphargb)
             elif check_nan(colorval): # for NaN values in color column
-                c = (51,51,51,alphargb)
+                c = (128,128,128,alphargb)
             elif not check_nan(colorval):
                 c = cmap[colorval]
         except:
