@@ -16,7 +16,7 @@ from keras.applications import imagenet_utils
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import load_img
 from keras.models import Model
-from keras.applications import ResNet50
+from tensorflow.keras.applications.resnet50 import ResNet50
 
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar

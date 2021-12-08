@@ -336,8 +336,13 @@ def _pct(col,domain):
 def _idx(im,i):
     pos = 0 # hard-code
     draw = ImageDraw.Draw(im)
+
     text = str(int(i))
-    font = ImageFont.truetype('../fonts/VeraMono.ttf',12)
+
+    fontsize = int( im.width / 28 )
+    if fontsize < 10:
+        fontsize = 10
+    font = ImageFont.truetype('../fonts/VeraMono.ttf',fontsize)
     fontWidth, fontHeight = font.getsize(text)
 
     draw.rectangle(
