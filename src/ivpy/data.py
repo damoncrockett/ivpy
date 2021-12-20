@@ -517,7 +517,10 @@ def check_nan(cell):
     is not natively possible in pandas.
     """
 
-    if pd.isnull(pd.Series(cell)[0]):
+    try:
+        if pd.isnull(pd.Series(cell)[0]):
+            return True
+        else:
+            return False
+    except:
         return True
-    else:
-        return False
