@@ -50,7 +50,8 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
               (201,240,127,alphargb),
               (124,70,160,alphargb),
               (58,166,9,alphargb),
-              (223,42,105,alphargb)]
+              (223,42,105,alphargb),
+              (0,0,0,alphargb)]
 
     color = aes.get('color')
     if color is not None:
@@ -91,9 +92,9 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
         try:
             colorval = df[color].loc[i]
             if colorval is None:
-                c = (128,128,128,alphargb)
+                c = (160,160,160,alphargb)
             elif check_nan(colorval): # for NaN values in color column
-                c = (128,128,128,alphargb)
+                c = (160,160,160,alphargb)
             elif not check_nan(colorval):
                 c = cmap[colorval]
         except:
