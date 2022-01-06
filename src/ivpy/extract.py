@@ -12,10 +12,8 @@ from scipy.stats import percentileofscore as pct
 from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
 
-from keras.applications import imagenet_utils
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import load_img
-from keras.models import Model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.applications.resnet50 import preprocess_input
 from tensorflow.keras.applications.resnet50 import ResNet50
 
 from .data import _typecheck,_pathfilter
@@ -347,30 +345,26 @@ def _greycoprops(imgpath,scale,prop):
 def _neural(pathcol,verbose):
     """Returns ResNet50 penultimate vector"""
 
-    preprocess = imagenet_utils.preprocess_input
-    base_model = ResNet50(weights='imagenet')
-    penlayer = base_model.layers[-2].name # unpredictable
-    model = Model(inputs=base_model.input,
-                  outputs=base_model.get_layer(penlayer).output)
+    # need pooling, otherwise the model returns a 7x7 feature map
+    model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
 
     if isinstance(pathcol,string_types):
-        return _featvector(pathcol,preprocess,model)
+        return _featvector(pathcol,model)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         cols = list(range(2048))
         featdf = _iterextract(pathcol,cols,breaks,pct,_featvector,verbose,
-                              preprocess=preprocess,
                               model=model)
         return featdf
 
-def _featvector(imgpath,preprocess,model):
-    inputShape = (224,224)
-    image = load_img(imgpath,target_size=inputShape)
-    image = img_to_array(image)
-    image = np.expand_dims(image,axis=0)
-    image = preprocess(image)
-    return model.predict(image)[0]
+def _featvector(imgpath,model):
+    img = image.load_img(imgpath, target_size=(224, 224))
+    x = image.img_to_array(img)
+    x = np.expand_dims(x, axis=0)
+    x = preprocess_input(x)
+
+    return model.predict(x)[0]
 
 #------------------------------------------------------------------------------
 
