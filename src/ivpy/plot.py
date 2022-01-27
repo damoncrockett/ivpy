@@ -292,7 +292,8 @@ def scatter(xcol,
                                                ydomain=ydomain,
                                                sample=sample,
                                                facetcol=facetcol,
-                                               notecol=notecol)
+                                               notecol=notecol,
+                                               scatter=True)
 
     if facetcol is None:
         return _scatter(**locals())
