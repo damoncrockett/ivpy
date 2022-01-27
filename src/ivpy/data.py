@@ -261,7 +261,8 @@ def _colfilter(pathcol,
                xdomain=None,
                ydomain=None,
                facetcol=None,
-               notecol=None):
+               notecol=None,
+               scatter=False):
 
     """Index matching and working with attach()"""
     pathcol = _pathfilter(pathcol)
@@ -276,7 +277,8 @@ def _colfilter(pathcol,
     pathcol,xcol,ycol,facetcol,notecol = _sample(pathcol,xcol,ycol,
                                                  sample,facetcol,notecol)
     pathcol,xcol,ycol,facetcol,notecol = _sort(pathcol,xcol,ycol,
-                                               ascending,facetcol,notecol)
+                                               ascending,facetcol,notecol,
+                                               scatter)
     pathcol,xcol,ycol,facetcol,notecol = _subset(pathcol,xcol,ycol,
                                                  xdomain,ydomain,facetcol,
                                                  notecol)
@@ -400,21 +402,26 @@ def _sample(pathcol,xcol,ycol,sample,facetcol,notecol):
 
     return pathcol,xcol,ycol,facetcol,notecol
 
-def _sort(pathcol,xcol,ycol,ascending,facetcol,notecol):
+def _sort(pathcol,xcol,ycol,ascending,facetcol,notecol,scatter):
 
     """
     If user supplies xcol, we sort xcol and apply to path/ycol.
     At this point, if xcol is not None, we know it is a pandas Series
     (either user-supplied or from the attached df). We also know it is
-    the same length as pathcol - even if pathcol got sampled above. Note
-    that for scatterplots, sorting makes no difference. But it's easier
-    to reuse this function for all plots. Note that your working DataFrame
-    is unchanged. Also note that it is never possible to sort globally by
-    ycol. This is because only histogram and scatter have ycol, and for
-    histograms, this sorting happens bin by bin.
+    the same length as pathcol - even if pathcol got sampled above.
+
+    Note that for scatterplots, sorting is unnecessary, and in fact, I now
+    believe it to be undesired behavior in case you want to control the stacking
+    order of your scatterplot, which you might. So, if scatter=True, there is no
+    sort.
+
+    Note that your working DataFrame is unchanged. Also note that it is never
+    possible to sort globally by ycol. This is because only histogram and
+    scatter have ycol, and for histograms, this sorting happens bin by bin.
     """
     if xcol is not None:
-        xcol = xcol.sort_values(ascending=ascending)
+        if scatter==False: # sort only if non-scatter
+            xcol = xcol.sort_values(ascending=ascending)
         pathcol = pathcol.loc[xcol.index]
         if ycol is not None: # nb sorting by ycol not possible globally
             ycol = ycol.loc[xcol.index]
