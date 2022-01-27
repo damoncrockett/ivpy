@@ -148,9 +148,10 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
 
     return gpaths
 
+# outline not settable by user, currently
 def _radar(polypts,crosshairs,fill,
           side=200,
-          outline='lightgrey',
+          outline=None,
           crosshairfill='grey'):
 
     """
