@@ -138,7 +138,8 @@ def _featscale(ser):
     try:
         ser_adj = ser_adj.map(lambda x:x/adj_max)
     except:
-        raise ValueError("Min and max are the same, causing division by zero")
+        # above will fail if all values are the same; if so, return zeros
+        ser_adj = np.zeros(len(ser))
 
     return ser_adj
 
