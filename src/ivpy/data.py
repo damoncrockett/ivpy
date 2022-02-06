@@ -94,6 +94,7 @@ def _typecheck(**kwargs):
     verbose = kwargs.get('verbose',False)
     crosshairs = kwargs.get('crosshairs',True)
     alpha = kwargs.get('alpha',1.0)
+    plot = kwargs.get('plot',True)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -214,6 +215,8 @@ def _typecheck(**kwargs):
         raise TypeError("'alpha' must be a number between 0 and 1")
     if not all([alpha <= 1, alpha >= 0]):
         raise TypeError("'alpha' must be a number between 0 and 1")
+    if not isinstance(plot,bool):
+        raise TypeError("'plot' must be True or False")
 
 def attach(df,pathcol=None):
 

@@ -10,7 +10,15 @@ return some of this data for use in other processes, but for now it's merely a
 quick (and approximate) visual analysis tool.
 """
 
-def nearest(X=None,i=None,pathcol=None,k=4,notecol=None,thumb=False,bg='white'):
+def nearest(X=None,
+            i=None,
+            pathcol=None,
+            k=4,
+            notecol=None,
+            thumb=False,
+            bg='white',
+            plot=True):
+
     if isinstance(pathcol,int): # allowable for show(), blocked by _paste()
         raise TypeError("'pathcol' must be a pandas Series")
     if X is None:
@@ -38,12 +46,15 @@ def nearest(X=None,i=None,pathcol=None,k=4,notecol=None,thumb=False,bg='white'):
     t.build(10) # 10 trees
     nnsAnnoy = t.get_nns_by_item(idmap[i],k,include_distances=False) # dists?
     nnsNative = [idmapReverse[item] for item in nnsAnnoy]
-    print(nnsNative)
 
-    if notecol is None:
-        return show(pathcol=pathcol.loc[nnsNative],idx=True,thumb=thumb,bg=bg)
-    elif notecol is not None:
-        return show(pathcol=pathcol.loc[nnsNative],
-                    idx=True,
-                    notecol=notecol.loc[nnsNative],
-                    thumb=thumb,bg=bg)
+    if plot==True:
+        print(nnsNative)
+        if notecol is None:
+            return show(pathcol=pathcol.loc[nnsNative],idx=True,thumb=thumb,bg=bg)
+        elif notecol is not None:
+            return show(pathcol=pathcol.loc[nnsNative],
+                        idx=True,
+                        notecol=notecol.loc[nnsNative],
+                        thumb=thumb,bg=bg)
+    elif plot==False:
+        return nnsNative
