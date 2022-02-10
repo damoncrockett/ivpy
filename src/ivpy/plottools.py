@@ -8,6 +8,9 @@ import requests
 
 from .data import _bin, _typecheck
 
+int_types = (int,np.int8,np.int16,np.int32,np.int64,
+             np.uint8,np.uint16,np.uint32,np.uint64)
+
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
@@ -206,7 +209,13 @@ def _scatter(xcol=None,
     if ybins is not None:
         ycol = _bin(ycol,ybins)
 
-    canvas = Image.new('RGB',(side,side),bg) # fixed size
+    if isinstance(side,(list,tuple)):
+        if coordinates!='cartesian':
+            raise TypeError("If sides unequal, 'coordinates' must be 'cartesian'")
+    elif isinstance(side,int_types):
+        side = (side,side)
+
+    canvas = Image.new('RGB',side,bg) # fixed size
 
     # xdomain and ydomain only active at this stage if expanding
     if coordinates=='cartesian':
@@ -298,9 +307,10 @@ def _histcoordspolar(n,binlabel,binmax,nbins,thumb):
 def _scalecart(xcol,ycol,xdomain,ydomain,side,thumb):
     xcolpct = _pct(xcol,xdomain)
     ycolpct = _pct(ycol,ydomain)
-    pasterange = side - thumb # otherwise will cut off extremes
-    x = [int(item*pasterange) for item in xcolpct]
-    y = [int((1-item)*pasterange) for item in ycolpct]
+    xpasterange = side[0] - thumb # otherwise will cut off extremes
+    ypasterange = side[1] - thumb # otherwise will cut off extremes
+    x = [int(item*xpasterange) for item in xcolpct]
+    y = [int((1-item)*ypasterange) for item in ycolpct]
     return x,y
 
 def _scalepol(xcol,ycol,xdomain,ydomain,side,thumb):

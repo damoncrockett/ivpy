@@ -121,8 +121,11 @@ def _typecheck(**kwargs):
         raise TypeError("'bins' must be an integer or a sequence")
     if not any([coordinates=='cartesian',coordinates=='polar']):
         raise TypeError("'coordinates' must be 'cartesian' or 'polar'")
-    if not isinstance(side,int_types):
-        raise TypeError("'side' must be an integer")
+    if not isinstance(side,(int_types,list,tuple)):
+        raise TypeError("'side' must be an integer, list, or tuple")
+    if isinstance(side,(list,tuple)):
+        if not len(side)==2:
+            raise TypeError("'side' must have exactly 2 items if list or tuple")
     if xdomain is not None:
         if not isinstance(xdomain,(list,tuple)):
             raise TypeError("'xdomain' must be a list or tuple")
