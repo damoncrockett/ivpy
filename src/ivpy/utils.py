@@ -9,7 +9,7 @@ from .data import _pathfilter,_typecheck
 
 #-------------------------------------------------------------------------------
 
-def resize(savedir=None,pathcol=None,thumb=256):
+def resize(savedir=None,pathcol=None,thumb=256,verbose=False):
     """Creates thumbnails of images, saves to 'savedir'. Had considered default
        'savedir', but decided user should always supply 'savedir', putting
        the write responsibility on them."""
@@ -33,15 +33,18 @@ def resize(savedir=None,pathcol=None,thumb=256):
 
     elif isinstance(pathcol,pd.Series):
         pathcol_resized = pd.Series(index=pathcol.index)
-        for i in pathcol.index:
+        n = len(pathcol)
+        for j,i in enumerate(pathcol.index):
             impath = pathcol.loc[i]
+            if verbose==True:
+                print(j+1,'of',n,impath)
             pathcol_resized.loc[i] = _resize(impath,savedir,thumb)
         return pathcol_resized
 
 def _resize(impath,savedir,thumb):
     try:
         im = Image.open(impath)
-        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        im.thumbnail((thumb,thumb),Image.LANCZOS)
         basename = os.path.basename(impath)
         savestring = savedir + "/" + basename
         im.save(savestring)
