@@ -1,6 +1,6 @@
 from annoy import AnnoyIndex
 from .data import _typecheck,_pathfilter,_featfilter,seq_types
-from .plot import show
+from .plot import show,montage
 import numpy as np
 
 """
@@ -47,12 +47,21 @@ def nearest(X=None,
     nnsAnnoy = t.get_nns_by_item(idmap[i],k,include_distances=False) # dists?
     nnsNative = [idmapReverse[item] for item in nnsAnnoy]
 
-    if plot==True:
+    if plot in [True,'show']:
         print(nnsNative)
         if notecol is None:
             return show(pathcol=pathcol.loc[nnsNative],idx=True,thumb=thumb,bg=bg)
         elif notecol is not None:
             return show(pathcol=pathcol.loc[nnsNative],
+                        idx=True,
+                        notecol=notecol.loc[nnsNative],
+                        thumb=thumb,bg=bg)
+    elif plot=='montage':
+        print(nnsNative)
+        if notecol is None:
+            return montage(pathcol=pathcol.loc[nnsNative],idx=True,thumb=thumb,bg=bg)
+        elif notecol is not None:
+            return montage(pathcol=pathcol.loc[nnsNative],
                         idx=True,
                         notecol=notecol.loc[nnsNative],
                         thumb=thumb,bg=bg)

@@ -218,8 +218,11 @@ def _typecheck(**kwargs):
         raise TypeError("'alpha' must be a number between 0 and 1")
     if not all([alpha <= 1, alpha >= 0]):
         raise TypeError("'alpha' must be a number between 0 and 1")
-    if not isinstance(plot,bool):
-        raise TypeError("'plot' must be True or False")
+    if not isinstance(plot,(bool,string_types)):
+        raise TypeError("'plot' must be True, False, 'show', or 'montage'")
+    if isinstance(plot,string_types):
+        if plot not in ['show','montage']:
+            raise TypeError("If a string is passed to 'plot', it must be 'show' or 'montage'")
 
 def attach(df,pathcol=None):
 

@@ -366,13 +366,19 @@ def _idx(im,i):
 def _annote(im,note):
     draw = ImageDraw.Draw(im)
     text = str(note)
+    textlist = text.split('\n')
+    noterows = len(textlist)
     fontsize = int( im.width / 28 )
     if fontsize < 10:
         fontsize = 10
-    font = ImageFont.truetype('../fonts/VeraMono.ttf', fontsize )
-    fontWidth, fontHeight = font.getsize(text)
+    font = ImageFont.truetype('../fonts/VeraMono.ttf',fontsize )
+    maxwidthtext = max(textlist,key=len)
+    fontWidth = font.getsize(maxwidthtext)[0]
+    # 4 is default line spacing in PIL multiline_text
+    fontHeight = max([font.getsize(item)[1] for item in textlist]) + 4
+
     imHeight = im.height
-    pos = imHeight - fontHeight
+    pos = imHeight - (fontHeight * noterows - 4) # rm unnecessary final space
 
     draw.rectangle(
         [(0,pos),(fontWidth,imHeight)],
@@ -380,7 +386,7 @@ def _annote(im,note):
         outline=None
     )
 
-    draw.text((0,pos),text,font=font,fill='black')
+    draw.multiline_text((0,pos),text,font=font,fill='black')
 
 def _placeholder(thumb):
     im = Image.new('RGB',(thumb,thumb),'#969696')
