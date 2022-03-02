@@ -53,7 +53,7 @@ def _montage(pathcol=None,
     n = len(pathcol)
 
     if shape=='square':
-        ncols = int(sqrt(n))
+        ncols = ceil(sqrt(n))
         w,h,coords = _gridcoords(n,ncols,thumb)
         canvas = Image.new('RGB',(w,h),bg)
         _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
