@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from PIL import Image
 from six import string_types
-import image_slicer
+#import image_slicer
 from glob2 import glob
 
 from .data import _pathfilter,_typecheck
@@ -53,6 +53,7 @@ def _resize(impath,savedir,thumb):
         return None
 #-------------------------------------------------------------------------------
 
+"""
 def shatter(savedir=None,pathcol=None,k=64,verbose=False):
 
     if savedir==None:
@@ -138,3 +139,4 @@ def _shatter(impath,savedir,k,verbose):
                                    'tilesize'])
 
     return tf
+"""

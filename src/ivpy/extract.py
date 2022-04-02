@@ -11,6 +11,8 @@ from scipy.stats import entropy
 from scipy.stats import percentileofscore as pct
 from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
+import tifffile as tiff
+import cv2
 
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.applications.resnet50 import preprocess_input
@@ -51,6 +53,8 @@ def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
         return _neural(pathcol,verbose)
     elif feature=='condition':
         return _condition(pathcol,scale,verbose)
+    elif feature=='roughness':
+        return _roughness(pathcol,verbose)
 
 #------------------------------------------------------------------------------
 
@@ -468,3 +472,68 @@ def neighbors(pixel):
     ]
 
     return neighborhood
+
+#------------------------------------------------------------------------------
+
+def _roughness(pathcol,verbose):
+    """Returns standard deviation of pixel brightness after some pre-processing
+    and bandpass filtering. Only works with TIFF files currently. Intended for
+    use with raking light microscopy images. Used for approximating Sq as
+    defined in surface metrology (root mean square height). The roughness values
+    computed here have a ~0.9 Pearson correlation with Sq.
+    """
+
+    if isinstance(pathcol,string_types):
+        return _bandpass_std(pathcol)
+
+    elif isinstance(pathcol,pd.Series):
+        cols = [0]
+        breaks,pct = _progressBar(pathcol)
+        return _iterextract(pathcol,cols,breaks,pct,_bandpass_std,verbose)
+
+def _crop_array(array,N):
+
+    h, w = array.shape
+
+    left  = w/2 - N/2
+    upper = h/2 - N/2
+    right = w/2 + N/2
+    lower = h/2 + N/2
+
+    return array[int(upper):int(lower),int(left):int(right)]
+
+def _read_process_image(imgpath,gain,N):
+
+    tif_array = np.array(tiff.imread(imgpath),dtype=np.float64)/(2**16)
+    tif_array = color.rgb2gray(tif_array)
+
+    # define sigma for Gaussian blurs to low pass and high pass the data
+    low_pass_sigma = 201
+    high_pass_sigma = 5
+
+    # Crop array to extract middle 1024x1024 portion of image
+    # Adding extra to allow for smooth filtering
+    tif_array = _crop_array(tif_array,N+low_pass_sigma)
+
+    # Normalize by total intensity
+    tif_array = (gain*tif_array)/(np.sum(tif_array))*(N**2)
+
+    #Subtract low-pass to remove low order waviness
+    tif_array = tif_array - cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
+
+    #High-pass data
+    tif_array = cv2.GaussianBlur(tif_array,(high_pass_sigma,high_pass_sigma),0)
+    tif_array = _crop_array(tif_array,N)
+
+    return tif_array
+
+def _bandpass_std(imgpath):
+    # Scaling factor used in normalization step (found by trial)
+    gain = 250
+
+    # Extracted image will be NxN = 1024x1024 (middle chunk of the image)
+    N = 1024
+
+    img = _read_process_image(imgpath,gain,N)
+
+    return np.std(img)
