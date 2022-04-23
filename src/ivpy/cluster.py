@@ -256,16 +256,18 @@ def centrality(X,clustercol=None):
 
     distcol = pd.Series(index=clustercol.index)
     clusternums = list(clustercol.value_counts().index)
+    centroids = []
     for clusternum in clusternums:
         idxs = clustercol.index[clustercol==clusternum]
         tmp = X.loc[idxs]
         centroid = np.array(tmp.apply(np.mean))
+        centroids.append(centroid)
         for idx in idxs:
             row = np.array(tmp.loc[idx])
             dist = _centrality(centroid,row)
             distcol.loc[idx] = dist
 
-    return distcol
+    return distcol, centroids
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
