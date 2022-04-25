@@ -35,10 +35,8 @@ def nearest(X=None,
     f = X.shape[1] # number of columns in X
     t = AnnoyIndex(f)  # Length of item vector that will be indexed
 
-    counter = -1
-    for j in X.index:
-        counter+=1
-        t.add_item(counter,list(X.loc[j]))
+    for i,item in enumerate(X.index):
+        t.add_item(i,list(X.loc[item]))
 
     idmap = dict(zip(X.index,list(range(len(X)))))
     idmapReverse = dict(zip(list(range(len(X))),X.index))
