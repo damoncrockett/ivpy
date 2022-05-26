@@ -11,12 +11,19 @@ from scipy.stats import entropy
 from scipy.stats import percentileofscore as pct
 from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
-import tifffile as tiff
-import cv2
 
-from tensorflow.keras.preprocessing import image
-from tensorflow.keras.applications.resnet50 import preprocess_input
-from tensorflow.keras.applications.resnet50 import ResNet50
+try:
+    import tifffile as tiff
+    import cv2
+except:
+    print("for roughness extraction, must install 'opencv-python' and 'tifffile' modules")
+
+try:
+    from tensorflow.keras.preprocessing import image
+    from tensorflow.keras.applications.resnet50 import preprocess_input
+    from tensorflow.keras.applications.resnet50 import ResNet50
+except:
+    print("for neural feature extraction, must install 'tensorflow' module")
 
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
