@@ -29,13 +29,13 @@ note: this will create a virtual environment directory called 'myEnv' inside wha
 
 3. Install requirements:
 
-`$ pip3 install numpy`
+`$ pip install numpy`
 
-`$ pip3 install jupyter`
+`$ pip install notebook`
 
-`$ pip3 install pandas`
+`$ pip install pandas`
 
-`$ pip3 install Pillow`
+`$ pip install Pillow`
 
 
 4. Optional (if you want to use my custom jupyter theme): Create .jupyter/custom/ in your home folder, and copy ivpy/style/custom.css there
@@ -73,15 +73,13 @@ The basic functionality, including everything in the tutorial notebooks, will wo
 
 #### For feature extraction / dimension reduction, you'll need to install these additional dependencies:
 
-`$ pip3 install scikit-image`
+`$ pip install scikit-image`
 
-`$ pip3 install scikit-learn`
+`$ pip install scikit-learn`
 
-`$ pip3 install tensorflow`
+`$ pip install tensorflow`
 
-`$ pip3 install keras`
-
-`$ pip3 install umap-learn`
+`$ pip install umap-learn`
 
 #### For nearest neighbor search, you'll need:
 
@@ -97,28 +95,18 @@ image_slicer
 
 ## Working Setup
 
-As of March 4, 2021, the following setup will successfully run the tutorial notebooks:
+As of May 26, 2022, the following setup will successfully run the tutorial notebooks (0-4):
 
-**macOS Catalina** 10.15.7
+**macOS Monterey** 12.2.1
 
-**Python** 3.6.5
+**Python** 3.10.4
 
-**pip** 9.0.3
+**pip** 22.0.4
 
-**numpy** 1.19.5
+**numpy** 1.22.4
 
-**jupyter** 1.0.0
+**notebook** 6.4.11
 
-**pandas** 1.1.5
+**pandas** 1.4.2
 
-**Pillow** 8.1.1
-
-**scikit-image** 0.17.2
-
-**scikit-learn** 0.24.1
-
-**tensorflow** 2.4.1
-
-**keras** 2.4.3
-
-**umap-learn** 0.5.1
+**Pillow** 9.1.1
