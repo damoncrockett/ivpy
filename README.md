@@ -77,6 +77,10 @@ The basic functionality, including everything in the tutorial notebooks, will wo
 
 `$ pip install scikit-learn`
 
+`$ pip install opencv-python`
+
+`$ pip install tifffile`
+
 `$ pip install tensorflow`
 
 `$ pip install umap-learn`
@@ -95,7 +99,7 @@ image_slicer
 
 ## Working Setup
 
-As of May 26, 2022, the following setup will successfully run the tutorial notebooks (0-4):
+As of May 26, 2022, the following setup will successfully run the tutorial notebooks (except neural extraction in tensorflow):
 
 **macOS Monterey** 12.2.1
 
@@ -110,3 +114,9 @@ As of May 26, 2022, the following setup will successfully run the tutorial noteb
 **pandas** 1.4.2
 
 **Pillow** 9.1.1
+
+**scikit-image** 0.19.2
+
+**scikit-learn** 1.1.1
+
+**umap-learn** 0.5.3
