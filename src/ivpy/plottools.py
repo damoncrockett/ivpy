@@ -4,7 +4,11 @@ from numpy import repeat,sqrt,arange,radians,cos,sin
 import numpy as np
 from math import ceil
 from six import string_types
-import requests
+
+try:
+    import requests
+except:
+    print("'requests' module not installed")
 
 from .data import _bin, _typecheck
 
@@ -325,7 +329,7 @@ def _scalepol(xcol,ycol,xdomain,ydomain,side,thumb):
     polcoords = list(zip(rhos,phiradians))
     xycoords = [_pol2cart(item[0],item[1]) for item in polcoords]
     # convert to canvas coordinates
-    pasterange = side - thumb # otherwise will cut off extremes
+    pasterange = side[0] - thumb # otherwise will cut off extremes
     radius = float(pasterange)/2
     x = [int(item[0]*radius+radius) for item in xycoords]
     y = [int(radius-item[1]*radius) for item in xycoords]
