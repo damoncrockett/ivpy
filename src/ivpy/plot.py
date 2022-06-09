@@ -200,7 +200,8 @@ def histogram(xcol,
               coordinates='cartesian',
               facetcol=None,
               notecol=None,
-              xaxis=None):
+              xaxis=None,
+              flip=False):
 
     """
     Cartesian or polar histogram of images
@@ -222,6 +223,8 @@ def histogram(xcol,
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
         xaxis (Boolean) --- whether to include bin labels
+        flip (Boolean) --- whether to flip images vertically; for 'under'
+            histogram
     """
 
     _typecheck(**locals())
@@ -237,6 +240,8 @@ def histogram(xcol,
     if facetcol is None:
         return _histogram(**locals())
     elif facetcol is not None:
+        if flip==True:
+            raise ValueError("Cannot flip images in a faceted plot")
         facetlist = _facet(**locals())
         plotlist = [_histogram(**facet) for facet in facetlist]
         return compose(*plotlist)

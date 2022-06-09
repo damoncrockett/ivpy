@@ -106,7 +106,8 @@ def _histogram(xcol=None,
                facetcol=None,
                facettitle=None,
                xaxis=None,
-               notecol=None):
+               notecol=None,
+               flip=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
@@ -148,6 +149,8 @@ def _histogram(xcol=None,
         plotheight = thumb * binmax
         canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
     elif coordinates=='polar':
+        if flip==True:
+            raise ValueError("If 'flip' is true, 'coordinates' must be 'cartesian'")
         canvas = Image.new('RGB',(binmax*2*thumb+thumb,binmax*2*thumb+thumb),bg)
 
     for binlabel in nonemptybins:
@@ -163,7 +166,7 @@ def _histogram(xcol=None,
         if coordinates=='cartesian':
             coords = _histcoordscart(n,binlabel,plotheight,thumb)
             _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,
-                   notecol=notecol)
+                   notecol=notecol,flip=flip)
         elif coordinates=='polar':
             coords,phis = _histcoordspolar(n,binlabel,binmax,nbins,thumb)
             _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis,
@@ -177,7 +180,10 @@ def _histogram(xcol=None,
                           xaxis=xaxis,
                           plottype='histogram')
 
-        return canvas
+        if flip==True:
+            return canvas.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
+        else:
+            return canvas
 
     elif facetcol is not None:
         matdict = {'bg':bg,
@@ -399,7 +405,7 @@ def _placeholder(thumb):
     return im
 
 def _paste(pathcol,thumb,idx,canvas,coords,
-           coordinates=None,phis=None,notecol=None):
+           coordinates=None,phis=None,notecol=None,flip=None):
     if isinstance(pathcol, string_types): # bc this is allowable in _typecheck
         raise TypeError("'pathcol' must be a pandas Series")
 
@@ -421,6 +427,8 @@ def _paste(pathcol,thumb,idx,canvas,coords,
         if notecol is not None:
             note = notecol.loc[i]
             _annote(im,note)
+        if flip==True:
+            im = im.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
         if coordinates=='polar':
             phi = phis[counter]
             if 90 < phi < 270:
