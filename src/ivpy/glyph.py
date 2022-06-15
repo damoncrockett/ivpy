@@ -149,7 +149,7 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
     return gpaths
 
 # outline not settable by user, currently
-def _radar(polypts,crosshairs,fill,
+def _radar(polypts,crosshairs,radarfill,
           side=200,
           outline=None,
           crosshairfill='grey'):
@@ -167,16 +167,16 @@ def _radar(polypts,crosshairs,fill,
 
     if len(coords)==1:
         x,y = list(coords)[0][0], list(coords)[0][1]
-        draw.ellipse([(x-adj,y-adj),(x+adj,y+adj)], fill=fill)
+        draw.ellipse([(x-adj,y-adj),(x+adj,y+adj)], fill=radarfill)
     elif len(coords)==2:
         if any([list(coords.index)==[0,2],list(coords.index)==[1,3]]):
-            draw.line(list(coords), fill=fill, width=adj*2)
+            draw.line(list(coords), fill=radarfill, width=adj*2)
         else:
             coords = list(coords)
             coords.append((halfside,halfside))
-            draw.polygon(coords, fill=fill, outline=outline)
+            draw.polygon(coords, fill=radarfill, outline=outline)
     elif len(coords) > 2:
-        draw.polygon(list(coords), fill=fill, outline=outline)
+        draw.polygon(list(coords), fill=radarfill, outline=outline)
 
     if crosshairs:
         draw.line([(halfside,0),(halfside,side)],

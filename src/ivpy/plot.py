@@ -38,7 +38,7 @@ def show(pathcol=None,
         ascending (Boolean) --- sorting order
     """
 
-    _typecheck(**locals())
+    _typecheck(**locals()['kwargs'])
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                             xcol=xcol,
                                             notecol=notecol,
@@ -96,7 +96,7 @@ def compose(*args,**kwargs):
     bg = kwargs.get('bg', '#212121')
     border = kwargs.get('border',False)
 
-    _typecheck(**locals()) # won't typecheck args
+    _typecheck(**locals()['kwargs']) # won't typecheck args
 
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
@@ -171,7 +171,7 @@ def montage(pathcol=None,
         notecol (str,Series) --- annotation column
     """
 
-    _typecheck(**locals())
+    _typecheck(**locals()['kwargs'])
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
@@ -232,7 +232,7 @@ def histogram(xcol,
         dot (Boolean) --- whether to use uniform dots as plotting units
     """
 
-    _typecheck(**locals())
+    _typecheck(**locals()['kwargs'])
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
@@ -296,7 +296,7 @@ def scatter(xcol,
         dot (Boolean) --- whether to use uniform dots as plotting units
     """
 
-    _typecheck(**locals())
+    _typecheck(**locals()['kwargs'])
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
@@ -327,10 +327,10 @@ def line(*args,**kwargs):
         side (int) --- length of plot side in pixels; all plots enforced square
         bg (color) --- background color
         fill (color or sequence of colors) --- line color
-        width (int) --- line weight
+        width (int or sequence of ints) --- line weight
     """
 
-    _typecheck(**locals())
+    _typecheck(**locals()['kwargs'])
 
     typelist = [isinstance(item,(seq_types)) for item in args]
     if not all(typelist):
@@ -369,6 +369,11 @@ def line(*args,**kwargs):
         else:
             fcolor = fill
 
-        draw.line(list(coords),fill=fcolor,width=width,joint='curve')
+        if isinstance(width,seq_types):
+            lwidth = width[i]
+        else:
+            lwidth = width
+
+        draw.line(list(coords),fill=fcolor,width=lwidth,joint='curve')
 
     return canvas
