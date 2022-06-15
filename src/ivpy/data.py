@@ -96,6 +96,7 @@ def _typecheck(**kwargs):
     alpha = kwargs.get('alpha',1.0)
     plot = kwargs.get('plot',True)
     flip = kwargs.get('flip',False)
+    dot = kwargs.get('dot',False)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -226,6 +227,8 @@ def _typecheck(**kwargs):
             raise TypeError("If a string is passed to 'plot', it must be 'show' or 'montage'")
     if not isinstance(flip,bool):
         raise TypeError("'flip' must be True or False")
+    if not isinstance(dot,bool):
+        raise TypeError("'dot' must be True or False")
 
 def attach(df,pathcol=None):
 

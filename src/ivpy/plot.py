@@ -1,10 +1,13 @@
-from PIL import Image
-from numpy import sqrt
+from PIL import Image,ImageDraw
+from pandas import Series
+from numpy import sqrt,arange,ndarray,mean
 from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
 from .plottools import _border,_montage,_histogram,_scatter,_plotmat
+
+seq_types = (list,tuple,ndarray,Series)
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
@@ -201,7 +204,8 @@ def histogram(xcol,
               facetcol=None,
               notecol=None,
               xaxis=None,
-              flip=False):
+              flip=False,
+              dot=False):
 
     """
     Cartesian or polar histogram of images
@@ -225,6 +229,7 @@ def histogram(xcol,
         xaxis (Boolean) --- whether to include bin labels
         flip (Boolean) --- whether to flip images vertically; for 'under'
             histogram
+        dot (Boolean) --- whether to use uniform dots as plotting units
     """
 
     _typecheck(**locals())
@@ -264,7 +269,8 @@ def scatter(xcol,
             facetcol=None,
             notecol=None,
             xaxis=None,
-            yaxis=None):
+            yaxis=None,
+            dot=False):
 
     """
     Cartesian or polar scatterplot of images
@@ -287,6 +293,7 @@ def scatter(xcol,
         notecol (str,Series) --- annotation column
         xaxis (Boolean) --- whether to include x-axis labels
         yaxis (Boolean) --- whether to include y-axis labels
+        dot (Boolean) --- whether to use uniform dots as plotting units
     """
 
     _typecheck(**locals())
@@ -306,3 +313,62 @@ def scatter(xcol,
         facetlist = _facet(**locals())
         plotlist = [_scatter(**facet) for facet in facetlist]
         return compose(*plotlist)
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+def line(*args,**kwargs):
+
+    """
+    Simple line plot. Will eliminate null values.
+
+    Args:
+        *args --- sequences to be plotted as lines
+        side (int) --- length of plot side in pixels; all plots enforced square
+        bg (color) --- background color
+        fill (color or sequence of colors) --- line color
+        width (int) --- line weight
+    """
+
+    _typecheck(**locals())
+
+    typelist = [isinstance(item,(seq_types)) for item in args]
+    if not all(typelist):
+        raise TypeError("Arguments passed to 'line' must be sequences")
+
+    fill = kwargs.get('fill', 'white')
+    width = kwargs.get('width', 1)
+    side = kwargs.get('side', 400)
+    bg = kwargs.get('bg', '#212121')
+
+    canvas = Image.new('RGB',(side,side),bg) # fixed size
+    draw = ImageDraw.Draw(canvas)
+
+    anynull = [mean(Series(arg).notnull())!=1 for arg in args]
+    if any(anynull):
+        raise ValueError("Cannot pass null sequence values to 'line'")
+
+    lens = list(set([len(arg) for arg in args]))
+    n = lens[0]
+    if len(lens) > 1:
+        raise ValueError("All sequences passed to 'line' must be the same length")
+
+    ymax = max([max(item) for item in args])
+    ymin = min([min(item) for item in args])
+    yrange = ymax - ymin
+
+    for i,arg in enumerate(args):
+        incr = side / (n-1)
+        xs = arange(0,side+incr,incr)
+        xs = [int(item) for item in xs[:n]]
+        ys = [int( (1 - (item-ymin) / yrange ) * side ) for item in arg]
+        coords = zip(xs,ys)
+
+        if isinstance(fill,seq_types):
+            fcolor = fill[i]
+        else:
+            fcolor = fill
+
+        draw.line(list(coords),fill=fcolor,width=width,joint='curve')
+
+    return canvas

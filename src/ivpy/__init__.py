@@ -5,4 +5,4 @@ __email__ = 'damoncrockett@gmail.com'
 __version__ = '0.0.1'
 
 from ivpy.data import attach,detach
-from ivpy.plot import show,montage,histogram,scatter,compose
+from ivpy.plot import show,montage,histogram,scatter,compose,line

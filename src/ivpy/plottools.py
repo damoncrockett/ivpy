@@ -107,7 +107,8 @@ def _histogram(xcol=None,
                facettitle=None,
                xaxis=None,
                notecol=None,
-               flip=None):
+               flip=None,
+               dot=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
@@ -164,13 +165,20 @@ def _histogram(xcol=None,
         n = len(pathcol_bin)
 
         if coordinates=='cartesian':
-            coords = _histcoordscart(n,binlabel,plotheight,thumb)
-            _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,
-                   notecol=notecol,flip=flip)
+            bincols = 1
+            if bincols > 1:
+                # actually this needs to move up
+                w,h,coords = _gridcoordsup(n,bincols,thumb)
+                canvas = Image.new('RGB',(w,h),bg)
+                _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol,dot=dot)
+            else:
+                coords = _histcoordscart(n,binlabel,plotheight,thumb)
+                _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,
+                       notecol=notecol,flip=flip,dot=dot)
         elif coordinates=='polar':
             coords,phis = _histcoordspolar(n,binlabel,binmax,nbins,thumb)
             _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,phis,
-                   notecol=notecol)
+                   notecol=notecol,dot=dot)
 
     if facetcol is None:
         if xaxis is not None:
@@ -212,7 +220,8 @@ def _scatter(xcol=None,
              facettitle=None,
              xaxis=None,
              yaxis=None,
-             notecol=None):
+             notecol=None,
+             dot=None):
 
     if xbins is not None:
         xcol = _bin(xcol,xbins)
@@ -231,11 +240,11 @@ def _scatter(xcol=None,
     if coordinates=='cartesian':
         x,y = _scalecart(xcol,ycol,xdomain,ydomain,side,thumb)
         coords = list(zip(x,y)) # py3 zip
-        _paste(pathcol,thumb,idx,canvas,coords,coordinates,notecol=notecol)
+        _paste(pathcol,thumb,idx,canvas,coords,coordinates,notecol=notecol,dot=dot)
     elif coordinates=='polar':
         x,y,phis = _scalepol(xcol,ycol,xdomain,ydomain,side,thumb)
         coords = list(zip(x,y)) # py3 zip
-        _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis,notecol=notecol)
+        _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis,notecol=notecol,dot=dot)
 
     if facetcol is None:
         if any([xaxis is not None,yaxis is not None]):
@@ -264,6 +273,19 @@ def _gridcoords(n,ncols,thumb):
 
     xgrid = list(range(ncols)) * nrows # bc py3 range returns iterator
     ygrid = repeat(range(nrows),ncols)
+    xgrid = xgrid[:n]
+    ygrid = ygrid[:n]
+    x = [item*thumb for item in xgrid]
+    y = [item*thumb for item in ygrid]
+
+    return w,h,list(zip(x,y)) # py3 zip
+
+def _gridcoordsup(n,ncols,thumb):
+    nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
+    w,h = ncols*thumb,nrows*thumb
+
+    xgrid = list(range(ncols)) * nrows # bc py3 range returns iterator
+    ygrid = repeat(list(reversed(range(nrows))),ncols)
     xgrid = xgrid[:n]
     ygrid = ygrid[:n]
     x = [item*thumb for item in xgrid]
@@ -404,8 +426,17 @@ def _placeholder(thumb):
     draw.line([(0,0),(thumb,thumb)],'#dddddd')
     return im
 
+def _dot(thumb):
+    im = Image.new('RGBA',(thumb,thumb),'rgba(0,0,0,0)')
+    draw = ImageDraw.Draw(im)
+    incr = int( thumb / 10 )
+    radius = int( thumb / 20 )
+    draw.rounded_rectangle([(incr,incr),(thumb-incr,thumb-incr)],
+                           radius=radius,outline=None,fill='white')
+    return im
+
 def _paste(pathcol,thumb,idx,canvas,coords,
-           coordinates=None,phis=None,notecol=None,flip=None):
+           coordinates=None,phis=None,notecol=None,flip=None,dot=None):
     if isinstance(pathcol, string_types): # bc this is allowable in _typecheck
         raise TypeError("'pathcol' must be a pandas Series")
 
@@ -414,12 +445,15 @@ def _paste(pathcol,thumb,idx,canvas,coords,
         counter+=1
         try:
             if pathcol.loc[i].startswith(("http://", "https://")):
-              response = requests.get(pathcol.loc[i], stream=True)
-              im = Image.open(response.raw)
+                response = requests.get(pathcol.loc[i], stream=True)
+                im = Image.open(response.raw)
+            elif dot==True:
+                im = _dot(thumb)
             else:
-              im = Image.open(pathcol.loc[i])
+                im = Image.open(pathcol.loc[i])
         except:
             im = _placeholder(thumb)
+
         im.thumbnail((thumb,thumb),Image.ANTIALIAS)
         im = im.convert('RGBA') # often unnecessary but for rotation and glyphs
         if idx==True: # idx labels placed after thumbnail
