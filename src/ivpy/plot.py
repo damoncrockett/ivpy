@@ -38,7 +38,11 @@ def show(pathcol=None,
         ascending (Boolean) --- sorting order
     """
 
-    _typecheck(**locals()['kwargs'])
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
+
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                             xcol=xcol,
                                             notecol=notecol,
@@ -96,7 +100,10 @@ def compose(*args,**kwargs):
     bg = kwargs.get('bg', '#212121')
     border = kwargs.get('border',False)
 
-    _typecheck(**locals()['kwargs']) # won't typecheck args
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
 
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
@@ -171,7 +178,11 @@ def montage(pathcol=None,
         notecol (str,Series) --- annotation column
     """
 
-    _typecheck(**locals()['kwargs'])
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
+
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
@@ -205,7 +216,8 @@ def histogram(xcol,
               notecol=None,
               xaxis=None,
               flip=False,
-              dot=False):
+              dot=False,
+              bincols=1):
 
     """
     Cartesian or polar histogram of images
@@ -230,9 +242,15 @@ def histogram(xcol,
         flip (Boolean) --- whether to flip images vertically; for 'under'
             histogram
         dot (Boolean) --- whether to use uniform dots as plotting units
+        bincols (int) --- number of columns per bin; usually 1, higher if some
+            bins are excessively large
     """
 
-    _typecheck(**locals()['kwargs'])
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
+
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
@@ -296,7 +314,11 @@ def scatter(xcol,
         dot (Boolean) --- whether to use uniform dots as plotting units
     """
 
-    _typecheck(**locals()['kwargs'])
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
+
     pathcol,xcol,ycol,facetcol,notecol = _colfilter(pathcol,
                                                xcol=xcol,
                                                xdomain=xdomain,
@@ -330,7 +352,10 @@ def line(*args,**kwargs):
         width (int or sequence of ints) --- line weight
     """
 
-    _typecheck(**locals()['kwargs'])
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
 
     typelist = [isinstance(item,(seq_types)) for item in args]
     if not all(typelist):
