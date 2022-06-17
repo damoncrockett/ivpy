@@ -1,6 +1,6 @@
 import pandas as pd
 from PIL import Image,ImageDraw,ImageFont
-from numpy import repeat,sqrt,arange,radians,cos,sin
+from numpy import repeat,sqrt,arange,radians,cos,sin,linspace
 import numpy as np
 from math import ceil
 from six import string_types
@@ -14,6 +14,8 @@ from .data import _bin, _typecheck
 
 int_types = (int,np.int8,np.int16,np.int32,np.int64,
              np.uint8,np.uint16,np.uint32,np.uint64)
+
+seq_types = (list,tuple,np.ndarray,pd.Series)
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -108,13 +110,14 @@ def _histogram(xcol=None,
                xaxis=None,
                notecol=None,
                flip=None,
-               dot=None):
+               dot=None,
+               bincols=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
     argument, because data subsetting not allowable this late in the process.
     """
-    if isinstance(bins,(list,tuple,np.ndarray)):
+    if isinstance(bins,(seq_types)):
         if any([xcol.max()>bins[-1],xcol.min()<bins[0]]):
             raise ValueError("""Submitted bin edges do not capture all the data.
                                 Domain contraction requires 'xdomain' argument,
@@ -122,7 +125,7 @@ def _histogram(xcol=None,
                                 """)
 
     """
-    This (below) is domain expansion. The histogram ydomain can be contracted;
+    This (below) is domain expansion. The histogram ydomain can be contracted:
     it simply removes data points. But it cannot be expanded, since y in a
     histogram is not a proper axis. The user can expand the xdomain either using
     that kwarg or by submitting a set of domain-expanding bin edges. If user
@@ -133,22 +136,28 @@ def _histogram(xcol=None,
     plotting space using 'bins'.
     """
     if xdomain is not None:
-        xrange = xdomain[1]-xdomain[0]
         if isinstance(bins,int):
-            # n.b.: this is slightly different than giving int to pd.cut
-            increment = float(xrange)/bins
-            # range is overkill but don't have great way to always avoid NaNs
-            # will probably need to revisit this in the future
-            bins = arange(xdomain[0],xdomain[1]+increment*2,increment)
+            xbin = pd.cut(xcol,linspace(xdomain[0],xdomain[1],bins+1),labels=False,include_lowest=True)
+    else:
+        xbin = pd.cut(xcol,bins,labels=False,include_lowest=True)
 
-    xbin = pd.cut(xcol,bins,labels=False,include_lowest=True)
-    nbins = len(pd.cut(xcol,bins,include_lowest=True).value_counts())
     nonemptybins = xbin.unique() # will ignore empty bins
     binmax = xbin.value_counts().max()
 
+    if isinstance(bins,int):
+        nbins = bins
+    else:
+        nbins = len(bins) - 1
+
+    if bincols > 1:
+        binmax = ceil(binmax / bincols)
+        plotwidth = (bincols + 1) * thumb * nbins
+    else:
+        plotwidth = thumb * nbins
+
     if coordinates=='cartesian':
         plotheight = thumb * binmax
-        canvas = Image.new('RGB',(thumb*nbins,plotheight),bg)
+        canvas = Image.new('RGB',(plotwidth,plotheight),bg)
     elif coordinates=='polar':
         if flip==True:
             raise ValueError("If 'flip' is true, 'coordinates' must be 'cartesian'")
@@ -165,12 +174,14 @@ def _histogram(xcol=None,
         n = len(pathcol_bin)
 
         if coordinates=='cartesian':
-            bincols = 1
             if bincols > 1:
-                # actually this needs to move up
                 w,h,coords = _gridcoordsup(n,bincols,thumb)
-                canvas = Image.new('RGB',(w,h),bg)
-                _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol,dot=dot)
+                binbar = Image.new('RGB',(w,h),bg)
+                _paste(pathcol_bin,thumb,idx,binbar,coords,notecol=notecol,flip=flip,dot=dot)
+
+                xbar = binlabel * (bincols + 1) * thumb
+                ybar = plotheight - h
+                canvas.paste(binbar,(xbar,ybar))
             else:
                 coords = _histcoordscart(n,binlabel,plotheight,thumb)
                 _paste(pathcol_bin,thumb,idx,canvas,coords,coordinates,
