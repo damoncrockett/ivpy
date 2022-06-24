@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from PIL import Image
 from six import string_types
+from math import ceil
 
 from skimage.io import imread
 from skimage import color
@@ -25,12 +26,18 @@ try:
 except:
     print("for neural feature extraction, must install 'tensorflow' module")
 
+try:
+    from shapely.geometry import Point
+except:
+    print("for condition extraction, must install 'shapely' module")
+
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
 
 #------------------------------------------------------------------------------
 
-def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
+def extract(feature,
+            pathcol=None,aggregate=True,scale=True,verbose=False,**kwargs):
     _typecheck(**locals())
     pathcol = _pathfilter(pathcol)
 
@@ -59,7 +66,7 @@ def extract(feature,pathcol=None,aggregate=True,scale=True,verbose=False):
     elif feature=='neural':
         return _neural(pathcol,verbose)
     elif feature=='condition':
-        return _condition(pathcol,scale,verbose)
+        return _condition(pathcol,scale,verbose,k=37)
     elif feature=='roughness':
         return _roughness(pathcol,verbose)
 
@@ -380,21 +387,21 @@ def _featvector(imgpath,model):
 
 #------------------------------------------------------------------------------
 
-def _condition(pathcol,scale,verbose):
+def _condition(pathcol,scale,verbose,k):
     """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
        used for measuring photo fading and yellowing"""
 
     if isinstance(pathcol,string_types):
-        return _condition_convolution(pathcol,scale)
+        return _condition_convolution(pathcol,scale,k)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         cols = ['dmax','dmin','contrast','satdmin']
 
         return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
-                            verbose,scale=scale)
+                            verbose,scale=scale,k=k)
 
-def _condition_convolution(imgpath,scale):
+def _condition_convolution(imgpath,scale,k):
     img = color.rgb2hsv(imread(imgpath))
 
     if scale==True:
@@ -408,7 +415,7 @@ def _condition_convolution(imgpath,scale):
     for i in range(nrows):
         for j in range(ncols):
             pixel = (i,j)
-            neighborhood = neighbors(pixel)
+            neighborhood = neighbors(pixel,k)
             neighborhood = [item for item in neighborhood if all([item[0]>-1,
                                                                   item[1]>-1,
                                                                   item[0]<nrows,
@@ -433,52 +440,26 @@ def _condition_convolution(imgpath,scale):
 
     return dmax,dmin,dmin-dmax,satdmin
 
-# eventually will make patch size user-selectable
-def neighbors(pixel):
-    i = pixel[0]
-    j = pixel[1]
+def neighbors(pixel,k):
 
-    neighborhood = [
-        (i,j),
-        (i-1,j),
-        (i-2,j),
-        (i-3,j),
-        (i+1,j),
-        (i+2,j),
-        (i+3,j),
-        (i,j-1),
-        (i,j-2),
-        (i,j-3),
-        (i,j+1),
-        (i,j+2),
-        (i,j+3),
-        (i-1,j-1),
-        (i-2,j-1),
-        (i-3,j-1),
-        (i+1,j-1),
-        (i+2,j-1),
-        (i+3,j-1),
-        (i-1,j+1),
-        (i-2,j+1),
-        (i-3,j+1),
-        (i+1,j+1),
-        (i+2,j+1),
-        (i+3,j+1),
-        (i+1,j-2),
-        (i+2,j-2),
-        (i-1,j-2),
-        (i-2,j-2),
-        (i+1,j+2),
-        (i+2,j+2),
-        (i-1,j+2),
-        (i-2,j+2),
-        (i-1,j-3),
-        (i+1,j-3),
-        (i-1,j+3),
-        (i+1,j+3),
-    ]
+    r = ceil(np.sqrt(k))
+    ncols = nrows = r * 2 + 1
+    xgrid = list(range(ncols)) * nrows
+    ygrid = np.repeat(range(nrows),ncols)
 
-    return neighborhood
+    xadj = [i-r for i in xgrid]
+    yadj = [i-r for i in ygrid]
+
+    x = [pixel[0] + i for i in xadj]
+    y = [pixel[1] + i for i in yadj]
+
+    c = Point(pixel)
+    allpts = list(zip(x,y))
+    dists = [c.distance(Point(item)) for item in allpts]
+    df = pd.DataFrame({'pt':allpts,'dist':dists})
+    df = df.sort_values('dist')
+
+    return list(df.pt[:k])
 
 #------------------------------------------------------------------------------
 
