@@ -98,6 +98,7 @@ def _typecheck(**kwargs):
     flip = kwargs.get('flip',False)
     dot = kwargs.get('dot',False)
     bincols = kwargs.get('bincols',1)
+    sigma = kwargs.get('sigma',1)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -232,6 +233,8 @@ def _typecheck(**kwargs):
         raise TypeError("'dot' must be True or False")
     if not isinstance(bincols,int_types):
         raise TypeError("'bincols' must be an integer")
+    if not isinstance(sigma,int_types):
+        raise TypeError("'sigma' must be an integer")
 
 def attach(df,pathcol=None):
 
