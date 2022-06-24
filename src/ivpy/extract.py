@@ -5,6 +5,7 @@ from six import string_types
 from math import ceil
 
 from skimage.io import imread
+from skimage.filters import gaussian
 from skimage import color
 from skimage import img_as_ubyte
 from skimage.transform import resize
@@ -25,11 +26,6 @@ try:
     from tensorflow.keras.applications.resnet50 import ResNet50
 except:
     print("for neural feature extraction, must install 'tensorflow' module")
-
-try:
-    from shapely.geometry import Point
-except:
-    print("for condition extraction, must install 'shapely' module")
 
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
@@ -66,7 +62,7 @@ def extract(feature,
     elif feature=='neural':
         return _neural(pathcol,verbose)
     elif feature=='condition':
-        return _condition(pathcol,scale,verbose,k=37)
+        return _condition(pathcol,scale,verbose,sigma=3)
     elif feature=='roughness':
         return _roughness(pathcol,verbose)
 
@@ -387,79 +383,32 @@ def _featvector(imgpath,model):
 
 #------------------------------------------------------------------------------
 
-def _condition(pathcol,scale,verbose,k):
+def _condition(pathcol,scale,verbose,sigma):
     """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
        used for measuring photo fading and yellowing"""
 
     if isinstance(pathcol,string_types):
-        return _condition_convolution(pathcol,scale,k)
+        return _condition_convolution(pathcol,scale,sigma)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        cols = ['dmax','dmin','contrast','satdmin']
+        cols = ['contrast','satdmin']
 
         return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
-                            verbose,scale=scale,k=k)
+                            verbose,scale=scale,sigma=sigma)
 
-def _condition_convolution(imgpath,scale,k):
+def _condition_convolution(imgpath,scale,sigma):
     img = color.rgb2hsv(imread(imgpath))
 
     if scale==True:
         img = _scale(img)
 
-    nrows,ncols = img.shape[0],img.shape[1]
+    imgblur = gaussian(img,sigma=sigma,channel_axis=2)
+    contrast = np.max(imgblur[:,:,2]) - np.min(imgblur[:,:,2])
+    dmin = np.argmax(imgblur[:,:,2])
+    satdmin = imgblur[:,:,1].flatten()[dmin]
 
-    valdict = {}
-    satdict = {}
-
-    for i in range(nrows):
-        for j in range(ncols):
-            pixel = (i,j)
-            neighborhood = neighbors(pixel,k)
-            neighborhood = [item for item in neighborhood if all([item[0]>-1,
-                                                                  item[1]>-1,
-                                                                  item[0]<nrows,
-                                                                  item[1]<ncols])]
-
-            # at each pixel in hood, grab brightness and saturation
-            vals = [img[item[0]][item[1]][2] for item in neighborhood]
-            sats = [img[item[0]][item[1]][1] for item in neighborhood]
-            valdict[pixel] = np.mean(vals)
-            satdict[pixel] = np.mean(sats)
-
-    # the pixel locations of min brightness (minpx) and max brightness (maxpx)
-    minpx = min(valdict,key=valdict.get)
-    maxpx = max(valdict,key=valdict.get)
-
-    # the actual brightness values at those pixels
-    dmin = valdict[maxpx] # bc silver density inverts brightness
-    dmax = valdict[minpx] # bc silver density inverts brightness
-
-    # saturation at max brightness
-    satdmin = satdict[maxpx]
-
-    return dmax,dmin,dmin-dmax,satdmin
-
-def neighbors(pixel,k):
-
-    r = ceil(np.sqrt(k))
-    ncols = nrows = r * 2 + 1
-    xgrid = list(range(ncols)) * nrows
-    ygrid = np.repeat(range(nrows),ncols)
-
-    xadj = [i-r for i in xgrid]
-    yadj = [i-r for i in ygrid]
-
-    x = [pixel[0] + i for i in xadj]
-    y = [pixel[1] + i for i in yadj]
-
-    c = Point(pixel)
-    allpts = list(zip(x,y))
-    dists = [c.distance(Point(item)) for item in allpts]
-    df = pd.DataFrame({'pt':allpts,'dist':dists})
-    df = df.sort_values('dist')
-
-    return list(df.pt[:k])
+    return contrast,satdmin
 
 #------------------------------------------------------------------------------
 
