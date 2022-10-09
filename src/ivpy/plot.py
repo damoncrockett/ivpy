@@ -95,7 +95,7 @@ def compose(*args,**kwargs):
         raise TypeError("Arguments passed to 'compose' must be PIL Images")
 
     n = len(args)
-    rounding = kwargs.get('rounding', 'up')
+    rounding = kwargs.get('rounding', 'down')
     ncols = kwargs.get('ncols',_round(sqrt(n),direction=rounding))
     bg = kwargs.get('bg', '#212121')
     border = kwargs.get('border',False)
@@ -366,7 +366,11 @@ def line(*args,**kwargs):
     side = kwargs.get('side', 400)
     bg = kwargs.get('bg', '#212121')
 
-    canvas = Image.new('RGB',(side,side),bg) # fixed size
+    if bg=='transparent':
+        canvas = Image.new('RGBA',(side,side),None) # fixed size
+    else:
+        canvas = Image.new('RGB',(side,side),bg) # fixed size
+
     draw = ImageDraw.Draw(canvas)
 
     anynull = [mean(Series(arg).notnull())!=1 for arg in args]
