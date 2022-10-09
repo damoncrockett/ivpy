@@ -6,6 +6,7 @@ from six import string_types
 from glob2 import glob
 
 from .data import _pathfilter,_typecheck
+from .extract import _read_process_image
 
 #-------------------------------------------------------------------------------
 
@@ -51,6 +52,53 @@ def _resize(impath,savedir,thumb):
         return savestring
     except:
         return None
+
+#-------------------------------------------------------------------------------
+
+def tifpass(savedir=None,pathcol=None,verbose=False):
+    """Creates cropped, normalized, bandpassed versions of texturescope TIFFs,
+    saves to 'savedir'."""
+
+    if savedir==None:
+        raise ValueError("Must supply 'savedir'")
+    elif savedir is not None:
+        if os.path.isdir(savedir)==True:
+            pass
+        else:
+            try:
+                os.mkdir(savedir)
+            except:
+                raise ValueError("'savedir' must be a valid filepath")
+
+    _typecheck(**locals())
+    pathcol = _pathfilter(pathcol)
+
+    if isinstance(pathcol,string_types):
+        return _tifpass(pathcol,savedir)
+
+    elif isinstance(pathcol,pd.Series):
+        pathcol_tifpassed = pd.Series(index=pathcol.index)
+        n = len(pathcol)
+        for j,i in enumerate(pathcol.index):
+            impath = pathcol.loc[i]
+            if verbose==True:
+                print(j+1,'of',n,impath)
+            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir)
+        return pathcol_tifpassed
+
+def _tifpass(impath,savedir):
+    try:
+        img = _read_process_image(impath,gain=250,N=1024)
+        im = Image.fromarray(img)
+        basename = os.path.basename(impath)[:-4]
+        savestring = savedir + "/" + basename + '.tif'
+        im.save(savestring)
+        # alt: 3sd range, imshow colormap = grey
+        return savestring
+    except Exception as e:
+        print(e)
+        return None
+
 #-------------------------------------------------------------------------------
 
 """
