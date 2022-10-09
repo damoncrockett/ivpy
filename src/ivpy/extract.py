@@ -383,7 +383,7 @@ def _featvector(imgpath,model):
 
 #------------------------------------------------------------------------------
 
-def _condition(pathcol,scale,verbose,sigma):
+def _condition(pathcol,scale,verbose,sigma=6):
     """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
        used for measuring photo fading and yellowing"""
 
