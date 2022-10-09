@@ -457,6 +457,10 @@ def _read_process_image(imgpath,gain,N):
     tif_array = (gain*tif_array)/(np.sum(tif_array))*(N**2)
 
     #Subtract low-pass to remove low order waviness
+
+    # for NN, will be darker
+    #tif_array = tif_array / cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
+
     tif_array = tif_array - cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
 
     #High-pass data
