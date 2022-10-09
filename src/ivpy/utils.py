@@ -55,7 +55,7 @@ def _resize(impath,savedir,thumb):
 
 #-------------------------------------------------------------------------------
 
-def tifpass(savedir=None,pathcol=None,verbose=False):
+def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365):
     """Creates cropped, normalized, bandpassed versions of texturescope TIFFs,
     saves to 'savedir'."""
 
@@ -74,7 +74,7 @@ def tifpass(savedir=None,pathcol=None,verbose=False):
     pathcol = _pathfilter(pathcol)
 
     if isinstance(pathcol,string_types):
-        return _tifpass(pathcol,savedir)
+        return _tifpass(pathcol,savedir,gain,N)
 
     elif isinstance(pathcol,pd.Series):
         pathcol_tifpassed = pd.Series(index=pathcol.index)
@@ -83,12 +83,12 @@ def tifpass(savedir=None,pathcol=None,verbose=False):
             impath = pathcol.loc[i]
             if verbose==True:
                 print(j+1,'of',n,impath)
-            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir)
+            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N)
         return pathcol_tifpassed
 
-def _tifpass(impath,savedir):
+def _tifpass(impath,savedir,gain,N):
     try:
-        img = _read_process_image(impath,gain=250,N=1024)
+        img = _read_process_image(impath,gain,N)
         im = Image.fromarray(img)
         basename = os.path.basename(impath)[:-4]
         savestring = savedir + "/" + basename + '.tif'
