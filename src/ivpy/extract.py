@@ -62,7 +62,7 @@ def extract(feature,
     elif feature=='neural':
         return _neural(pathcol,verbose)
     elif feature=='condition':
-        return _condition(pathcol,scale,verbose,sigma=3)
+        return _condition(pathcol,scale,verbose,**kwargs)
     elif feature=='roughness':
         return _roughness(pathcol,verbose)
 
@@ -445,6 +445,7 @@ def _read_process_image(imgpath,gain,N):
     tif_array = color.rgb2gray(tif_array)
 
     # define sigma for Gaussian blurs to low pass and high pass the data
+    #low_pass_sigma = 151
     low_pass_sigma = 201
     high_pass_sigma = 5
 
@@ -469,7 +470,8 @@ def _bandpass_std(imgpath):
     gain = 250
 
     # Extracted image will be NxN = 1024x1024 (middle chunk of the image)
-    N = 1024
+    #N = 1024
+    N = 1365
 
     img = _read_process_image(imgpath,gain,N)
 
