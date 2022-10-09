@@ -90,7 +90,7 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,include_dir=
             pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N,include_dir)
         return pathcol_tifpassed
 
-def _tifpass(impath,savedir,gain,N):
+def _tifpass(impath,savedir,gain,N,include_dir):
     try:
         img = _read_process_image(impath,gain,N)
         im = Image.fromarray(img)
