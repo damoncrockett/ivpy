@@ -10,7 +10,7 @@ from .extract import _read_process_image
 
 #-------------------------------------------------------------------------------
 
-def resize(savedir=None,pathcol=None,thumb=256,verbose=False):
+def resize(savedir=None,pathcol=None,thumb=256,verbose=False,include_dir=False):
     """Creates thumbnails of images, saves to 'savedir'. Had considered default
        'savedir', but decided user should always supply 'savedir', putting
        the write responsibility on them."""
@@ -30,7 +30,7 @@ def resize(savedir=None,pathcol=None,thumb=256,verbose=False):
     pathcol = _pathfilter(pathcol)
 
     if isinstance(pathcol,string_types):
-        return _resize(pathcol,savedir,thumb)
+        return _resize(pathcol,savedir,thumb,include_dir)
 
     elif isinstance(pathcol,pd.Series):
         pathcol_resized = pd.Series(index=pathcol.index)
@@ -39,14 +39,18 @@ def resize(savedir=None,pathcol=None,thumb=256,verbose=False):
             impath = pathcol.loc[i]
             if verbose==True:
                 print(j+1,'of',n,impath)
-            pathcol_resized.loc[i] = _resize(impath,savedir,thumb)
+            pathcol_resized.loc[i] = _resize(impath,savedir,thumb,include_dir)
         return pathcol_resized
 
-def _resize(impath,savedir,thumb):
+def _resize(impath,savedir,thumb,include_dir):
     try:
         im = Image.open(impath)
         im.thumbnail((thumb,thumb),Image.LANCZOS)
-        basename = os.path.basename(impath)
+        if include_dir:
+            basename = '_'.join(impath.split("/"))
+        else:
+            basename = os.path.basename(impath)
+
         savestring = savedir + "/" + basename
         im.save(savestring)
         return savestring
@@ -55,7 +59,7 @@ def _resize(impath,savedir,thumb):
 
 #-------------------------------------------------------------------------------
 
-def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365):
+def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,include_dir=False):
     """Creates cropped, normalized, bandpassed versions of texturescope TIFFs,
     saves to 'savedir'."""
 
@@ -74,7 +78,7 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365):
     pathcol = _pathfilter(pathcol)
 
     if isinstance(pathcol,string_types):
-        return _tifpass(pathcol,savedir,gain,N)
+        return _tifpass(pathcol,savedir,gain,N,include_dir)
 
     elif isinstance(pathcol,pd.Series):
         pathcol_tifpassed = pd.Series(index=pathcol.index)
@@ -83,15 +87,19 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365):
             impath = pathcol.loc[i]
             if verbose==True:
                 print(j+1,'of',n,impath)
-            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N)
+            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N,include_dir)
         return pathcol_tifpassed
 
 def _tifpass(impath,savedir,gain,N):
     try:
         img = _read_process_image(impath,gain,N)
         im = Image.fromarray(img)
-        basename = os.path.basename(impath)[:-4]
-        savestring = savedir + "/" + basename + '.tif'
+        if include_dir:
+            basename = '_'.join(impath.split("/"))
+        else:
+            basename = os.path.basename(impath)
+
+        savestring = savedir + "/" + basename
         im.save(savestring)
         # alt: 3sd range, imshow colormap = grey
         return savestring
