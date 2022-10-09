@@ -99,6 +99,9 @@ def _typecheck(**kwargs):
     dot = kwargs.get('dot',False)
     bincols = kwargs.get('bincols',1)
     sigma = kwargs.get('sigma',1)
+    gain = kwargs.get('gain',250)
+    N = kwargs.get('N',1365)
+    include_dir = kwargs.get('include_dir',False)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -235,6 +238,13 @@ def _typecheck(**kwargs):
         raise TypeError("'bincols' must be an integer")
     if not isinstance(sigma,int_types):
         raise TypeError("'sigma' must be an integer")
+    if not isinstance(gain,int_types):
+        raise TypeError("'gain' must be an integer")
+    if not isinstance(N,int_types):
+        raise TypeError("'N' must be an integer")
+    if not isinstance(include_dir,bool):
+        raise TypeError("'include_dir' must be True or False")
+
 
 def attach(df,pathcol=None):
 
