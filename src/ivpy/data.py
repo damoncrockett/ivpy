@@ -102,6 +102,8 @@ def _typecheck(**kwargs):
     gain = kwargs.get('gain',250)
     N = kwargs.get('N',1365)
     include_dir = kwargs.get('include_dir',False)
+    low_pass_sigma = kwargs.get('low_pass_sigma',201)
+    high_pass_sigma = kwargs.get('high_pass_sigma',5)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -244,7 +246,10 @@ def _typecheck(**kwargs):
         raise TypeError("'N' must be an integer")
     if not isinstance(include_dir,bool):
         raise TypeError("'include_dir' must be True or False")
-
+    if not isinstance(low_pass_sigma,int_types):
+        raise TypeError("'low_pass_sigma' must be an integer")
+    if not isinstance(high_pass_sigma,int_types):
+        raise TypeError("'high_pass_sigma' must be an integer")
 
 def attach(df,pathcol=None):
 

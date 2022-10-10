@@ -64,7 +64,7 @@ def extract(feature,
     elif feature=='condition':
         return _condition(pathcol,scale,verbose,**kwargs)
     elif feature=='roughness':
-        return _roughness(pathcol,verbose)
+        return _roughness(pathcol,verbose,**kwargs)
 
 #------------------------------------------------------------------------------
 
@@ -412,7 +412,9 @@ def _condition_convolution(imgpath,scale,sigma):
 
 #------------------------------------------------------------------------------
 
-def _roughness(pathcol,verbose):
+def _roughness(pathcol,verbose,
+               N=1365,gain=250,low_pass_sigma=201,high_pass_sigma=5):
+
     """Returns standard deviation of pixel brightness after some pre-processing
     and bandpass filtering. Only works with TIFF files currently. Intended for
     use with raking light microscopy images. Used for approximating Sq as
@@ -421,12 +423,14 @@ def _roughness(pathcol,verbose):
     """
 
     if isinstance(pathcol,string_types):
-        return _bandpass_std(pathcol)
+        return _bandpass_std(pathcol,N,gain,low_pass_sigma,high_pass_sigma)
 
     elif isinstance(pathcol,pd.Series):
         cols = [0]
         breaks,pct = _progressBar(pathcol)
-        return _iterextract(pathcol,cols,breaks,pct,_bandpass_std,verbose)
+        return _iterextract(pathcol,cols,breaks,pct,_bandpass_std,verbose,
+                            N=N,gain=gain,low_pass_sigma=low_pass_sigma,
+                            high_pass_sigma=high_pass_sigma)
 
 def _crop_array(array,N):
 
@@ -439,15 +443,15 @@ def _crop_array(array,N):
 
     return array[int(upper):int(lower),int(left):int(right)]
 
-def _read_process_image(imgpath,gain,N):
+def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma):
 
     tif_array = np.array(tiff.imread(imgpath),dtype=np.float64)/(2**16)
     tif_array = color.rgb2gray(tif_array)
 
     # define sigma for Gaussian blurs to low pass and high pass the data
     #low_pass_sigma = 151
-    low_pass_sigma = 201
-    high_pass_sigma = 5
+    #low_pass_sigma = 201
+    #high_pass_sigma = 5
 
     # Crop array to extract middle 1024x1024 portion of image
     # Adding extra to allow for smooth filtering
@@ -469,14 +473,15 @@ def _read_process_image(imgpath,gain,N):
 
     return tif_array
 
-def _bandpass_std(imgpath):
+def _bandpass_std(imgpath,N,gain,low_pass_sigma,high_pass_sigma):
+
     # Scaling factor used in normalization step (found by trial)
-    gain = 250
+    #gain = 250
 
     # Extracted image will be NxN = 1024x1024 (middle chunk of the image)
     #N = 1024
-    N = 1365
+    #N = 1365
 
-    img = _read_process_image(imgpath,gain,N)
+    img = _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma)
 
     return np.std(img)
