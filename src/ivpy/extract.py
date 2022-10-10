@@ -413,7 +413,7 @@ def _condition_convolution(imgpath,scale,sigma):
 #------------------------------------------------------------------------------
 
 def _roughness(pathcol,verbose,
-               N=1365,gain=250,low_pass_sigma=201,high_pass_sigma=5):
+               N=1365,gain=250,low_pass_sigma=201,high_pass_sigma=5,low_pass_apply='subtract'):
 
     """Returns standard deviation of pixel brightness after some pre-processing
     and bandpass filtering. Only works with TIFF files currently. Intended for
@@ -423,14 +423,14 @@ def _roughness(pathcol,verbose,
     """
 
     if isinstance(pathcol,string_types):
-        return _bandpass_std(pathcol,N,gain,low_pass_sigma,high_pass_sigma)
+        return _bandpass_std(pathcol,N,gain,low_pass_sigma,high_pass_sigma,low_pass_apply)
 
     elif isinstance(pathcol,pd.Series):
         cols = [0]
         breaks,pct = _progressBar(pathcol)
         return _iterextract(pathcol,cols,breaks,pct,_bandpass_std,verbose,
                             N=N,gain=gain,low_pass_sigma=low_pass_sigma,
-                            high_pass_sigma=high_pass_sigma)
+                            high_pass_sigma=high_pass_sigma,low_pass_apply=low_pass_apply)
 
 def _crop_array(array,N):
 
@@ -443,7 +443,7 @@ def _crop_array(array,N):
 
     return array[int(upper):int(lower),int(left):int(right)]
 
-def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma):
+def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_apply):
 
     tif_array = np.array(tiff.imread(imgpath),dtype=np.float64)/(2**16)
     tif_array = color.rgb2gray(tif_array)
@@ -460,12 +460,13 @@ def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma):
     # Normalize by total intensity
     tif_array = (gain*tif_array)/(np.sum(tif_array))*(N**2)
 
-    #Subtract low-pass to remove low order waviness
+    #Subtract or divide low-pass to remove low order waviness
+    #Use divide for NN, will be darker
 
-    # for NN, will be darker
-    #tif_array = tif_array / cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
-
-    tif_array = tif_array - cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
+    if low_pass_apply == 'divide':
+        tif_array = tif_array / cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
+    elif low_pass_apply == 'subtract':
+        tif_array = tif_array - cv2.GaussianBlur(tif_array,(low_pass_sigma,low_pass_sigma),0)
 
     #High-pass data
     tif_array = cv2.GaussianBlur(tif_array,(high_pass_sigma,high_pass_sigma),0)
@@ -473,7 +474,7 @@ def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma):
 
     return tif_array
 
-def _bandpass_std(imgpath,N,gain,low_pass_sigma,high_pass_sigma):
+def _bandpass_std(imgpath,N,gain,low_pass_sigma,high_pass_sigma,low_pass_apply):
 
     # Scaling factor used in normalization step (found by trial)
     #gain = 250
@@ -482,6 +483,6 @@ def _bandpass_std(imgpath,N,gain,low_pass_sigma,high_pass_sigma):
     #N = 1024
     #N = 1365
 
-    img = _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma)
+    img = _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_apply)
 
     return np.std(img)
