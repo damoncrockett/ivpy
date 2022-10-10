@@ -1,9 +1,11 @@
 import os
 import pandas as pd
+import numpy as np
 from PIL import Image
 from six import string_types
 #import image_slicer
 from glob2 import glob
+import matplotlib.pyplot as plt
 
 from .data import _pathfilter,_typecheck
 from .extract import _read_process_image
@@ -59,7 +61,9 @@ def _resize(impath,savedir,thumb,include_dir):
 
 #-------------------------------------------------------------------------------
 
-def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,include_dir=False):
+def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,
+            include_dir=False,low_pass_sigma=201,high_pass_sigma=5,
+            plainsave=False):
     """Creates cropped, normalized, bandpassed versions of texturescope TIFFs,
     saves to 'savedir'."""
 
@@ -78,7 +82,8 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,include_dir=
     pathcol = _pathfilter(pathcol)
 
     if isinstance(pathcol,string_types):
-        return _tifpass(pathcol,savedir,gain,N,include_dir)
+        return _tifpass(pathcol,savedir,gain,N,
+                        include_dir,low_pass_sigma,high_pass_sigma,plainsave)
 
     elif isinstance(pathcol,pd.Series):
         pathcol_tifpassed = pd.Series(index=pathcol.index)
@@ -87,21 +92,29 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,include_dir=
             impath = pathcol.loc[i]
             if verbose==True:
                 print(j+1,'of',n,impath)
-            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N,include_dir)
+            pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N,include_dir,
+                                                low_pass_sigma,high_pass_sigma,plainsave)
         return pathcol_tifpassed
 
-def _tifpass(impath,savedir,gain,N,include_dir):
+def _tifpass(impath,savedir,gain,N,include_dir,low_pass_sigma,high_pass_sigma,plainsave):
     try:
-        img = _read_process_image(impath,gain,N)
-        im = Image.fromarray(img)
+        img = _read_process_image(impath,gain,N,low_pass_sigma,high_pass_sigma)
+
         if include_dir:
             basename = '_'.join(impath.split("/"))
         else:
             basename = os.path.basename(impath)
-
         savestring = savedir + "/" + basename
-        im.save(savestring)
-        # alt: 3sd range, imshow colormap = grey
+
+        if plainsave:
+            im = Image.fromarray(img)
+            im.save(savestring)
+        else:
+            vmin= -3*np.std(img)
+            vmax=  3*np.std(img)
+            savestring = savestring[:-3] + 'jpg'
+            _ = plt.imsave(savestring, img, vmin=vmin, vmax=vmax, cmap='gray')
+
         return savestring
     except Exception as e:
         print(e)

@@ -104,6 +104,7 @@ def _typecheck(**kwargs):
     include_dir = kwargs.get('include_dir',False)
     low_pass_sigma = kwargs.get('low_pass_sigma',201)
     high_pass_sigma = kwargs.get('high_pass_sigma',5)
+    plainsave = kwargs.get('plainsave',False)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -250,6 +251,8 @@ def _typecheck(**kwargs):
         raise TypeError("'low_pass_sigma' must be an integer")
     if not isinstance(high_pass_sigma,int_types):
         raise TypeError("'high_pass_sigma' must be an integer")
+    if not isinstance(plainsave,bool):
+        raise TypeError("'plainsave' must be True or False")
 
 def attach(df,pathcol=None):
 
