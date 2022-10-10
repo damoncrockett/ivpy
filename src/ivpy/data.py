@@ -105,6 +105,7 @@ def _typecheck(**kwargs):
     low_pass_sigma = kwargs.get('low_pass_sigma',201)
     high_pass_sigma = kwargs.get('high_pass_sigma',5)
     plainsave = kwargs.get('plainsave',False)
+    low_pass_apply = kwargs.get('low_pass_apply','subtract')
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -253,6 +254,8 @@ def _typecheck(**kwargs):
         raise TypeError("'high_pass_sigma' must be an integer")
     if not isinstance(plainsave,bool):
         raise TypeError("'plainsave' must be True or False")
+    if low_pass_apply not in ['subtract','divide']:
+        raise TypeError("'low_pass_apply' must be either 'subtract' or 'divide'")
 
 def attach(df,pathcol=None):
 
