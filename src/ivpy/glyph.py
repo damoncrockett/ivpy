@@ -1,7 +1,6 @@
 import pandas as pd
 from PIL import Image,ImageDraw
 from .data import check_nan, _typecheck
-from .plottools import _border
 import os
 import numpy as np
 
@@ -10,9 +9,9 @@ import numpy as np
 
 def draw_glyphs(df,aes,savedir,
                 glyphtype='radar',
-                border=True,
+                gridlines=True,
                 mat=True,
-                crosshairs=True,
+                radii=True,
                 side=200,
                 alpha=1.0):
     """
@@ -31,13 +30,13 @@ def draw_glyphs(df,aes,savedir,
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha)
+        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha)
 
     return gpaths
 
 #-------------------------------------------------------------------------------
 
-def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
+def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha):
 
     alphargb = int(alpha*255)
 
@@ -100,10 +99,8 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
         except:
             c = colors[0]
 
-        glyph = _radar(polypts,crosshairs,c,side)
+        glyph = _radar(polypts,radii,gridlines,c,side)
 
-        if border:
-            glyph = _border(glyph,width=round(side/200))
         if mat:
             glyph = _mat(glyph)
 
@@ -149,10 +146,10 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
     return gpaths
 
 # outline not settable by user, currently
-def _radar(polypts,crosshairs,radarfill,
+def _radar(polypts,radii,gridlines,radarfill,
           side=200,
           outline=None,
-          crosshairfill='grey'):
+          radiifill='grey'):
 
     """
     Function where the basic radar glyph is drawn. Not meant to be user-called,
@@ -178,13 +175,36 @@ def _radar(polypts,crosshairs,radarfill,
     elif len(coords) > 2:
         draw.polygon(list(coords), fill=radarfill, outline=outline)
 
-    if crosshairs:
+    if radii:
         draw.line([(halfside,0),(halfside,side)],
-                  fill=crosshairfill,
+                  fill=radiifill,
                   width=round(side/200))
         draw.line([(0,halfside),(side,halfside)],
-                  fill=crosshairfill,
+                  fill=radiifill,
                   width=round(side/200))
+
+    if gridlines:
+
+        sSixth = side / 6;
+        sThird = side / 3;
+        sHalf = side / 2;
+        sTwoThird = side * 2/3;
+        sFiveSixth = side * 5/6;
+
+        draw.line([(sHalf,0),(side,sHalf)],fill=radiifill,width=round(side/200))
+        draw.line([(side,sHalf),(sHalf,side)],fill=radiifill,width=round(side/200))
+        draw.line([(sHalf,side),(0,sHalf)],fill=radiifill,width=round(side/200))
+        draw.line([(0,sHalf),(sHalf,0)],fill=radiifill,width=round(side/200))
+
+        draw.line([(sHalf,sSixth),(sFiveSixth,sHalf)],fill=radiifill,width=round(side/200))
+        draw.line([(sFiveSixth,sHalf),(sHalf,sFiveSixth)],fill=radiifill,width=round(side/200))
+        draw.line([(sHalf,sFiveSixth),(sSixth,sHalf)],fill=radiifill,width=round(side/200))
+        draw.line([(sSixth,sHalf),(sHalf,sSixth)],fill=radiifill,width=round(side/200))
+
+        draw.line([(sHalf,sThird),(sTwoThird,sHalf)],fill=radiifill,width=round(side/200))
+        draw.line([(sTwoThird,sHalf),(sHalf,sTwoThird)],fill=radiifill,width=round(side/200))
+        draw.line([(sHalf,sTwoThird),(sThird,sHalf)],fill=radiifill,width=round(side/200))
+        draw.line([(sThird,sHalf),(sHalf,sThird)],fill=radiifill,width=round(side/200))
 
     return im
 

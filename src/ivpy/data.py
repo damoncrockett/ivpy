@@ -92,7 +92,8 @@ def _typecheck(**kwargs):
     border = kwargs.get('border',True)
     mat = kwargs.get('mat',True)
     verbose = kwargs.get('verbose',False)
-    crosshairs = kwargs.get('crosshairs',True)
+    radii = kwargs.get('radii',True)
+    gridlines = kwargs.get('gridlines',True)
     alpha = kwargs.get('alpha',1.0)
     plot = kwargs.get('plot',True)
     flip = kwargs.get('flip',False)
@@ -223,8 +224,10 @@ def _typecheck(**kwargs):
         raise TypeError("'mat' must be True or False")
     if not isinstance(verbose,bool):
         raise TypeError("'aggregate' must be True or False")
-    if not isinstance(crosshairs,bool):
-        raise TypeError("'crosshairs' must be True or False")
+    if not isinstance(radii,bool):
+        raise TypeError("'radii' must be True or False")
+    if not isinstance(gridlines,bool):
+        raise TypeError("'gridlines' must be True or False")
     if not isinstance(alpha,(int_types,float_types)):
         raise TypeError("'alpha' must be a number between 0 and 1")
     if not all([alpha <= 1, alpha >= 0]):
