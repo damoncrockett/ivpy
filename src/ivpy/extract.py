@@ -448,12 +448,15 @@ def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_a
     tif_array = np.array(tiff.imread(imgpath),dtype=np.float64)/(2**16)
     tif_array = color.rgb2gray(tif_array)
 
+    if tif_array.shape != (2048,2448):
+        N = 1024
+
     # define sigma for Gaussian blurs to low pass and high pass the data
     #low_pass_sigma = 151
     #low_pass_sigma = 201
     #high_pass_sigma = 5
 
-    # Crop array to extract middle 1024x1024 portion of image
+    # Crop array to extract middle NxN portion of image
     # Adding extra to allow for smooth filtering
     tif_array = _crop_array(tif_array,N+low_pass_sigma)
 

@@ -63,7 +63,7 @@ def _resize(impath,savedir,thumb,include_dir):
 
 def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,
             include_dir=False,low_pass_sigma=201,high_pass_sigma=5,
-            plainsave=False):
+            low_pass_apply='subtract',plainsave=False):
     """Creates cropped, normalized, bandpassed versions of texturescope TIFFs,
     saves to 'savedir'."""
 
@@ -83,7 +83,8 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,
 
     if isinstance(pathcol,string_types):
         return _tifpass(pathcol,savedir,gain,N,
-                        include_dir,low_pass_sigma,high_pass_sigma,plainsave)
+                        include_dir,low_pass_sigma,high_pass_sigma,
+                        low_pass_apply,plainsave)
 
     elif isinstance(pathcol,pd.Series):
         pathcol_tifpassed = pd.Series(index=pathcol.index)
@@ -93,12 +94,13 @@ def tifpass(savedir=None,pathcol=None,verbose=False,gain=250,N=1365,
             if verbose==True:
                 print(j+1,'of',n,impath)
             pathcol_tifpassed.loc[i] = _tifpass(impath,savedir,gain,N,include_dir,
-                                                low_pass_sigma,high_pass_sigma,plainsave)
+                                                low_pass_sigma,high_pass_sigma,
+                                                low_pass_apply,plainsave)
         return pathcol_tifpassed
 
-def _tifpass(impath,savedir,gain,N,include_dir,low_pass_sigma,high_pass_sigma,plainsave):
+def _tifpass(impath,savedir,gain,N,include_dir,low_pass_sigma,high_pass_sigma,low_pass_apply,plainsave):
     try:
-        img = _read_process_image(impath,gain,N,low_pass_sigma,high_pass_sigma)
+        img = _read_process_image(impath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_apply)
 
         if include_dir:
             basename = '_'.join(impath.split("/"))
