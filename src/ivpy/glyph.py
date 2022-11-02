@@ -142,7 +142,7 @@ def _draw_radar(df,aes,savedir,border,mat,crosshairs,side,alpha):
                     fill = 'black'
                 glyph = add_flag(glyph,'right',outline=None,fill=fill)
 
-        savestring = savedir + str(basename_i) + ".png"
+        savestring = os.path.join(savedir, str(basename_i) + ".png")
         glyph.save(savestring)
         gpaths.append(savestring)
 
