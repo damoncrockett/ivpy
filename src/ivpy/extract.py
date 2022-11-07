@@ -450,7 +450,7 @@ def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_a
     if tif_array.shape[2] == 3:
         tif_array = color.rgb2gray(tif_array)
     elif tif_array.shape[2] == 4:
-        tif_array = color.rgb2gray(color.rgba2rgb(tif_array))
+        tif_array = color.rgb2gray(tif_array[:,:,:3])
 
     if tif_array.shape != (2048,2448):
         N = 1024
