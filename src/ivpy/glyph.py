@@ -213,7 +213,8 @@ def _radarcoords(polypts,halfside):
 
     left = _radar_axis_position(False,False,polypts[0],halfside)
     top = _radar_axis_position(True,False,polypts[1],halfside)
-    right = _radar_axis_position(False,True,1-polypts[2],halfside)
+    #right = _radar_axis_position(False,True,1-polypts[2],halfside) # gloss inversion
+    right = _radar_axis_position(False,True,polypts[2],halfside)
     bottom = _radar_axis_position(True,True,polypts[3],halfside)
 
     coords = pd.Series([left,top,right,bottom])
