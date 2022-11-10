@@ -9,6 +9,11 @@ import matplotlib.pyplot as plt
 
 from .data import _pathfilter,_typecheck
 from .extract import _read_process_image
+from skimage.color import rgb2gray
+from skimage.io import imsave
+import tifffile as tiff
+import warnings
+warnings.filterwarnings('ignore')
 
 #-------------------------------------------------------------------------------
 
@@ -121,6 +126,84 @@ def _tifpass(impath,savedir,gain,N,include_dir,low_pass_sigma,high_pass_sigma,lo
     except Exception as e:
         print(e)
         return None
+
+#-------------------------------------------------------------------------------
+
+def tifprocess(savedir=None,pathcol=None,verbose=False,N=1365,include_dir=False):
+    """Creates cropped, exposure-corrected versions of texturescope TIFFs,
+    saves to 'savedir'."""
+
+    if savedir==None:
+        raise ValueError("Must supply 'savedir'")
+    elif savedir is not None:
+        if os.path.isdir(savedir)==True:
+            pass
+        else:
+            try:
+                os.mkdir(savedir)
+            except:
+                raise ValueError("'savedir' must be a valid filepath")
+
+    _typecheck(**locals())
+    pathcol = _pathfilter(pathcol)
+
+    if isinstance(pathcol,string_types):
+        return _tifprocess(pathcol,savedir,N,include_dir)
+
+    elif isinstance(pathcol,pd.Series):
+        pathcol_tifprocessed = []
+        n = len(pathcol)
+        for j,i in enumerate(pathcol.index):
+            impath = pathcol.loc[i]
+            if verbose==True:
+                print(j+1,'of',n,impath)
+            pathcol_tifprocessed.append(_tifprocess(impath,savedir,N,include_dir))
+        return pd.Series(pathcol_tifprocessed,index=pathcol.index)
+
+def _tifprocess(impath,savedir,N,include_dir):
+    try:
+        img = rgb2gray(tiff.imread(impath))
+        if img.shape[1] < 2448:
+            N = 1024
+        img = _crop_array(img,N)
+        img = _exposure_correction(img)
+
+        if include_dir:
+            basename = '_'.join(impath.split("/"))
+        else:
+            basename = os.path.basename(impath)[:-3] + 'jpg'
+
+        savestring = os.path.join(savedir,basename)
+        _ = imsave(savestring,img)
+
+        return savestring
+    except Exception as e:
+        print(e)
+        return None
+
+def _crop_array(array,N):
+
+    h, w = array.shape
+
+    left  = w/2 - N/2
+    upper = h/2 - N/2
+    right = w/2 + N/2
+    lower = h/2 + N/2
+
+    return array[int(upper):int(lower),int(left):int(right)]
+
+def _exposure_correction(img):
+    tmp = img.flatten()
+    y, _ = np.histogram(tmp, bins=np.linspace(0,1,101))
+    peak = np.argmax(y)
+    exposure_correction = 0.5/(peak/100)
+
+    imgout = img*exposure_correction
+
+    imgout[imgout < 0] = 0
+    imgout[imgout > 1] = 1
+
+    return imgout
 
 #-------------------------------------------------------------------------------
 

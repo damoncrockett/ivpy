@@ -445,14 +445,14 @@ def _crop_array(array,N):
 
 def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_apply):
 
-    tif_array = np.array(tiff.imread(imgpath),dtype=np.float64)/(2**16)
+    tif_array = tiff.imread(imgpath)
 
     if tif_array.shape[2] == 3:
         tif_array = color.rgb2gray(tif_array)
     elif tif_array.shape[2] == 4:
         tif_array = color.rgb2gray(tif_array[:,:,:3])
 
-    if tif_array.shape != (2048,2448):
+    if tif_array.shape[1] < 2448:
         N = 1024
 
     # define sigma for Gaussian blurs to low pass and high pass the data
