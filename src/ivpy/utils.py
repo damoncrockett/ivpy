@@ -167,6 +167,7 @@ def _tifprocess(impath,savedir,N,include_dir):
             N = 1024
         img = _crop_array(img,N)
         img = _exposure_correction(img)
+        img = np.uint8(img * 255)
 
         if include_dir:
             basename = '_'.join(impath.split("/"))
