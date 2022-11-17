@@ -108,34 +108,64 @@ def compose(*args,**kwargs):
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
 
-    # if user-called
+    # if user-called, we take min side as thumb
     if isinstance(args[0],Image.Image):
         thumb = kwargs.get('thumb',min(_getsizes(args)))
         if not isinstance(thumb, int): # main typecheck already done
             raise TypeError("'thumb' must be an integer")
+
+        thumbargs = [deepcopy(arg) for arg in args]
+        for thumbarg in thumbargs:
+            thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        maxheight = max([item.height for item in thumbargs])
+
         w,h,coords = _gridcoords(n,ncols,thumb)
         metacanvas = Image.new('RGB',(w,h),bg)
 
         for i in range(n):
-            canvas = args[i]
-            tmp = deepcopy(canvas) # copy because thumbnail always inplace
-            tmp.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            if border==True:
-                tmp = _border(tmp)
-            metacanvas.paste(tmp,coords[i])
+            canvas = thumbargs[i]
+            if canvas.height < maxheight:
+                maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
+                maxtemplate.paste(canvas,(0,maxheight-canvas.height))
+            else:
+                maxtemplate = canvas
+            if border:
+                maxtemplate = _border(maxtemplate)
+            metacanvas.paste(maxtemplate,coords[i])
 
     # if called by plotting function
     elif isinstance(args[0],tuple):
         # need user control here
         # item[0] in each arg is the Image; item[1] is matdict
-        thumb = kwargs.get('thumb',min(_getsizes([item[0] for item in args])))
+        thumb = kwargs.get('thumb',max(_getsizes([item[0] for item in args])))
+        for arg in args:
+            arg[0].thumbnail((thumb,thumb),Image.ANTIALIAS)
+        # below is necessary because hist facets can be different heights
+        maxheight = max([item[0].height for item in args])
 
+        """
+        If plottype == scatter, all facets have the same widths and heights.
+        If plottype == histogram, all facet widths are the same, but heights can differ.
+        If plottype == montage, both heights and widths can differ.
+        """
         mattedfacets = []
         for arg in args:
             canvas = arg[0]
             matdict = arg[1]
-            canvas.thumbnail((thumb,thumb),Image.ANTIALIAS)
-            mattedfacets.append(_plotmat(canvas,**matdict))
+            matdict['border'] = border
+            if all([matdict['plottype']=='histogram',canvas.height < maxheight]):
+                maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
+                maxtemplate.paste(canvas,(0,maxheight-canvas.height))
+                mattedfacets.append(_plotmat(maxtemplate,**matdict))
+            elif all([matdict['plottype']=='montage',any([canvas.width < thumb, canvas.height < thumb])]):
+                maxtemplate = Image.new('RGB',(thumb,thumb),bg)
+                halfwdiff = int( (thumb - canvas.width) / 2 )
+                halfhdiff = int( (thumb - canvas.height) / 2 )
+                maxtemplate.paste(canvas,(halfwdiff,halfhdiff))
+                #maxtemplate.paste(canvas,(0,0)) # top left, doesn't look as good
+                mattedfacets.append(_plotmat(maxtemplate,**matdict))
+            else:
+                mattedfacets.append(_plotmat(canvas,**matdict))
 
         side = mattedfacets[0].width # any side in the list is fine, all same
         w,h,coords = _gridcoords(n,ncols,side)
@@ -159,7 +189,8 @@ def montage(pathcol=None,
             shape='square',
             ascending=False,
             facetcol=None,
-            notecol=None):
+            notecol=None,
+            border=False):
 
     """
     Square or circular montage of images
@@ -176,6 +207,7 @@ def montage(pathcol=None,
         ascending (Boolean) --- sorting order
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
+        border (Boolean) --- whether to draw border around plot
     """
 
     try:
@@ -196,7 +228,7 @@ def montage(pathcol=None,
     elif facetcol is not None:
         facetlist = _facet(**locals())
         plotlist = [_montage(**facet) for facet in facetlist]
-        return compose(*plotlist)
+        return compose(*plotlist,border=border)
 
 #------------------------------------------------------------------------------
 
@@ -217,7 +249,8 @@ def histogram(xcol,
               xaxis=None,
               flip=False,
               dot=False,
-              bincols=1):
+              bincols=1,
+              border=False):
 
     """
     Cartesian or polar histogram of images
@@ -238,12 +271,13 @@ def histogram(xcol,
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
-        xaxis (Boolean) --- whether to include bin labels
+        xaxis (Boolean,int) --- whether to include bin labels or number to include
         flip (Boolean) --- whether to flip images vertically; for 'under'
             histogram
         dot (Boolean) --- whether to use uniform dots as plotting units
         bincols (int) --- number of columns per bin; usually 1, higher if some
             bins are excessively large
+        border (Boolean) --- whether to draw border around plot
     """
 
     try:
@@ -267,7 +301,7 @@ def histogram(xcol,
             raise ValueError("Cannot flip images in a faceted plot")
         facetlist = _facet(**locals())
         plotlist = [_histogram(**facet) for facet in facetlist]
-        return compose(*plotlist)
+        return compose(*plotlist,border=border)
 
 #------------------------------------------------------------------------------
 
@@ -288,7 +322,8 @@ def scatter(xcol,
             notecol=None,
             xaxis=None,
             yaxis=None,
-            dot=False):
+            dot=False,
+            border=False):
 
     """
     Cartesian or polar scatterplot of images
@@ -309,9 +344,10 @@ def scatter(xcol,
         coordinates (str) --- 'cartesian' or 'polar'
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
-        xaxis (Boolean) --- whether to include x-axis labels
-        yaxis (Boolean) --- whether to include y-axis labels
+        xaxis (Boolean,int) --- whether to include x-axis labels or number to include
+        yaxis (Boolean,int) --- whether to include y-axis labels or number to inlucde
         dot (Boolean) --- whether to use uniform dots as plotting units
+        border (Boolean) --- whether to border plots
     """
 
     try:
@@ -334,7 +370,7 @@ def scatter(xcol,
     elif facetcol is not None:
         facetlist = _facet(**locals())
         plotlist = [_scatter(**facet) for facet in facetlist]
-        return compose(*plotlist)
+        return compose(*plotlist,border=border)
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------

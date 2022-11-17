@@ -99,6 +99,8 @@ def _typecheck(**kwargs):
     flip = kwargs.get('flip',False)
     dot = kwargs.get('dot',False)
     bincols = kwargs.get('bincols',1)
+    xaxis = kwargs.get('xaxis')
+    yaxis = kwargs.get('yaxis')
     sigma = kwargs.get('sigma',1)
     gain = kwargs.get('gain',250)
     N = kwargs.get('N',1365)
@@ -243,6 +245,12 @@ def _typecheck(**kwargs):
         raise TypeError("'dot' must be True or False")
     if not isinstance(bincols,int_types):
         raise TypeError("'bincols' must be an integer")
+    if xaxis is not None:
+        if not isinstance(xaxis,(int_types,bool)):
+            raise TypeError("'xaxis' must be True, False, or an integer")
+    if yaxis is not None:
+        if not isinstance(yaxis,(int_types,bool)):
+            raise TypeError("'yaxis' must be True, False, or an integer")
     if not isinstance(sigma,int_types):
         raise TypeError("'sigma' must be an integer")
     if not isinstance(gain,int_types):
@@ -532,6 +540,7 @@ def _facet(**kwargs):
     the data extremes so that each facet can use the same domain. Conversely, if
     we do have user-passed domains, they need to dictate the plotting ranges.
     """
+
     if xcol is not None:
         if xdomain is None:
             xdomain = (xcol.min(),xcol.max())
