@@ -20,12 +20,12 @@ seq_types = (list,tuple,np.ndarray,pd.Series)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-def _border(im,fill='#4a4a4a',width=1):
+def _border(im,fill='white',width=1):
     _typecheck(**locals())
     draw = ImageDraw.Draw(im)
     # n.b.: lines are drawn under and to the right of the starting pixel
-    draw.line([(0,0),(im.width,0)],fill=fill,width=width)
-    draw.line([(im.width-1,0),(im.width-1,im.height)],fill=fill,width=width)
+    #draw.line([(0,0),(im.width,0)],fill=fill,width=width)
+    #draw.line([(im.width-1,0),(im.width-1,im.height)],fill=fill,width=width)
     draw.line([(im.width,im.height-1),(0,im.height-1)],fill=fill,width=width)
     draw.line([(0,im.height),(0,0)],fill=fill,width=width)
 
@@ -54,7 +54,8 @@ def _montage(pathcol=None,
              ascending=None,
              facetcol=None,
              facettitle=None,
-             notecol=None):
+             notecol=None,
+             border=None):
 
     n = len(pathcol)
 
@@ -111,7 +112,8 @@ def _histogram(xcol=None,
                notecol=None,
                flip=None,
                dot=None,
-               bincols=None):
+               bincols=None,
+               border=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
@@ -192,16 +194,12 @@ def _histogram(xcol=None,
                    notecol=notecol,dot=dot)
 
     if facetcol is None:
-        if xaxis is not None:
-            canvas = _plotmat(canvas,
-                          bg=bg,
-                          facetcol=facetcol,
-                          xaxis=xaxis,
-                          plottype='histogram')
-
         if flip==True:
-            return canvas.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
+            return canvas.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM) # note that a flipped canvas cannot have axis labels
         else:
+            if xaxis is not None:
+                canvas = _plotmat(canvas,bg=bg,xaxis=xaxis,plottype='histogram',border=border)
+
             return canvas
 
     elif facetcol is not None:
@@ -232,7 +230,8 @@ def _scatter(xcol=None,
              xaxis=None,
              yaxis=None,
              notecol=None,
-             dot=None):
+             dot=None,
+             border=None):
 
     if xbins is not None:
         xcol = _bin(xcol,xbins)
@@ -259,11 +258,8 @@ def _scatter(xcol=None,
 
     if facetcol is None:
         if any([xaxis is not None,yaxis is not None]):
-            canvas = _plotmat(canvas,
-                          bg=bg,
-                          facetcol=facetcol,
-                          xaxis=xaxis,
-                          yaxis=yaxis)
+            canvas = _plotmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
+                              plottype='scatter',border=border)
 
         return canvas
 
@@ -271,7 +267,8 @@ def _scatter(xcol=None,
         matdict = {'bg':bg,
                    'facettitle':facettitle,
                    'xaxis':xaxis,
-                   'yaxis':yaxis}
+                   'yaxis':yaxis,
+                   'plottype':'scatter'}
 
         return canvas,matdict
 
@@ -497,13 +494,14 @@ def _plotmat(im,
          facettitle=None,
          xaxis=None,
          yaxis=None,
-         plottype=None):
+         plottype=None,
+         border=None):
 
     if im.width!=im.height:
-        im = _premat(im,bg,plottype)
-
-    #if plottype!='montage': # bc montages do not have axis boundaries
-    #    im = _border(im)
+        im = _premat(im,bg,plottype,border)
+    else:
+        if border:
+            im = _border(im)
 
     # we want a 9-letter word to span half the plot width
     pt = 0
@@ -531,11 +529,15 @@ def _plotmat(im,
 
     return mat
 
-def _premat(im,bg,plottype):
+def _premat(im,bg,plottype,border):
+
+    if border:
+        im = _border(im)
+
     side = max([im.width,im.height])
     premat = Image.new('RGB',(side,side),bg)
 
-    if plottype=='histogram':
+    if plottype in ['histogram','scatter']:
         premat.paste(im,(0,side-im.height))
     elif plottype=='montage':
         halfwdiff = int( (side - im.width) / 2 )
