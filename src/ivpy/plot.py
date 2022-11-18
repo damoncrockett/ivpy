@@ -299,8 +299,8 @@ def histogram(xcol,
     elif facetcol is not None:
         if flip==True:
             raise ValueError("Cannot flip images in a faceted plot")
-        facetlist = _facet(**locals())
-        plotlist = [_histogram(**facet) for facet in facetlist]
+        facetlist,binmax = _facet(**locals(),plottype='histogram')
+        plotlist = [_histogram(**facet,binmax=binmax) for facet in facetlist]
         return compose(*plotlist,border=border)
 
 #------------------------------------------------------------------------------
