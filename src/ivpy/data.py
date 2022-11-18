@@ -534,6 +534,9 @@ def _facet(**kwargs):
     xdomain = kwargs.get('xdomain')
     ydomain = kwargs.get('ydomain')
     notecol = kwargs.get('notecol')
+    plottype = kwargs.get('plottype')
+    coordinates = kwargs.get('coordinates')
+    bins = kwargs.get('bins')
 
     """
     If we have xcol and ycol, but no user-passed domains, then we set them to
@@ -550,9 +553,11 @@ def _facet(**kwargs):
 
     facetlist = []
     vcounts = facetcol.value_counts()
+    binmax = None # idle unless polar histogram
     #for val in np.sort(facetcol.unique()): # incl NaN but NaNs probably removed
     for val in vcounts.index:
         tmp = copy.deepcopy(kwargdict)
+        del tmp['plottype']
         tmp['facettitle'] = str(val)
 
         # this bit fixes plot axes across facets
@@ -570,9 +575,27 @@ def _facet(**kwargs):
         if notecol is not None:
             tmp['notecol'] = notecol.loc[facetedcol.index]
 
+        ###---------- Getting binmax for polar histogram
+        if all([plottype=='histogram',coordinates=='polar']):
+            if xdomain is not None:
+                if isinstance(bins,int):
+                    xbin = pd.cut(tmp['xcol'],np.linspace(xdomain[0],xdomain[1],bins+1),labels=False,include_lowest=True)
+            else:
+                xbin = pd.cut(tmp['xcol'],bins,labels=False,include_lowest=True)
+
+            nonemptybins = xbin.unique() # will ignore empty bins
+            facet_binmax = xbin.value_counts().max()
+            if binmax is None:
+                binmax = facet_binmax
+            elif binmax is not None:
+                if facet_binmax > binmax:
+                    binmax = facet_binmax
+
+        ###----------
+
         facetlist.append(tmp)
 
-    return facetlist
+    return facetlist,binmax
 
 def check_nan(cell):
     """

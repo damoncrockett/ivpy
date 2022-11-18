@@ -113,7 +113,8 @@ def _histogram(xcol=None,
                flip=None,
                dot=None,
                bincols=None,
-               border=None):
+               border=None,
+               binmax=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
@@ -144,7 +145,9 @@ def _histogram(xcol=None,
         xbin = pd.cut(xcol,bins,labels=False,include_lowest=True)
 
     nonemptybins = xbin.unique() # will ignore empty bins
-    binmax = xbin.value_counts().max()
+
+    if binmax is None:
+        binmax = xbin.value_counts().max()
 
     if isinstance(bins,int):
         nbins = bins
@@ -520,7 +523,7 @@ def _plotmat(im,
     draw = ImageDraw.Draw(mat)
 
     if any([xaxis is not None, yaxis is not None]):
-        mat = _axes(mat,draw,xaxis,yaxis)
+        mat = _axes(mat,draw,xaxis,yaxis,pt)
 
     if facettitle is not None:
         text = facettitle
@@ -546,7 +549,7 @@ def _premat(im,bg,plottype,border):
 
     return premat
 
-def _axes(mat,draw,xaxis,yaxis):
+def _axes(mat,draw,xaxis,yaxis,pt):
     return None
 
 def _progressBar(pathcol):
