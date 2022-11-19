@@ -20,6 +20,9 @@ seq_types = (list,tuple,np.ndarray,pd.Series)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
+"""
+This needs to be made sensitive to the plot size, or else the line just vanishes.
+"""
 def _border(im,fill='white',width=1):
     _typecheck(**locals())
     draw = ImageDraw.Draw(im)
@@ -55,7 +58,8 @@ def _montage(pathcol=None,
              facetcol=None,
              facettitle=None,
              notecol=None,
-             border=None):
+             border=None,
+             title=None):
 
     n = len(pathcol)
 
@@ -109,12 +113,14 @@ def _histogram(xcol=None,
                facetcol=None,
                facettitle=None,
                xaxis=None,
+               yaxis=None,
                notecol=None,
                flip=None,
                dot=None,
                bincols=None,
                border=None,
-               binmax=None):
+               binmax=None,
+               title=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
@@ -200,8 +206,10 @@ def _histogram(xcol=None,
         if flip==True:
             return canvas.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM) # note that a flipped canvas cannot have axis labels
         else:
-            if xaxis is not None:
-                canvas = _plotmat(canvas,bg=bg,xaxis=xaxis,plottype='histogram',border=border)
+            if any([xaxis is not None,border is not None]):
+                canvas = _facetmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
+                                   plottype='histogram',border=border,
+                                   xtitle=xcol.name,ytitle='count')
 
             return canvas
 
@@ -209,7 +217,10 @@ def _histogram(xcol=None,
         matdict = {'bg':bg,
                    'facettitle':facettitle,
                    'xaxis':xaxis,
-                   'plottype':'histogram'}
+                   'yaxis':yaxis,
+                   'plottype':'histogram',
+                   'xtitle':xcol.name,
+                   'ytitle':'count'}
 
         return canvas,matdict
 
@@ -234,7 +245,8 @@ def _scatter(xcol=None,
              yaxis=None,
              notecol=None,
              dot=None,
-             border=None):
+             border=None,
+             title=None):
 
     if xbins is not None:
         xcol = _bin(xcol,xbins)
@@ -260,9 +272,10 @@ def _scatter(xcol=None,
         _paste(pathcol,thumb,idx,canvas,coords,coordinates,phis,notecol=notecol,dot=dot)
 
     if facetcol is None:
-        if any([xaxis is not None,yaxis is not None]):
-            canvas = _plotmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
-                              plottype='scatter',border=border)
+        if any([xaxis is not None,border is not None]):
+            canvas = _facetmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
+                              plottype='scatter',border=border,
+                              xtitle=xcol.name,ytitle=ycol.name)
 
         return canvas
 
@@ -271,23 +284,217 @@ def _scatter(xcol=None,
                    'facettitle':facettitle,
                    'xaxis':xaxis,
                    'yaxis':yaxis,
-                   'plottype':'scatter'}
+                   'plottype':'scatter',
+                   'xtitle':xcol.name,
+                   'ytitle':ycol.name}
 
         return canvas,matdict
+
+#-------------------------------------------------------------------------------
+
+def _facetcompose(*args,border=None,bg=None):
+
+    # item[0] in each arg is the Image; item[1] is matdict
+    thumb = max( _getsizes([item[0] for item in args]) )
+    for arg in args:
+        arg[0].thumbnail((thumb,thumb),Image.ANTIALIAS)
+
+    # below is necessary because hist facets can be different heights
+    maxheight = max([item[0].height for item in args])
+
+    """
+    If plottype == scatter, all facets have the same widths and heights.
+    If plottype == histogram, all facet widths are the same, but heights can differ.
+    If plottype == montage, both heights and widths can differ.
+
+    In the loop below, plots are same-sized (set to the largest),and then matted
+    (where titles, axes are added). Another loop composes them into a single plot.
+    """
+    mattedfacets = []
+    for arg in args:
+        canvas = arg[0]
+        matdict = arg[1]
+        matdict['border'] = border
+        if all([matdict['plottype']=='histogram',canvas.height < maxheight]):
+            maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
+            #maxtemplate = Image.new('RGB',(canvas.width,maxheight),'salmon')
+            maxtemplate.paste(canvas,(0,maxheight-canvas.height))
+            mattedfacets.append(_facetmat(maxtemplate,**matdict))
+        elif all([matdict['plottype']=='montage',any([canvas.width < thumb, canvas.height < thumb])]):
+            maxtemplate = Image.new('RGB',(thumb,thumb),bg)
+            #maxtemplate = Image.new('RGB',(thumb,thumb),'salmon')
+            halfwdiff = int( (thumb - canvas.width) / 2 )
+            halfhdiff = int( (thumb - canvas.height) / 2 )
+            maxtemplate.paste(canvas,(halfwdiff,halfhdiff))
+            #maxtemplate.paste(canvas,(0,0)) # top left, doesn't look as good
+            mattedfacets.append(_facetmat(maxtemplate,**matdict))
+        else:
+            mattedfacets.append(_facetmat(canvas,**matdict))
+
+    n = len(args)
+    ncols = _round(sqrt(n),direction='down')
+    w,h,coords = _gridcoords(n,ncols,mattedfacets[0].size) # any facet in the list is fine, all same
+    metacanvas = Image.new('RGB',(w,h),bg)
+
+    for i in range(n):
+        canvas = mattedfacets[i]
+
+        # I'll remove this _border() eventually; just for development
+        # if border:
+        #     canvas = _border(canvas)
+
+        metacanvas.paste(canvas,coords[i])
+
+    return metacanvas
+
+#-------------------------------------------------------------------------------
+
+def _facetmat(im,
+         bg=None,
+         facettitle=None,
+         xaxis=None,
+         yaxis=None,
+         plottype=None,
+         border=None,
+         xtitle=None,
+         ytitle=None):
+
+    if border:
+        im = _border(im)
+
+    font,pt,fontHeight = _titlesize(im)
+
+    """
+    Note below that axis titles are added automatically when and only when axes
+    are specified. One possibility this rules out is simply specifying axis
+    titles without also printing ticks and labels. My current position is that
+    if this is all you need, you can just put 'Y by X' as the title of the plot,
+    but I could see changing this in the future.
+    """
+
+    if xaxis is not None:
+        if all([yaxis is None,plottype=='scatter']):
+            raise ValueError("If 'xaxis' is not None, 'yaxis' cannot be None")
+        elif all([yaxis is None,plottype=='histogram']):
+            im = _axes(im,xaxis,4,pt,fontHeight,xtitle,ytitle) # 4 bin count ticks if none specified
+        else:
+            im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle)
+
+    if facettitle is not None:
+        im = _entitle(im,facettitle,font,fontHeight)
+
+    return im
+
+def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle):
+
+    boxSize = fontHeight*2
+    imsize = im.size
+    ax = Image.new('RGB',(imsize[0]+boxSize*2,imsize[1]+boxSize*2),'#212121')
+    ax.paste(im,(boxSize*2,0))
+
+    # ticks
+    # xbox = Image.new('RGB',(imsize[0],boxSize),'green')
+    # ybox = Image.new('RGB',(boxSize,imsize[1]),'purple')
+    xbox = Image.new('RGB',(imsize[0],boxSize),'#212121')
+    ybox = Image.new('RGB',(boxSize,imsize[1]),'#212121')
+
+    xboxdraw = ImageDraw.Draw(xbox)
+    yboxdraw = ImageDraw.Draw(ybox)
+
+    xtickincr = ceil(imsize[0]/xaxis)
+    xticklocs = list(range(xtickincr,imsize[0],xtickincr))
+    for xtick in xticklocs[:xaxis]:
+        xboxdraw.line([(xtick,0),(xtick,int(boxSize/8))])
+
+    ytickincr = ceil(imsize[1]/yaxis)
+    yticklocs = list(range(ytickincr,imsize[1],ytickincr))
+    for ytick in yticklocs[:yaxis]:
+        yboxdraw.line([(boxSize,ytick),(boxSize-int(boxSize/8),ytick)])
+
+    # ticklabels
+    tickLabelFont = ImageFont.truetype('../fonts/Roboto-Light.ttf',int(pt * 0.67))
+
+    for xtick in xticklocs:
+        text = str(xtick)
+        labelFontWidth,labelFontHeight = tickLabelFont.getsize(text)
+        xboxdraw.text((int(xtick-labelFontWidth/2),int(boxSize/8+labelFontHeight/2)),text,font=tickLabelFont)
+
+    ylabels = list(reversed(yticklocs))
+    for i,ytick in enumerate(yticklocs):
+        text = str(ylabels[i])
+        labelFontWidth,labelFontHeight = tickLabelFont.getsize(text)
+        yboxdraw.text((boxSize-int(boxSize/8)-labelFontWidth-labelFontHeight/2,int(ytick-labelFontHeight/2)),text,font=tickLabelFont)
+
+    ax.paste(xbox,(boxSize*2,imsize[1]))
+    ax.paste(ybox,(boxSize,0))
+
+    # axis titles
+    titleFont = ImageFont.truetype('../fonts/Roboto-Light.ttf',pt)
+    xAxisFontWidth,xAxisFontHeight = titleFont.getsize(xtitle)
+    yAxisFontWidth,yAxisFontHeight = titleFont.getsize(ytitle)
+
+    # xlbox = Image.new('RGB',(imsize[0],boxSize),'black')
+    # ylbox = Image.new('RGB',(imsize[1],boxSize),'darkslategrey')
+    xlbox = Image.new('RGB',(imsize[0],boxSize),'#212121')
+    ylbox = Image.new('RGB',(imsize[1],boxSize),'#212121')
+
+    xlboxdraw = ImageDraw.Draw(xlbox)
+    ylboxdraw = ImageDraw.Draw(ylbox)
+
+    xlboxdraw.text((int(imsize[0]/2-xAxisFontWidth/2),int(xAxisFontHeight/4)),xtitle,font=titleFont)
+    ylboxdraw.text((int(imsize[1]/2-yAxisFontWidth/2),int(yAxisFontHeight/4)),ytitle,font=titleFont)
+
+    ax.paste(xlbox,(boxSize*2,imsize[1]+boxSize))
+
+    ylbox = ylbox.rotate(90,expand=1)
+    ax.paste(ylbox,(0,0))
+
+    return ax
+
+def _titlesize(im):
+
+    side = max(im.size)
+    pt = 0
+    fontWidth = 0
+    while fontWidth < side/4:
+        pt+=1
+        sampletext = "LANDSCAPE" # just some 9-letter word
+        font = ImageFont.truetype('../fonts/Roboto-Light.ttf',pt)
+        fontWidth,fontHeight = font.getsize(sampletext)
+
+    return font,pt,fontHeight
+
+def _entitle(im,title,font,fontHeight):
+    mat = Image.new('RGB',(im.width,im.height+fontHeight*2),'#212121')
+    #mat = Image.new('RGB',(im.width,im.height+fontHeight*2),'dodgerblue')
+    mat.paste(im,(0,fontHeight*2))
+    draw = ImageDraw.Draw(mat)
+    titleFontWidth,titleFontHeight = font.getsize(title)
+    draw.text((int(im.width/2-titleFontWidth/2),int(fontHeight-titleFontHeight/2)),title,font=font)
+
+    return mat
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
 def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
-    w,h = ncols*thumb,nrows*thumb
+
+    if isinstance(thumb,int_types):
+        item_width = thumb
+        item_height = thumb
+    elif isinstance(thumb,tuple):
+        item_width = thumb[0]
+        item_height = thumb[1]
+
+    w,h = ncols*item_width,nrows*item_height
 
     xgrid = list(range(ncols)) * nrows # bc py3 range returns iterator
     ygrid = repeat(range(nrows),ncols)
     xgrid = xgrid[:n]
     ygrid = ygrid[:n]
-    x = [item*thumb for item in xgrid]
-    y = [item*thumb for item in ygrid]
+    x = [item*item_width for item in xgrid]
+    y = [item*item_height for item in ygrid]
 
     return w,h,list(zip(x,y)) # py3 zip
 
@@ -395,7 +602,7 @@ def _idx(im,i):
     fontsize = int( im.width / 28 )
     if fontsize < 10:
         fontsize = 10
-    font = ImageFont.truetype('../fonts/VeraMono.ttf',fontsize)
+    font = ImageFont.truetype('../fonts/Roboto-Light.ttf',fontsize)
     fontWidth, fontHeight = font.getsize(text)
 
     draw.rectangle(
@@ -414,7 +621,7 @@ def _annote(im,note):
     fontsize = int( im.width / 28 )
     if fontsize < 10:
         fontsize = 10
-    font = ImageFont.truetype('../fonts/VeraMono.ttf',fontsize )
+    font = ImageFont.truetype('../fonts/Roboto-Light.ttf',fontsize )
     maxwidthtext = max(textlist,key=len)
     fontWidth = font.getsize(maxwidthtext)[0]
     # 4 is default line spacing in PIL multiline_text
@@ -491,66 +698,6 @@ def _round(x,direction='down'):
 def _getsizes(args):
     plotsizes = [item.size for item in args]
     return [item for sublist in plotsizes for item in sublist]
-
-def _plotmat(im,
-         bg=None,
-         facettitle=None,
-         xaxis=None,
-         yaxis=None,
-         plottype=None,
-         border=None):
-
-    if im.width!=im.height:
-        im = _premat(im,bg,plottype,border)
-    else:
-        if border:
-            im = _border(im)
-
-    # we want a 9-letter word to span half the plot width
-    pt = 0
-    fontWidth = 0
-    while fontWidth < im.width/2:
-        pt+=1
-        sampletext = "LANDSCAPE" # just some 9-letter word
-        font = ImageFont.truetype('../fonts/VeraMono.ttf',pt)
-        fontWidth,fontHeight = font.getsize(sampletext)
-
-    side = im.height + fontHeight * 3 * 2 # 3 rows of text top and bottom
-    mat = Image.new('RGB',(side,side),bg)
-    halfwdiff = int( (side - im.width) / 2 )
-    halfhdiff = int( (side - im.height) / 2 )
-    mat.paste(im,(halfwdiff,halfhdiff))
-    draw = ImageDraw.Draw(mat)
-
-    if any([xaxis is not None, yaxis is not None]):
-        mat = _axes(mat,draw,xaxis,yaxis,pt)
-
-    if facettitle is not None:
-        text = facettitle
-        fontWidth,fontHeight = font.getsize(text)
-        draw.text((int((side-fontWidth)/2),fontHeight),text,font=font)
-
-    return mat
-
-def _premat(im,bg,plottype,border):
-
-    if border:
-        im = _border(im)
-
-    side = max([im.width,im.height])
-    premat = Image.new('RGB',(side,side),bg)
-
-    if plottype in ['histogram','scatter']:
-        premat.paste(im,(0,side-im.height))
-    elif plottype=='montage':
-        halfwdiff = int( (side - im.width) / 2 )
-        halfhdiff = int( (side - im.height) / 2 )
-        premat.paste(im,(halfwdiff,halfhdiff))
-
-    return premat
-
-def _axes(mat,draw,xaxis,yaxis,pt):
-    return None
 
 def _progressBar(pathcol):
     n = len(pathcol)
