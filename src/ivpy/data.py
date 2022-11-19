@@ -112,8 +112,8 @@ def _typecheck(**kwargs):
 
     """type checking"""
     if thumb!=False: # can only be false in show()
-        if not isinstance(thumb,int_types):
-            raise TypeError("'thumb' must be an integer")
+        if not isinstance(thumb,(int_types,tuple)):
+            raise TypeError("'thumb' must be an integer or a tuple")
     if not isinstance(sample,int_types):
         raise TypeError("'sample' must be an integer")
     elif sample==True: # necessary bc True counts as int for some reason
@@ -557,7 +557,12 @@ def _facet(**kwargs):
     #for val in np.sort(facetcol.unique()): # incl NaN but NaNs probably removed
     for val in vcounts.index:
         tmp = copy.deepcopy(kwargdict)
-        del tmp['plottype']
+
+        try:
+            del tmp['plottype']
+        except:
+            pass
+
         tmp['facettitle'] = str(val)
 
         # this bit fixes plot axes across facets

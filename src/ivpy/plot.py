@@ -5,7 +5,8 @@ from copy import deepcopy
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
-from .plottools import _border,_montage,_histogram,_scatter,_plotmat
+from .plottools import _border,_montage,_histogram,_scatter,_facetcompose
+from .plottools import _titlesize,_entitle
 
 seq_types = (list,tuple,ndarray,Series)
 
@@ -71,7 +72,7 @@ def show(pathcol=None,
 
 #------------------------------------------------------------------------------
 
-def compose(*args,**kwargs):
+def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=False):
 
     """
     Composes PIL canvases into metacanvas
@@ -83,22 +84,17 @@ def compose(*args,**kwargs):
         thumb (int) --- pixel value for thumbnail side
         bg (color) --- background color
         border (Boolean) --- whether to border plots
-
-        Currently, an issue needing fixing is that when 'compose' is called
-        by a plotting function, the user cannot directly control facet size.
-        Indirectly, the user can crank up 'thumb' in the original plot call.
     """
 
-    # can be (canvas,matdict) tuples if called within a plotting function
-    typelist = [isinstance(item,(Image.Image,tuple)) for item in args]
+    typelist = [isinstance(item,Image.Image) for item in args]
     if not all(typelist):
         raise TypeError("Arguments passed to 'compose' must be PIL Images")
 
     n = len(args)
-    rounding = kwargs.get('rounding', 'down')
-    ncols = kwargs.get('ncols',_round(sqrt(n),direction=rounding))
-    bg = kwargs.get('bg', '#212121')
-    border = kwargs.get('border',False)
+    if ncols is None:
+        ncols = _round(sqrt(n),direction=rounding)
+    if thumb is None:
+        thumb = min(_getsizes(args))
 
     try:
         _typecheck(**locals()['kwargs'])
@@ -108,72 +104,24 @@ def compose(*args,**kwargs):
     if ncols > n:
         raise ValueError("'ncols' cannot be larger than number of plots")
 
-    # if user-called, we take min side as thumb
-    if isinstance(args[0],Image.Image):
-        thumb = kwargs.get('thumb',min(_getsizes(args)))
-        if not isinstance(thumb, int): # main typecheck already done
-            raise TypeError("'thumb' must be an integer")
+    thumbargs = [deepcopy(arg) for arg in args]
+    for thumbarg in thumbargs:
+        thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
+    maxheight = max([item.height for item in thumbargs])
 
-        thumbargs = [deepcopy(arg) for arg in args]
-        for thumbarg in thumbargs:
-            thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
-        maxheight = max([item.height for item in thumbargs])
+    w,h,coords = _gridcoords(n,ncols,thumb)
+    metacanvas = Image.new('RGB',(w,h),bg)
 
-        w,h,coords = _gridcoords(n,ncols,thumb)
-        metacanvas = Image.new('RGB',(w,h),bg)
-
-        for i in range(n):
-            canvas = thumbargs[i]
-            if canvas.height < maxheight:
-                maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
-                maxtemplate.paste(canvas,(0,maxheight-canvas.height))
-            else:
-                maxtemplate = canvas
-            if border:
-                maxtemplate = _border(maxtemplate)
-            metacanvas.paste(maxtemplate,coords[i])
-
-    # if called by plotting function
-    elif isinstance(args[0],tuple):
-        # need user control here
-        # item[0] in each arg is the Image; item[1] is matdict
-        thumb = kwargs.get('thumb',max(_getsizes([item[0] for item in args])))
-        for arg in args:
-            arg[0].thumbnail((thumb,thumb),Image.ANTIALIAS)
-        # below is necessary because hist facets can be different heights
-        maxheight = max([item[0].height for item in args])
-
-        """
-        If plottype == scatter, all facets have the same widths and heights.
-        If plottype == histogram, all facet widths are the same, but heights can differ.
-        If plottype == montage, both heights and widths can differ.
-        """
-        mattedfacets = []
-        for arg in args:
-            canvas = arg[0]
-            matdict = arg[1]
-            matdict['border'] = border
-            if all([matdict['plottype']=='histogram',canvas.height < maxheight]):
-                maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
-                maxtemplate.paste(canvas,(0,maxheight-canvas.height))
-                mattedfacets.append(_plotmat(maxtemplate,**matdict))
-            elif all([matdict['plottype']=='montage',any([canvas.width < thumb, canvas.height < thumb])]):
-                maxtemplate = Image.new('RGB',(thumb,thumb),bg)
-                halfwdiff = int( (thumb - canvas.width) / 2 )
-                halfhdiff = int( (thumb - canvas.height) / 2 )
-                maxtemplate.paste(canvas,(halfwdiff,halfhdiff))
-                #maxtemplate.paste(canvas,(0,0)) # top left, doesn't look as good
-                mattedfacets.append(_plotmat(maxtemplate,**matdict))
-            else:
-                mattedfacets.append(_plotmat(canvas,**matdict))
-
-        side = mattedfacets[0].width # any side in the list is fine, all same
-        w,h,coords = _gridcoords(n,ncols,side)
-        metacanvas = Image.new('RGB',(w,h),bg)
-
-        for i in range(n):
-            canvas = mattedfacets[i]
-            metacanvas.paste(canvas,coords[i])
+    for i in range(n):
+        canvas = thumbargs[i]
+        if canvas.height < maxheight:
+            maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
+            maxtemplate.paste(canvas,(0,maxheight-canvas.height))
+        else:
+            maxtemplate = canvas
+        if border:
+            maxtemplate = _border(maxtemplate)
+        metacanvas.paste(maxtemplate,coords[i])
 
     return metacanvas
 
@@ -190,7 +138,7 @@ def montage(pathcol=None,
             ascending=False,
             facetcol=None,
             notecol=None,
-            border=False):
+            title=None):
 
     """
     Square or circular montage of images
@@ -207,7 +155,7 @@ def montage(pathcol=None,
         ascending (Boolean) --- sorting order
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
-        border (Boolean) --- whether to draw border around plot
+        title (str) --- plot title
     """
 
     try:
@@ -224,11 +172,18 @@ def montage(pathcol=None,
                                                notecol=notecol)
 
     if facetcol is None:
-        return _montage(**locals())
+        canvas = _montage(**locals())
+
     elif facetcol is not None:
-        facetlist = _facet(**locals())
+        facetlist,_ = _facet(**locals())
         plotlist = [_montage(**facet) for facet in facetlist]
-        return compose(*plotlist,border=border)
+        canvas = _facetcompose(*plotlist,bg=bg)
+
+    if title is not None:
+        font,_,fontHeight = _titlesize(canvas)
+        canvas = _entitle(canvas,title,font,fontHeight)
+
+    return canvas
 
 #------------------------------------------------------------------------------
 
@@ -247,10 +202,12 @@ def histogram(xcol,
               facetcol=None,
               notecol=None,
               xaxis=None,
+              yaxis=None,
               flip=False,
               dot=False,
               bincols=1,
-              border=False):
+              border=False,
+              title=None):
 
     """
     Cartesian or polar histogram of images
@@ -272,12 +229,14 @@ def histogram(xcol,
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
         xaxis (Boolean,int) --- whether to include bin labels or number to include
+        yaxis (Boolean,int) --- whether to include bin counts or number to include
         flip (Boolean) --- whether to flip images vertically; for 'under'
             histogram
         dot (Boolean) --- whether to use uniform dots as plotting units
         bincols (int) --- number of columns per bin; usually 1, higher if some
             bins are excessively large
         border (Boolean) --- whether to draw border around plot
+        title (str) --- plot title
     """
 
     try:
@@ -295,13 +254,22 @@ def histogram(xcol,
                                                notecol=notecol)
 
     if facetcol is None:
-        return _histogram(**locals())
+        canvas = _histogram(**locals())
+
     elif facetcol is not None:
+
         if flip==True:
             raise ValueError("Cannot flip images in a faceted plot")
+
         facetlist,binmax = _facet(**locals(),plottype='histogram')
         plotlist = [_histogram(**facet,binmax=binmax) for facet in facetlist]
-        return compose(*plotlist,border=border)
+        canvas = _facetcompose(*plotlist,border=border,bg=bg)
+
+    if title is not None:
+        font,_,fontHeight = _titlesize(canvas)
+        canvas = _entitle(canvas,title,font,fontHeight)
+
+    return canvas
 
 #------------------------------------------------------------------------------
 
@@ -323,7 +291,8 @@ def scatter(xcol,
             xaxis=None,
             yaxis=None,
             dot=False,
-            border=False):
+            border=False,
+            title=None):
 
     """
     Cartesian or polar scatterplot of images
@@ -348,6 +317,7 @@ def scatter(xcol,
         yaxis (Boolean,int) --- whether to include y-axis labels or number to inlucde
         dot (Boolean) --- whether to use uniform dots as plotting units
         border (Boolean) --- whether to border plots
+        title (str) --- plot title
     """
 
     try:
@@ -366,11 +336,18 @@ def scatter(xcol,
                                                scatter=True)
 
     if facetcol is None:
-        return _scatter(**locals())
+        canvas = _scatter(**locals())
+
     elif facetcol is not None:
-        facetlist = _facet(**locals())
+        facetlist,_ = _facet(**locals())
         plotlist = [_scatter(**facet) for facet in facetlist]
-        return compose(*plotlist,border=border)
+        canvas = _facetcompose(*plotlist,border=border,bg=bg)
+
+    if title is not None:
+        font,_,fontHeight = _titlesize(canvas)
+        canvas = _entitle(canvas,title,font,fontHeight)
+
+    return canvas
 
 #------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
