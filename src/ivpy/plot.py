@@ -6,7 +6,7 @@ from copy import deepcopy
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
 from .plottools import _border,_montage,_histogram,_scatter,_facetcompose
-from .plottools import _titlesize,_entitle
+from .plottools import _titlesize,_entitle,_bottom_left_corner
 
 seq_types = (list,tuple,ndarray,Series)
 
@@ -107,21 +107,17 @@ def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=Fals
     thumbargs = [deepcopy(arg) for arg in args]
     for thumbarg in thumbargs:
         thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
-    maxheight = max([item.height for item in thumbargs])
 
     w,h,coords = _gridcoords(n,ncols,thumb)
     metacanvas = Image.new('RGB',(w,h),bg)
 
     for i in range(n):
         canvas = thumbargs[i]
-        if canvas.height < maxheight:
-            maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
-            maxtemplate.paste(canvas,(0,maxheight-canvas.height))
-        else:
-            maxtemplate = canvas
+        if canvas.size!=(thumb,thumb):
+            canvas = _bottom_left_corner(canvas,thumb)
         if border:
-            maxtemplate = _border(maxtemplate)
-        metacanvas.paste(maxtemplate,coords[i])
+            canvas = _border(canvas)
+        metacanvas.paste(canvas,coords[i])
 
     return metacanvas
 
@@ -138,7 +134,8 @@ def montage(pathcol=None,
             ascending=False,
             facetcol=None,
             notecol=None,
-            title=None):
+            title=None,
+            border=False):
 
     """
     Square or circular montage of images
@@ -156,6 +153,7 @@ def montage(pathcol=None,
         facetcol (str,Series) --- col to split data into plot facets
         notecol (str,Series) --- annotation column
         title (str) --- plot title
+        border (Boolean) --- whether to border facets
     """
 
     try:
@@ -177,7 +175,7 @@ def montage(pathcol=None,
     elif facetcol is not None:
         facetlist,_ = _facet(**locals())
         plotlist = [_montage(**facet) for facet in facetlist]
-        canvas = _facetcompose(*plotlist,bg=bg)
+        canvas = _facetcompose(*plotlist,bg=bg,border=border)
 
     if title is not None:
         font,_,fontHeight = _titlesize(canvas)
@@ -207,7 +205,8 @@ def histogram(xcol,
               dot=False,
               bincols=1,
               border=False,
-              title=None):
+              title=None,
+              axislines=False):
 
     """
     Cartesian or polar histogram of images
@@ -235,8 +234,9 @@ def histogram(xcol,
         dot (Boolean) --- whether to use uniform dots as plotting units
         bincols (int) --- number of columns per bin; usually 1, higher if some
             bins are excessively large
-        border (Boolean) --- whether to draw border around plot
+        border (Boolean) --- whether to border facets
         title (str) --- plot title
+        axislines (Boolean) --- whether to draw axis lines
     """
 
     try:
@@ -292,7 +292,8 @@ def scatter(xcol,
             yaxis=None,
             dot=False,
             border=False,
-            title=None):
+            title=None,
+            axislines=False):
 
     """
     Cartesian or polar scatterplot of images
@@ -318,6 +319,7 @@ def scatter(xcol,
         dot (Boolean) --- whether to use uniform dots as plotting units
         border (Boolean) --- whether to border plots
         title (str) --- plot title
+        axislines (Boolean) --- whether to draw axis lines
     """
 
     try:

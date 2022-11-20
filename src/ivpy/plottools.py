@@ -20,17 +20,14 @@ seq_types = (list,tuple,np.ndarray,pd.Series)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-"""
-This needs to be made sensitive to the plot size, or else the line just vanishes.
-"""
-def _border(im,fill='white',width=1):
+def _border(im):
+
     _typecheck(**locals())
+
     draw = ImageDraw.Draw(im)
     # n.b.: lines are drawn under and to the right of the starting pixel
-    #draw.line([(0,0),(im.width,0)],fill=fill,width=width)
-    #draw.line([(im.width-1,0),(im.width-1,im.height)],fill=fill,width=width)
-    draw.line([(im.width,im.height-1),(0,im.height-1)],fill=fill,width=width)
-    draw.line([(0,im.height),(0,0)],fill=fill,width=width)
+    draw.line([(im.width,im.height-1),(0,im.height-1)],fill='white',width=1)
+    draw.line([(0,im.height),(0,0)],fill='white',width=1)
 
     return im
 
@@ -120,7 +117,8 @@ def _histogram(xcol=None,
                bincols=None,
                border=None,
                binmax=None,
-               title=None):
+               title=None,
+               axislines=None):
 
     """
     If user submitted bin sequence leaves out some rows, user must pass xdomain
@@ -208,8 +206,8 @@ def _histogram(xcol=None,
         else:
             if any([xaxis is not None,border is not None]):
                 canvas = _facetmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
-                                   plottype='histogram',border=border,
-                                   xtitle=xcol.name,ytitle='count')
+                                   plottype='histogram',xtitle=xcol.name,
+                                   ytitle='count',axislines=axislines)
 
             return canvas
 
@@ -220,7 +218,8 @@ def _histogram(xcol=None,
                    'yaxis':yaxis,
                    'plottype':'histogram',
                    'xtitle':xcol.name,
-                   'ytitle':'count'}
+                   'ytitle':'count',
+                   'axislines':axislines}
 
         return canvas,matdict
 
@@ -246,7 +245,8 @@ def _scatter(xcol=None,
              notecol=None,
              dot=None,
              border=None,
-             title=None):
+             title=None,
+             axislines=None):
 
     if xbins is not None:
         xcol = _bin(xcol,xbins)
@@ -274,8 +274,8 @@ def _scatter(xcol=None,
     if facetcol is None:
         if any([xaxis is not None,border is not None]):
             canvas = _facetmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
-                              plottype='scatter',border=border,
-                              xtitle=xcol.name,ytitle=ycol.name)
+                              plottype='scatter',xtitle=xcol.name,
+                              ytitle=ycol.name,axislines=axislines)
 
         return canvas
 
@@ -286,7 +286,8 @@ def _scatter(xcol=None,
                    'yaxis':yaxis,
                    'plottype':'scatter',
                    'xtitle':xcol.name,
-                   'ytitle':ycol.name}
+                   'ytitle':ycol.name,
+                   'axislines':axislines}
 
         return canvas,matdict
 
@@ -314,7 +315,6 @@ def _facetcompose(*args,border=None,bg=None):
     for arg in args:
         canvas = arg[0]
         matdict = arg[1]
-        matdict['border'] = border
         if all([matdict['plottype']=='histogram',canvas.height < maxheight]):
             maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
             #maxtemplate = Image.new('RGB',(canvas.width,maxheight),'salmon')
@@ -339,9 +339,8 @@ def _facetcompose(*args,border=None,bg=None):
     for i in range(n):
         canvas = mattedfacets[i]
 
-        # I'll remove this _border() eventually; just for development
-        # if border:
-        #     canvas = _border(canvas)
+        if border:
+            canvas = _border(canvas)
 
         metacanvas.paste(canvas,coords[i])
 
@@ -355,11 +354,11 @@ def _facetmat(im,
          xaxis=None,
          yaxis=None,
          plottype=None,
-         border=None,
+         axislines=None,
          xtitle=None,
          ytitle=None):
 
-    if border:
+    if axislines:
         im = _border(im)
 
     font,pt,fontHeight = _titlesize(im)
@@ -698,6 +697,12 @@ def _round(x,direction='down'):
 def _getsizes(args):
     plotsizes = [item.size for item in args]
     return [item for sublist in plotsizes for item in sublist]
+
+def _bottom_left_corner(im,thumb,bg='#212121'):
+    canvas = Image.new('RGB',(thumb,thumb),bg)
+    canvas.paste(im,(0,thumb-im.height))
+
+    return canvas
 
 def _progressBar(pathcol):
     n = len(pathcol)
