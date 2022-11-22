@@ -445,12 +445,15 @@ def _crop_array(array,N):
 
 def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_apply):
 
-    tif_array = tiff.imread(imgpath)
+    try:
+        tif_array = tiff.imread(imgpath)
+    except:
+        tif_array = np.asarray(Image.open(imgpath)) # used if imagecodecs is missing above
 
     if tif_array.shape[2] == 3:
         tif_array = color.rgb2gray(tif_array)
     elif tif_array.shape[2] == 4:
-        tif_array = color.rgb2gray(tif_array[:,:,:3])
+        tif_array = color.rgb2gray(tif_array[:,:,:3]) # some have alpha layer for some reason
 
     if tif_array.shape[1] < 2448:
         N = 1024
