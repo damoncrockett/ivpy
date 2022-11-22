@@ -162,9 +162,21 @@ def tifprocess(savedir=None,pathcol=None,verbose=False,N=1365,include_dir=False)
 
 def _tifprocess(impath,savedir,N,include_dir):
     try:
-        img = rgb2gray(tiff.imread(impath))
+        try:
+            img = tiff.imread(impath)
+        except:
+            # if imagecodecs is missing
+            img = np.asarray(Image.open(impath))
+
+        # remove transparency layer
+        if img.shape[2]==4:
+            img = img[:,:,:3]
+
+        img = rgb2gray(img)
+
         if img.shape[1] < 2448:
             N = 1024
+
         img = _crop_array(img,N)
         img = _exposure_correction(img)
         img = np.uint8(img * 255)
