@@ -383,7 +383,7 @@ def _facetmat(im,
         if all([yaxis is None,plottype=='scatter']):
             raise ValueError("If 'xaxis' is not None, 'yaxis' cannot be None")
         elif all([yaxis is None,plottype=='histogram']):
-            im = _axes(im,xaxis,4,pt,fontHeight,xtitle,ytitle,xdomain,binmax=binmax) # 4 bin count ticks if none specified
+            im = _axes(im,xaxis,6,pt,fontHeight,xtitle,ytitle,xdomain,binmax=binmax) # 4 bin count ticks if none specified
         else:
             im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=ydomain,binmax=binmax)
 
@@ -488,9 +488,7 @@ def _entitle(im,title,font,fontHeight):
 #-------------------------------------------------------------------------------
 
 def label_round(lmax):
-    
     lmax = abs(lmax)
-    
     if int(lmax)==0:
         return 2
     else:
@@ -667,6 +665,8 @@ def _placeholder(thumb):
     return im
 
 def _dot(thumb):
+    if isinstance(thumb,tuple):
+        thumb = max(thumb)
     im = Image.new('RGBA',(thumb,thumb),'rgba(0,0,0,0)')
     draw = ImageDraw.Draw(im)
     incr = int( thumb / 10 )
@@ -694,7 +694,11 @@ def _paste(pathcol,thumb,idx,canvas,coords,
         except:
             im = _placeholder(thumb)
 
-        im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        if isinstance(thumb,tuple):
+            im.thumbnail((thumb[0],thumb[1]),Image.ANTIALIAS)
+        elif isinstance(thumb,int_types):        
+            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        
         im = im.convert('RGBA') # often unnecessary but for rotation and glyphs
         if idx==True: # idx labels placed after thumbnail
             _idx(im,i)
