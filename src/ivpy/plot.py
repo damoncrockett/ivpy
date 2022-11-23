@@ -253,6 +253,9 @@ def histogram(xcol,
                                                facetcol=facetcol,
                                                notecol=notecol)
 
+    if xdomain is None:
+        xdomain = (xcol.min(),xcol.max())
+    
     if facetcol is None:
         canvas = _histogram(**locals())
 
@@ -336,6 +339,11 @@ def scatter(xcol,
                                                facetcol=facetcol,
                                                notecol=notecol,
                                                scatter=True)
+
+    if xdomain is None:
+        xdomain = (xcol.min(),xcol.max())
+    if ydomain is None:
+        ydomain = (ycol.min(),ycol.max())
 
     if facetcol is None:
         canvas = _scatter(**locals())

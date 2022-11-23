@@ -507,6 +507,7 @@ def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol,notecol):
             facetcol = facetcol.loc[xcol.index]
         if notecol is not None:
             notecol = notecol.loc[xcol.index]
+    
     if ydomain is not None:
         if ycol is None:
             raise ValueError("""If 'ydomain' is supplied, 'ycol' must be
@@ -556,7 +557,9 @@ def _facet(**kwargs):
 
     facetlist = []
     vcounts = facetcol.value_counts()
-    binmax = None # idle unless polar histogram
+    
+    binmax = None
+    
     #for val in np.sort(facetcol.unique()): # incl NaN but NaNs probably removed
     for val in vcounts.index:
         tmp = copy.deepcopy(kwargdict)
@@ -584,7 +587,7 @@ def _facet(**kwargs):
             tmp['notecol'] = notecol.loc[facetedcol.index]
 
         ###---------- Getting binmax for polar histogram
-        if all([plottype=='histogram',coordinates=='polar']):
+        if plottype=='histogram':
             if xdomain is not None:
                 if isinstance(bins,int):
                     xbin = pd.cut(tmp['xcol'],np.linspace(xdomain[0],xdomain[1],bins+1),labels=False,include_lowest=True)
