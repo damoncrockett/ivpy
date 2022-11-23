@@ -207,7 +207,8 @@ def _histogram(xcol=None,
             if any([xaxis is not None,border is not None]):
                 canvas = _facetmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
                                    plottype='histogram',xtitle=xcol.name,
-                                   ytitle='count',axislines=axislines)
+                                   ytitle='count',axislines=axislines,
+                                   xdomain=xdomain,binmax=binmax)
 
             return canvas
 
@@ -219,7 +220,9 @@ def _histogram(xcol=None,
                    'plottype':'histogram',
                    'xtitle':xcol.name,
                    'ytitle':'count',
-                   'axislines':axislines}
+                   'axislines':axislines,
+                   'xdomain':xdomain,
+                   'binmax':binmax}
 
         return canvas,matdict
 
@@ -275,7 +278,8 @@ def _scatter(xcol=None,
         if any([xaxis is not None,border is not None]):
             canvas = _facetmat(canvas,bg=bg,xaxis=xaxis,yaxis=yaxis,
                               plottype='scatter',xtitle=xcol.name,
-                              ytitle=ycol.name,axislines=axislines)
+                              ytitle=ycol.name,axislines=axislines,
+                              xdomain=xdomain,ydomain=ydomain)
 
         return canvas
 
@@ -287,7 +291,9 @@ def _scatter(xcol=None,
                    'plottype':'scatter',
                    'xtitle':xcol.name,
                    'ytitle':ycol.name,
-                   'axislines':axislines}
+                   'axislines':axislines,
+                   'xdomain':xdomain,
+                   'ydomain':ydomain}
 
         return canvas,matdict
 
@@ -311,22 +317,21 @@ def _facetcompose(*args,border=None,bg=None):
     In the loop below, plots are same-sized (set to the largest),and then matted
     (where titles, axes are added). Another loop composes them into a single plot.
     """
+
     mattedfacets = []
     for arg in args:
         canvas = arg[0]
         matdict = arg[1]
+
         if all([matdict['plottype']=='histogram',canvas.height < maxheight]):
             maxtemplate = Image.new('RGB',(canvas.width,maxheight),bg)
-            #maxtemplate = Image.new('RGB',(canvas.width,maxheight),'salmon')
             maxtemplate.paste(canvas,(0,maxheight-canvas.height))
             mattedfacets.append(_facetmat(maxtemplate,**matdict))
         elif all([matdict['plottype']=='montage',any([canvas.width < thumb, canvas.height < thumb])]):
             maxtemplate = Image.new('RGB',(thumb,thumb),bg)
-            #maxtemplate = Image.new('RGB',(thumb,thumb),'salmon')
             halfwdiff = int( (thumb - canvas.width) / 2 )
             halfhdiff = int( (thumb - canvas.height) / 2 )
             maxtemplate.paste(canvas,(halfwdiff,halfhdiff))
-            #maxtemplate.paste(canvas,(0,0)) # top left, doesn't look as good
             mattedfacets.append(_facetmat(maxtemplate,**matdict))
         else:
             mattedfacets.append(_facetmat(canvas,**matdict))
@@ -356,7 +361,10 @@ def _facetmat(im,
          plottype=None,
          axislines=None,
          xtitle=None,
-         ytitle=None):
+         ytitle=None,
+         xdomain=None,
+         ydomain=None,
+         binmax=None):
 
     if axislines:
         im = _border(im)
@@ -375,16 +383,16 @@ def _facetmat(im,
         if all([yaxis is None,plottype=='scatter']):
             raise ValueError("If 'xaxis' is not None, 'yaxis' cannot be None")
         elif all([yaxis is None,plottype=='histogram']):
-            im = _axes(im,xaxis,4,pt,fontHeight,xtitle,ytitle) # 4 bin count ticks if none specified
+            im = _axes(im,xaxis,4,pt,fontHeight,xtitle,ytitle,xdomain,binmax=binmax) # 4 bin count ticks if none specified
         else:
-            im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle)
+            im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=ydomain,binmax=binmax)
 
     if facettitle is not None:
         im = _entitle(im,facettitle,font,fontHeight)
 
     return im
 
-def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle):
+def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax=None):
 
     boxSize = fontHeight*2
     imsize = im.size
@@ -392,37 +400,43 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle):
     ax.paste(im,(boxSize*2,0))
 
     # ticks
-    # xbox = Image.new('RGB',(imsize[0],boxSize),'green')
-    # ybox = Image.new('RGB',(boxSize,imsize[1]),'purple')
     xbox = Image.new('RGB',(imsize[0],boxSize),'#212121')
     ybox = Image.new('RGB',(boxSize,imsize[1]),'#212121')
 
     xboxdraw = ImageDraw.Draw(xbox)
     yboxdraw = ImageDraw.Draw(ybox)
 
-    xtickincr = ceil(imsize[0]/xaxis)
-    xticklocs = list(range(xtickincr,imsize[0],xtickincr))
-    for xtick in xticklocs[:xaxis]:
+    xticklocs = [int(item) for item in linspace(0,imsize[0],xaxis)][1:-1] # cut off endpoints
+    for xtick in xticklocs:
         xboxdraw.line([(xtick,0),(xtick,int(boxSize/8))])
 
-    ytickincr = ceil(imsize[1]/yaxis)
-    yticklocs = list(range(ytickincr,imsize[1],ytickincr))
-    for ytick in yticklocs[:yaxis]:
+    yticklocs = [int(item) for item in linspace(0,imsize[1],yaxis)][1:-1] # cut off endpoints
+    for ytick in yticklocs:
         yboxdraw.line([(boxSize,ytick),(boxSize-int(boxSize/8),ytick)])
 
     # ticklabels
     tickLabelFont = ImageFont.truetype('../fonts/Roboto-Light.ttf',int(pt * 0.67))
+    
+    xmin = xdomain[0]
+    xmax = xdomain[1]
+    xlabels = [str(round(item,label_round(xmax))) for item in linspace(xmin,xmax,xaxis)][1:-1]
+    for i,xlabel in enumerate(xlabels):
+        xtick = xticklocs[i]
+        labelFontWidth,labelFontHeight = tickLabelFont.getsize(xlabel)
+        xboxdraw.text((int(xtick-labelFontWidth/2),int(boxSize/8+labelFontHeight/2)),text=xlabel,font=tickLabelFont)
 
-    for xtick in xticklocs:
-        text = str(xtick)
-        labelFontWidth,labelFontHeight = tickLabelFont.getsize(text)
-        xboxdraw.text((int(xtick-labelFontWidth/2),int(boxSize/8+labelFontHeight/2)),text,font=tickLabelFont)
-
-    ylabels = list(reversed(yticklocs))
-    for i,ytick in enumerate(yticklocs):
-        text = str(ylabels[i])
-        labelFontWidth,labelFontHeight = tickLabelFont.getsize(text)
-        yboxdraw.text((boxSize-int(boxSize/8)-labelFontWidth-labelFontHeight/2,int(ytick-labelFontHeight/2)),text,font=tickLabelFont)
+    if binmax:
+        ylabels = [str(int(item)) for item in linspace(0,binmax,yaxis)][1:-1]
+    else:
+        ymin = ydomain[0]
+        ymax = ydomain[1]
+        ylabels = [str(round(item,label_round(ymax))) for item in linspace(ymin,ymax,yaxis)][1:-1]
+    
+    ylabels = list(reversed(ylabels))
+    for i,ylabel in enumerate(ylabels):
+        ytick = yticklocs[i]
+        labelFontWidth,labelFontHeight = tickLabelFont.getsize(ylabel)
+        yboxdraw.text((boxSize-int(boxSize/8)-labelFontWidth-labelFontHeight/2,int(ytick-labelFontHeight/2)),text=ylabel,font=tickLabelFont)
 
     ax.paste(xbox,(boxSize*2,imsize[1]))
     ax.paste(ybox,(boxSize,0))
@@ -432,8 +446,6 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle):
     xAxisFontWidth,xAxisFontHeight = titleFont.getsize(xtitle)
     yAxisFontWidth,yAxisFontHeight = titleFont.getsize(ytitle)
 
-    # xlbox = Image.new('RGB',(imsize[0],boxSize),'black')
-    # ylbox = Image.new('RGB',(imsize[1],boxSize),'darkslategrey')
     xlbox = Image.new('RGB',(imsize[0],boxSize),'#212121')
     ylbox = Image.new('RGB',(imsize[1],boxSize),'#212121')
 
@@ -465,7 +477,6 @@ def _titlesize(im):
 
 def _entitle(im,title,font,fontHeight):
     mat = Image.new('RGB',(im.width,im.height+fontHeight*2),'#212121')
-    #mat = Image.new('RGB',(im.width,im.height+fontHeight*2),'dodgerblue')
     mat.paste(im,(0,fontHeight*2))
     draw = ImageDraw.Draw(mat)
     titleFontWidth,titleFontHeight = font.getsize(title)
@@ -475,6 +486,18 @@ def _entitle(im,title,font,fontHeight):
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
+
+def label_round(lmax):
+    
+    lmax = abs(lmax)
+    
+    if int(lmax)==0:
+        return 2
+    else:
+        if lmax / 10 >= 1:
+            return None
+        else:
+            return 1
 
 def _gridcoords(n,ncols,thumb):
     nrows = int( ceil( float(n) / ncols ) ) # final row may be incomplete
