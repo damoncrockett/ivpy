@@ -7,7 +7,7 @@ from math import ceil
 from skimage.io import imread
 from skimage.filters import gaussian
 from skimage import color
-from skimage import img_as_ubyte
+from skimage.util import img_as_ubyte
 from skimage.transform import resize
 from scipy.stats import entropy
 from scipy.stats import percentileofscore as pct
@@ -144,13 +144,20 @@ def _scale(img):
     else:
         return img
 
-def _featscale(ser):
+def _featscale(ser, output_range):
+    """Scales a series to a specified range (default 0-1)"""
+    a = output_range[0]
+    b = output_range[1]
+
+    if any([a>b, a==b]):
+        raise ValueError("'output_range' must be a list or tuple of (min,max), with max > min")
+
     init_min = min(ser[ser.notnull()])
     ser_adj = ser.map(lambda x:x-init_min)
     adj_max = max(ser[ser.notnull()]) - init_min
 
     try:
-        ser_adj = ser_adj.map(lambda x:x/adj_max)
+        ser_adj = ser_adj.map(lambda x: (x/adj_max)*(b-a)+a)
     except:
         # above will fail if all values are the same; if so, return zeros
         ser_adj = np.zeros(len(ser))
@@ -163,19 +170,23 @@ def _pct(ser):
 
     return ser
 
-def norm(arr, normtype='featscale'):
+def norm(arr, normtype='featscale', output_range=(0,1)):
     _typecheck(**locals())
 
     if isinstance(arr,pd.DataFrame):
         if normtype=='featscale':
-            return arr.apply(_featscale, axis=0)
+            return arr.apply(_featscale, axis=0, output_range=output_range)
         elif normtype=='pct':
+            if output_range != (0,1):
+                print("""Warning: 'output_range' is ignored when normtype='pct'""")
             return arr.apply(_pct, axis=0)
 
     elif isinstance(arr,pd.Series):
         if normtype=='featscale':
-            return _featscale(arr)
+            return _featscale(arr, output_range=output_range)
         elif normtype=='pct':
+            if output_range != (0,1):
+                print("""Warning: 'output_range' is ignored when normtype='pct'""")
             return _pct(arr)
 
     elif not isinstance(arr,(pd.DataFrame,pd.Series)):
@@ -413,7 +424,7 @@ def _condition_convolution(imgpath,scale,sigma):
 #------------------------------------------------------------------------------
 
 def _roughness(pathcol,verbose,
-               N=1365,gain=250,low_pass_sigma=201,high_pass_sigma=5,low_pass_apply='subtract'):
+               N=768,gain=250,low_pass_sigma=501,high_pass_sigma=21,low_pass_apply='divide'):
 
     """Returns standard deviation of pixel brightness after some pre-processing
     and bandpass filtering. Only works with TIFF files currently. Intended for
@@ -455,8 +466,10 @@ def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_a
     elif tif_array.shape[2] == 4:
         tif_array = color.rgb2gray(tif_array[:,:,:3]) # some have alpha layer for some reason
 
-    if tif_array.shape[1] < 2448:
-        N = 1024
+    #tif_array = img_as_ubyte(tif_array)
+
+    # if tif_array.shape[1] < 2448:
+    #    N = 1024
 
     # define sigma for Gaussian blurs to low pass and high pass the data
     #low_pass_sigma = 151

@@ -97,7 +97,8 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha):
             elif not check_nan(colorval):
                 c = cmap[colorval]
         except:
-            c = colors[0]
+            #c = colors[0]
+            c = (0,0,0,alphargb)
 
         glyph = _radar(polypts,radii,gridlines,c,side)
 
@@ -148,7 +149,7 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha):
 # outline not settable by user, currently
 def _radar(polypts,radii,gridlines,radarfill,
           side=200,
-          outline=None,
+          outline='black',
           radiifill='grey'):
 
     """
@@ -171,9 +172,9 @@ def _radar(polypts,radii,gridlines,radarfill,
         else:
             coords = list(coords)
             coords.append((halfside,halfside))
-            draw.polygon(coords, fill=radarfill, outline=outline)
+            draw.polygon(coords, fill=radarfill, outline=outline, width=int(side/100))
     elif len(coords) > 2:
-        draw.polygon(list(coords), fill=radarfill, outline=outline)
+        draw.polygon(list(coords), fill=radarfill, outline=outline, width=int(side/100))
 
     if radii:
         draw.line([(halfside,0),(halfside,side)],
