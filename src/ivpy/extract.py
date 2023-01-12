@@ -144,7 +144,7 @@ def _scale(img):
     else:
         return img
 
-def _featscale(ser, output_range):
+def _featscale(ser, input_range, output_range):
     """Scales a series to a specified range (default 0-1)"""
     a = output_range[0]
     b = output_range[1]
@@ -152,9 +152,13 @@ def _featscale(ser, output_range):
     if any([a>b, a==b]):
         raise ValueError("'output_range' must be a list or tuple of (min,max), with max > min")
 
-    init_min = min(ser[ser.notnull()])
-    ser_adj = ser.map(lambda x:x-init_min)
-    adj_max = max(ser[ser.notnull()]) - init_min
+    if input_range is None:
+        input_range = (min(ser[ser.notnull()]),max(ser[ser.notnull()]))
+    elif any([input_range[0]>input_range[1], input_range[0]==input_range[1]]):
+        raise ValueError("'input_range' must be a list or tuple of (min,max), with max > min")
+
+    ser_adj = ser.map(lambda x:x-input_range[0])
+    adj_max = input_range[1] - input_range[0]
 
     try:
         ser_adj = ser_adj.map(lambda x: (x/adj_max)*(b-a)+a)
@@ -170,23 +174,27 @@ def _pct(ser):
 
     return ser
 
-def norm(arr, normtype='featscale', output_range=(0,1)):
+def norm(arr, normtype='featscale', input_range=None, output_range=(0,1)):
     _typecheck(**locals())
 
     if isinstance(arr,pd.DataFrame):
         if normtype=='featscale':
-            return arr.apply(_featscale, axis=0, output_range=output_range)
+            return arr.apply(_featscale, axis=0, input_range=input_range, output_range=output_range)
         elif normtype=='pct':
             if output_range != (0,1):
                 print("""Warning: 'output_range' is ignored when normtype='pct'""")
+            if input_range is not None:
+                print("""Warning: 'input_range' is ignored when normtype='pct'""")
             return arr.apply(_pct, axis=0)
 
     elif isinstance(arr,pd.Series):
         if normtype=='featscale':
-            return _featscale(arr, output_range=output_range)
+            return _featscale(arr, input_range=input_range, output_range=output_range)
         elif normtype=='pct':
             if output_range != (0,1):
                 print("""Warning: 'output_range' is ignored when normtype='pct'""")
+            if input_range is not None:
+                print("""Warning: 'input_range' is ignored when normtype='pct'""")
             return _pct(arr)
 
     elif not isinstance(arr,(pd.DataFrame,pd.Series)):
