@@ -179,7 +179,7 @@ def montage(pathcol=None,
 
     if title is not None:
         font,_,fontHeight = _titlesize(canvas)
-        canvas = _entitle(canvas,title,font,fontHeight)
+        canvas = _entitle(canvas,title,font,fontHeight,bg)
 
     return canvas
 
