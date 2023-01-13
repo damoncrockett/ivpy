@@ -388,7 +388,7 @@ def _facetmat(im,
             im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=ydomain,binmax=binmax)
 
     if facettitle is not None:
-        im = _entitle(im,facettitle,font,fontHeight)
+        im = _entitle(im,facettitle,font,fontHeight,bg)
 
     return im
 
@@ -475,12 +475,12 @@ def _titlesize(im):
 
     return font,pt,fontHeight
 
-def _entitle(im,title,font,fontHeight):
-    mat = Image.new('RGB',(im.width,im.height+fontHeight*2),'#212121')
+def _entitle(im,title,font,fontHeight,bg):
+    mat = Image.new('RGB',(im.width,im.height+fontHeight*2),bg)
     mat.paste(im,(0,fontHeight*2))
     draw = ImageDraw.Draw(mat)
     titleFontWidth,titleFontHeight = font.getsize(title)
-    draw.text((int(im.width/2-titleFontWidth/2),int(fontHeight-titleFontHeight/2)),title,font=font)
+    draw.text((int(im.width/2-titleFontWidth/2),int(fontHeight-titleFontHeight/2)),title,font=font,fill='grey')
 
     return mat
 
