@@ -638,7 +638,7 @@ def _annote(im,note):
     text = str(note)
     textlist = text.split('\n')
     noterows = len(textlist)
-    fontsize = int( im.width / 28 )
+    fontsize = int( im.width / 16 )
     if fontsize < 10:
         fontsize = 10
     font = ImageFont.truetype('../fonts/Roboto-Light.ttf',fontsize )
@@ -656,7 +656,7 @@ def _annote(im,note):
         outline=None
     )
 
-    draw.multiline_text((0,pos),text,font=font,fill='black')
+    draw.multiline_text((0,pos),text,font=font,fill='grey')
 
 def _placeholder(thumb):
     im = Image.new('RGB',(thumb,thumb),'#969696')
