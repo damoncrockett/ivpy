@@ -1,12 +1,14 @@
+import os
 import pandas as pd
 import numpy as np
 from PIL import Image
 from six import string_types
 from math import ceil
 
-from skimage.io import imread
+from skimage.io import imread,imsave
 from skimage.filters import gaussian
 from skimage import color
+from skimage.draw import circle_perimeter
 from skimage.util import img_as_ubyte
 from skimage.transform import resize
 from scipy.stats import entropy
@@ -402,30 +404,61 @@ def _featvector(imgpath,model):
 
 #------------------------------------------------------------------------------
 
-def _condition(pathcol,scale,verbose,sigma=6):
+def _condition(pathcol,scale,verbose,sigma=6,savemap=False):
     """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
        used for measuring photo fading and yellowing"""
 
     if isinstance(pathcol,string_types):
-        return _condition_convolution(pathcol,scale,sigma)
+        return _condition_convolution(pathcol,scale,sigma,savemap)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
         cols = ['contrast','satdmin']
+        if savemap:
+            cols.append('mappath')
 
         return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
-                            verbose,scale=scale,sigma=sigma)
+                            verbose,scale=scale,sigma=sigma,savemap=savemap)
 
-def _condition_convolution(imgpath,scale,sigma):
-    img = color.rgb2hsv(imread(imgpath))
+def _condition_convolution(imgpath,scale,sigma,savemap):
+    
+    img = imread(imgpath)
+    img_hsv = color.rgb2hsv(img)
 
     if scale==True:
-        img = _scale(img)
+        img_hsv = _scale(img_hsv)
 
-    imgblur = gaussian(img,sigma=sigma,channel_axis=2)
-    contrast = np.max(imgblur[:,:,2]) - np.min(imgblur[:,:,2])
-    dmin = np.argmax(imgblur[:,:,2])
-    satdmin = imgblur[:,:,1].flatten()[dmin]
+        if savemap:
+            img = _scale(img)
+
+    imgblur_hsv = gaussian(img_hsv,sigma=sigma,channel_axis=2)
+    contrast = np.max(imgblur_hsv[:,:,2]) - np.min(imgblur_hsv[:,:,2])
+    dmin = np.argmax(imgblur_hsv[:,:,2])
+    dmax = np.argmin(imgblur_hsv[:,:,2])
+    satdmin = imgblur_hsv[:,:,1].flatten()[dmin]
+
+    if savemap:
+        imgblur = gaussian(img,sigma=sigma,channel_axis=2)
+        dmin = np.unravel_index(dmin,imgblur.shape[:2])
+        dmax = np.unravel_index(dmax,imgblur.shape[:2])
+        
+        # draw black circle around dmin in imgblur
+        rr,cc = circle_perimeter(dmin[0],dmin[1],radius=10,shape=imgblur.shape[:2])
+        imgblur[rr,cc] = [0,0,0]
+
+        # draw white circle around dmax in imgblur
+        rr,cc = circle_perimeter(dmax[0],dmax[1],radius=10,shape=imgblur.shape[:2])
+        imgblur[rr,cc] = [1,1,1]
+
+        imgdir = os.path.dirname(imgpath)
+        imgname = os.path.basename(imgpath)
+        mapdir = os.path.join(imgdir,'_maps')
+        if not os.path.exists(mapdir):
+            os.makedirs(mapdir)
+        mappath = os.path.join(mapdir,imgname[:-4]+".png")
+        imsave(mappath,imgblur)
+
+        return contrast,satdmin,mappath
 
     return contrast,satdmin
 

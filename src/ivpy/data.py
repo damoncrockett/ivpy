@@ -113,6 +113,7 @@ def _typecheck(**kwargs):
     input_range = kwargs.get('input_range')
     output_range = kwargs.get('output_range',(0,1))
     legend = kwargs.get('legend',True)
+    savemap = kwargs.get('savemap',False)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -284,6 +285,8 @@ def _typecheck(**kwargs):
             raise ValueError("'input_range' must be a two-item list or tuple")
     if not isinstance(legend,bool):
         raise TypeError("'legend' must be True or False")
+    if not isinstance(savemap,bool):
+        raise TypeError("'savemap' must be True or False")
     
 
 def attach(df,pathcol=None):
