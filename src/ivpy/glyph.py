@@ -1,5 +1,5 @@
 import pandas as pd
-from PIL import Image,ImageDraw
+from PIL import Image,ImageDraw,ImageFont
 from .data import check_nan, _typecheck
 import os
 import numpy as np
@@ -13,7 +13,8 @@ def draw_glyphs(df,aes,savedir,
                 mat=True,
                 radii=True,
                 side=200,
-                alpha=1.0):
+                alpha=1.0,
+                legend=True):
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -30,13 +31,68 @@ def draw_glyphs(df,aes,savedir,
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha)
+        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend)
 
     return gpaths
 
 #-------------------------------------------------------------------------------
 
-def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha):
+def _legend_entry(c,val,font,w,h,spacer_width):
+    """
+    Draw a single legend entry.
+    """
+
+    entry = Image.new('RGBA',(w,h),None)
+    draw = ImageDraw.Draw(entry)
+
+    draw.rounded_rectangle([(int(h/6),int(h/6)),(h-int(h/16),h-int(h/16))],fill=c,radius=int(h/8),outline='black',width=5)
+    draw.text((h+spacer_width,0),val.upper(),fill='grey',font=font)
+    
+    return entry
+
+def _legend(cmap):
+    """
+    Draw a legend for the radar glyphs.
+    """
+
+    font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf", 144)
+    maxwidth = max([font.getsize(val.upper())[0] for val in cmap.keys()])
+    maxheight = max([font.getsize(val.upper())[1] for val in cmap.keys()])
+    vincr = int( maxheight * 0.1)
+    spacer_width = 20
+    entry_height = maxheight + vincr # PIL font height estimate can be short, cutting off bottom
+    entry_width = maxwidth + spacer_width + entry_height + vincr # PIL font width estimate can be short, cutting off right side
+
+
+    entries = []
+    for key in cmap.keys():
+        im = _legend_entry(cmap[key],key,font,entry_width,entry_height,spacer_width)
+        entries.append(im)
+
+    # here, we are using 'vincr' for a different purpose: to add vertical space between entries
+    legend = Image.new('RGBA',(entry_width,(entry_height+vincr*2)*len(entries)),None)
+    
+    for i,im in enumerate(entries):
+        legend.paste(im,(0, i * (entry_height+vincr*2)),im)
+
+    return _mat(legend,rgba=False)
+
+def get_legend(df,col):
+
+    glyph_pathlist = list(df[col])
+    
+    if len(set([os.path.dirname(path) for path in glyph_pathlist])) > 1:
+        print("Glyphs are not all in the same directory; retrieving legend from first glyph")
+
+    legend_path = os.path.join(os.path.dirname(glyph_pathlist[0]),'_legend.png')
+    
+    if not os.path.exists(legend_path):
+        raise ValueError("Legend does not exist; glyph legends are drawn only if 'color' is set in 'aes'")
+    
+    return Image.open(legend_path)
+
+
+def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend):
 
     alphargb = int(alpha*255)
 
@@ -61,6 +117,9 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha):
             keys = list(df[color].value_counts().keys())
             vals = colors[:len(keys)]
             cmap = dict(zip(keys,vals))
+        
+        if legend:
+            _legend(cmap).save(os.path.join(savedir,'_legend.png'))
 
     basename = aes.get('basename')
     left = aes.get('left')
@@ -239,16 +298,21 @@ def _radar_axis_position(vert,pos,val,halfside):
 
 #-------------------------------------------------------------------------------
 
-def _mat(im):
+def _mat(im,rgba=True):
     w = im.width
     h = im.height
 
     w_incr = int( w * 0.1 )
     h_incr = int( h * 0.1 )
 
-    newim = Image.new('RGBA',(w+w_incr*2,h+h_incr*2),None)
+    if rgba:
+        newim = Image.new('RGBA',(w+w_incr*2,h+h_incr*2),None)
+    else:
+        # this for some reason prevents losing rect color when you mat a legend
+        newim = Image.new('RGB',(w+w_incr*2,h+h_incr*2),"white")
+        
     newim.paste(im,(w_incr,h_incr),im)
-
+    
     return newim
 
 def add_thumb(im,thumb,corner):

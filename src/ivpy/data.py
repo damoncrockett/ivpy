@@ -110,7 +110,9 @@ def _typecheck(**kwargs):
     plainsave = kwargs.get('plainsave',False)
     low_pass_apply = kwargs.get('low_pass_apply','subtract')
     axislines = kwargs.get('axislines',False)
+    input_range = kwargs.get('input_range')
     output_range = kwargs.get('output_range',(0,1))
+    legend = kwargs.get('legend',True)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -275,6 +277,14 @@ def _typecheck(**kwargs):
         raise TypeError("'output_range' must be a list or tuple")
     if not len(output_range)==2:
         raise ValueError("'output_range' must be a two-item list or tuple")
+    if input_range is not None:    
+        if not isinstance(input_range,(list,tuple)):
+            raise TypeError("'input_range' must be a list or tuple")
+        if not len(input_range)==2:
+            raise ValueError("'input_range' must be a two-item list or tuple")
+    if not isinstance(legend,bool):
+        raise TypeError("'legend' must be True or False")
+    
 
 def attach(df,pathcol=None):
 
