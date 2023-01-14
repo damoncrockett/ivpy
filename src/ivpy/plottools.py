@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from PIL import Image,ImageDraw,ImageFont
 from numpy import repeat,sqrt,arange,radians,cos,sin,linspace
 import numpy as np
@@ -415,7 +416,7 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax
         yboxdraw.line([(boxSize,ytick),(boxSize-int(boxSize/8),ytick)])
 
     # ticklabels
-    tickLabelFont = ImageFont.truetype('../fonts/Roboto-Light.ttf',int(pt * 0.67))
+    tickLabelFont = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",int(pt * 0.67))
     
     xmin = xdomain[0]
     xmax = xdomain[1]
@@ -442,7 +443,7 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax
     ax.paste(ybox,(boxSize,0))
 
     # axis titles
-    titleFont = ImageFont.truetype('../fonts/Roboto-Light.ttf',pt)
+    titleFont = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",pt)
     xAxisFontWidth,xAxisFontHeight = titleFont.getsize(xtitle)
     yAxisFontWidth,yAxisFontHeight = titleFont.getsize(ytitle)
 
@@ -470,7 +471,7 @@ def _titlesize(im):
     while fontWidth < side/4:
         pt+=1
         sampletext = "LANDSCAPE" # just some 9-letter word
-        font = ImageFont.truetype('../fonts/Roboto-Light.ttf',pt)
+        font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",pt)
         fontWidth,fontHeight = font.getsize(sampletext)
 
     return font,pt,fontHeight
@@ -622,7 +623,7 @@ def _idx(im,i):
     fontsize = int( im.width / 28 )
     if fontsize < 10:
         fontsize = 10
-    font = ImageFont.truetype('../fonts/Roboto-Light.ttf',fontsize)
+    font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",fontsize)
     fontWidth, fontHeight = font.getsize(text)
 
     draw.rectangle(
@@ -641,7 +642,7 @@ def _annote(im,note):
     fontsize = int( im.width / 16 )
     if fontsize < 10:
         fontsize = 10
-    font = ImageFont.truetype('../fonts/Roboto-Light.ttf',fontsize )
+    font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",fontsize )
     maxwidthtext = max(textlist,key=len)
     fontWidth = font.getsize(maxwidthtext)[0]
     # 4 is default line spacing in PIL multiline_text
