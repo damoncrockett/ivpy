@@ -8,7 +8,7 @@ from math import ceil
 from skimage.io import imread,imsave
 from skimage.filters import gaussian
 from skimage import color
-from skimage.draw import circle_perimeter
+from skimage.draw import disk
 from skimage.util import img_as_ubyte
 from skimage.transform import resize
 from scipy.stats import entropy
@@ -124,24 +124,24 @@ def _imgprocess(imgpath,scale):
     elif len(img.shape)==2:
         return color.rgb2hsv(color.gray2rgb(img))
 
-def _scale(img):
-    """Scales images to 256px max side for feature extraction. This
+def _scale(img,side):
+    """Scales images to  'side' pixels max side for feature extraction. This
        function is distinct from resize() in data.py and does not save any
        images to file."""
 
     h,w = img.shape[0],img.shape[1] # note weird order
-    if any([h>256,w>256]):
+    if any([h>side,w>side]):
         if h>w:
-            ratio = 256 / float(h)
-            newh = 256
+            ratio = side / float(h)
+            newh = side
             neww = int( w * ratio )
         elif w>h:
-            ratio = 256 / float(w)
-            neww = 256
+            ratio = side / float(w)
+            neww = side
             newh = int( h * ratio )
         elif w==h:
-            newh = 256
-            neww = 256
+            newh = side
+            neww = side
         return resize(img,(newh,neww))
     else:
         return img
@@ -404,7 +404,7 @@ def _featvector(imgpath,model):
 
 #------------------------------------------------------------------------------
 
-def _condition(pathcol,scale,verbose,sigma=6,savemap=False):
+def _condition(pathcol,scale,verbose,sigma=6,savemap=False,side=256):
     """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
        used for measuring photo fading and yellowing"""
 
@@ -418,18 +418,18 @@ def _condition(pathcol,scale,verbose,sigma=6,savemap=False):
             cols.append('mappath')
 
         return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
-                            verbose,scale=scale,sigma=sigma,savemap=savemap)
+                            verbose,scale=scale,sigma=sigma,savemap=savemap,side=side)
 
-def _condition_convolution(imgpath,scale,sigma,savemap):
+def _condition_convolution(imgpath,scale,sigma,savemap,side):
     
     img = imread(imgpath)
     img_hsv = color.rgb2hsv(img)
 
     if scale==True:
-        img_hsv = _scale(img_hsv)
+        img_hsv = _scale(img_hsv,side)
 
         if savemap:
-            img = _scale(img)
+            img = _scale(img,side)
 
     imgblur_hsv = gaussian(img_hsv,sigma=sigma,channel_axis=2)
     contrast = np.max(imgblur_hsv[:,:,2]) - np.min(imgblur_hsv[:,:,2])
@@ -443,11 +443,11 @@ def _condition_convolution(imgpath,scale,sigma,savemap):
         dmax = np.unravel_index(dmax,imgblur.shape[:2])
         
         # draw black circle around dmin in imgblur
-        rr,cc = circle_perimeter(dmin[0],dmin[1],radius=10,shape=imgblur.shape[:2])
+        rr,cc = disk((dmin[0],dmin[1]),radius=10,shape=imgblur.shape[:2])
         imgblur[rr,cc] = [0,0,0]
 
         # draw white circle around dmax in imgblur
-        rr,cc = circle_perimeter(dmax[0],dmax[1],radius=10,shape=imgblur.shape[:2])
+        rr,cc = disk((dmax[0],dmax[1]),radius=10,shape=imgblur.shape[:2])
         imgblur[rr,cc] = [1,1,1]
 
         imgdir = os.path.dirname(imgpath)
