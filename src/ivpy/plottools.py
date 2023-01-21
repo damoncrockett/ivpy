@@ -83,6 +83,11 @@ def _montage(pathcol=None,
         # remaining images
         coords = _gridcoordscircle(n,maximus,gridlist,thumb)
         _paste(pathcol[1:],thumb,idx,canvas,coords,notecol=notecol)
+    else:
+        # if shape is none of the above, it will be an integer number of columns
+        w,h,coords = _gridcoords(n,shape,thumb)
+        canvas = Image.new('RGB',(w,h),bg)
+        _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
 
     if facetcol is None:
         return canvas
