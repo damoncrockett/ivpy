@@ -109,15 +109,23 @@ def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=Fals
         thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
 
     w,h,coords = _gridcoords(n,ncols,thumb)
-    metacanvas = Image.new('RGB',(w,h),bg)
+    
+    if bg is None:
+        metacanvas = Image.new('RGBA',(w,h),bg)
+    else:
+        metacanvas = Image.new('RGB',(w,h),bg)
 
     for i in range(n):
         canvas = thumbargs[i]
         if canvas.size!=(thumb,thumb):
-            canvas = _bottom_left_corner(canvas,thumb)
+            canvas = _bottom_left_corner(canvas,thumb,bg)
         if border:
             canvas = _border(canvas)
-        metacanvas.paste(canvas,coords[i])
+       
+        if bg is None:
+            metacanvas.paste(canvas,coords[i],canvas)
+        else:
+            metacanvas.paste(canvas,coords[i])
 
     return metacanvas
 

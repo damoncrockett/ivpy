@@ -409,7 +409,7 @@ def _condition(pathcol,scale,verbose,sigma=6,savemap=False,side=256):
        used for measuring photo fading and yellowing"""
 
     if isinstance(pathcol,string_types):
-        return _condition_convolution(pathcol,scale,sigma,savemap)
+        return _condition_convolution(pathcol,scale,sigma,savemap,side)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
