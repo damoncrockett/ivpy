@@ -14,7 +14,8 @@ def draw_glyphs(df,aes,savedir,
                 radii=True,
                 side=200,
                 alpha=1.0,
-                legend=True):
+                legend=True,
+                savecolor=True):
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -31,7 +32,7 @@ def draw_glyphs(df,aes,savedir,
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend)
+        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor)
 
     return gpaths
 
@@ -92,7 +93,7 @@ def get_legend(df,col):
     return Image.open(legend_path)
 
 
-def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend):
+def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor):
 
     alphargb = int(alpha*255)
 
@@ -132,6 +133,7 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend):
     rightflag = aes.get('rightflag')
 
     gpaths = []
+    gpath_colors = []
     for i in df.index:
         try:
             basename_i = df[basename].loc[i]
@@ -203,7 +205,13 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend):
         glyph.save(savestring)
         gpaths.append(savestring)
 
-    return gpaths
+        if savecolor:
+            gpath_colors.append(c)
+
+    if savecolor:
+        return pd.DataFrame({'gpath':gpaths,'gpath_color':gpath_colors})
+    else:
+        return gpaths
 
 # outline not settable by user, currently
 def _radar(polypts,radii,gridlines,radarfill,
@@ -318,13 +326,18 @@ def _mat(im,rgba=True):
 def add_thumb(im,thumb,corner):
     w = im.width
     thumb_side = int(w/4)
-    thumb.thumbnail((thumb_side,thumb_side),Image.ANTIALIAS)
+    thumb.thumbnail((thumb_side,thumb_side),Image.Resampling.LANCZOS)
 
     if corner=='left':
         coords = (0,0)
     elif corner=='right':
         coords = (w-thumb_side,0)
-    im.paste(thumb,coords)
+    
+    # if thumb is transparent, paste it with alpha
+    if thumb.mode=='RGBA':
+        im.paste(thumb,coords,thumb)
+    else:
+        im.paste(thumb,coords)
 
     return im
 

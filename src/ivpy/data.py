@@ -114,6 +114,7 @@ def _typecheck(**kwargs):
     output_range = kwargs.get('output_range',(0,1))
     legend = kwargs.get('legend',True)
     savemap = kwargs.get('savemap',False)
+    textcolor = kwargs.get('textcolor')
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -288,6 +289,9 @@ def _typecheck(**kwargs):
         raise TypeError("'legend' must be True or False")
     if not isinstance(savemap,bool):
         raise TypeError("'savemap' must be True or False")
+    if textcolor is not None:
+        if not isinstance(textcolor,(tuple,string_types)):
+            raise TypeError("'textcolor' must be an RGB triplet or a string")
     
 
 def attach(df,pathcol=None):

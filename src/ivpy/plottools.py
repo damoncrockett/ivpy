@@ -1,6 +1,6 @@
 import pandas as pd
 import os
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image,ImageDraw,ImageFont,ImageColor
 from numpy import repeat,sqrt,arange,radians,cos,sin,linspace
 import numpy as np
 from math import ceil
@@ -21,14 +21,19 @@ seq_types = (list,tuple,np.ndarray,pd.Series)
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-def _border(im):
+def _border(im,bg):
+
+    if _islight(bg):
+        fill = 'black'
+    else:
+        fill = 'white'
 
     _typecheck(**locals())
 
     draw = ImageDraw.Draw(im)
     # n.b.: lines are drawn under and to the right of the starting pixel
-    draw.line([(im.width,im.height-1),(0,im.height-1)],fill='white',width=1)
-    draw.line([(0,im.height),(0,0)],fill='white',width=1)
+    draw.line([(im.width,im.height-1),(0,im.height-1)],fill=fill,width=1)
+    draw.line([(0,im.height),(0,0)],fill=fill,width=1)
 
     return im
 
@@ -351,13 +356,20 @@ def _facetcompose(*args,border=None,bg=None):
         canvas = mattedfacets[i]
 
         if border:
-            canvas = _border(canvas)
+            canvas = _border(canvas,bg)
 
         metacanvas.paste(canvas,coords[i])
 
     return metacanvas
 
 #-------------------------------------------------------------------------------
+
+def _islight(color):
+
+    if isinstance(color,str):
+        color = ImageColor.getrgb(color)
+
+    return sum(color) > 382.5
 
 def _facetmat(im,
          bg=None,
@@ -373,9 +385,15 @@ def _facetmat(im,
          binmax=None):
 
     if axislines:
-        im = _border(im)
+        im = _border(im,bg)
 
     font,pt,fontHeight = _titlesize(im)
+
+    # if bg is light, textcolor is dark
+    if _islight(bg):
+        textcolor = 'black'
+    else:
+        textcolor = 'white'
 
     """
     Note below that axis titles are added automatically when and only when axes
@@ -389,36 +407,36 @@ def _facetmat(im,
         if all([yaxis is None,plottype=='scatter']):
             raise ValueError("If 'xaxis' is not None, 'yaxis' cannot be None")
         elif all([yaxis is None,plottype=='histogram']):
-            im = _axes(im,xaxis,6,pt,fontHeight,xtitle,ytitle,xdomain,binmax=binmax) # 4 bin count ticks if none specified
+            im = _axes(im,xaxis,6,pt,fontHeight,xtitle,ytitle,bg,textcolor,xdomain,binmax=binmax) # 4 bin count ticks if none specified
         else:
-            im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=ydomain,binmax=binmax)
+            im = _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,bg,textcolor,xdomain,ydomain=ydomain,binmax=binmax)
 
     if facettitle is not None:
         im = _entitle(im,facettitle,font,fontHeight,bg)
 
     return im
 
-def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax=None):
+def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,bg,textcolor,xdomain,ydomain=None,binmax=None):
 
     boxSize = fontHeight*2
     imsize = im.size
-    ax = Image.new('RGB',(imsize[0]+boxSize*2,imsize[1]+boxSize*2),'#212121')
+    ax = Image.new('RGB',(imsize[0]+boxSize*2,imsize[1]+boxSize*2),bg)
     ax.paste(im,(boxSize*2,0))
 
     # ticks
-    xbox = Image.new('RGB',(imsize[0],boxSize),'#212121')
-    ybox = Image.new('RGB',(boxSize,imsize[1]),'#212121')
+    xbox = Image.new('RGB',(imsize[0],boxSize),bg)
+    ybox = Image.new('RGB',(boxSize,imsize[1]),bg)
 
     xboxdraw = ImageDraw.Draw(xbox)
     yboxdraw = ImageDraw.Draw(ybox)
 
     xticklocs = [int(item) for item in linspace(0,imsize[0],xaxis)][1:-1] # cut off endpoints
     for xtick in xticklocs:
-        xboxdraw.line([(xtick,0),(xtick,int(boxSize/8))])
+        xboxdraw.line([(xtick,0),(xtick,int(boxSize/8))],fill=textcolor)
 
     yticklocs = [int(item) for item in linspace(0,imsize[1],yaxis)][1:-1] # cut off endpoints
     for ytick in yticklocs:
-        yboxdraw.line([(boxSize,ytick),(boxSize-int(boxSize/8),ytick)])
+        yboxdraw.line([(boxSize,ytick),(boxSize-int(boxSize/8),ytick)],fill=textcolor)
 
     # ticklabels
     tickLabelFont = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",int(pt * 0.67))
@@ -429,7 +447,7 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax
     for i,xlabel in enumerate(xlabels):
         xtick = xticklocs[i]
         labelFontWidth,labelFontHeight = tickLabelFont.getsize(xlabel)
-        xboxdraw.text((int(xtick-labelFontWidth/2),int(boxSize/8+labelFontHeight/2)),text=xlabel,font=tickLabelFont)
+        xboxdraw.text((int(xtick-labelFontWidth/2),int(boxSize/8+labelFontHeight/2)),text=xlabel,font=tickLabelFont,fill=textcolor)
 
     if binmax:
         ylabels = [str(int(item)) for item in linspace(0,binmax,yaxis)][1:-1]
@@ -442,7 +460,7 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax
     for i,ylabel in enumerate(ylabels):
         ytick = yticklocs[i]
         labelFontWidth,labelFontHeight = tickLabelFont.getsize(ylabel)
-        yboxdraw.text((boxSize-int(boxSize/8)-labelFontWidth-labelFontHeight/2,int(ytick-labelFontHeight/2)),text=ylabel,font=tickLabelFont)
+        yboxdraw.text((boxSize-int(boxSize/8)-labelFontWidth-labelFontHeight/2,int(ytick-labelFontHeight/2)),text=ylabel,font=tickLabelFont,fill=textcolor)
 
     ax.paste(xbox,(boxSize*2,imsize[1]))
     ax.paste(ybox,(boxSize,0))
@@ -452,14 +470,14 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,xdomain,ydomain=None,binmax
     xAxisFontWidth,xAxisFontHeight = titleFont.getsize(xtitle)
     yAxisFontWidth,yAxisFontHeight = titleFont.getsize(ytitle)
 
-    xlbox = Image.new('RGB',(imsize[0],boxSize),'#212121')
-    ylbox = Image.new('RGB',(imsize[1],boxSize),'#212121')
+    xlbox = Image.new('RGB',(imsize[0],boxSize),bg)
+    ylbox = Image.new('RGB',(imsize[1],boxSize),bg)
 
     xlboxdraw = ImageDraw.Draw(xlbox)
     ylboxdraw = ImageDraw.Draw(ylbox)
 
-    xlboxdraw.text((int(imsize[0]/2-xAxisFontWidth/2),int(xAxisFontHeight/4)),xtitle,font=titleFont)
-    ylboxdraw.text((int(imsize[1]/2-yAxisFontWidth/2),int(yAxisFontHeight/4)),ytitle,font=titleFont)
+    xlboxdraw.text((int(imsize[0]/2-xAxisFontWidth/2),int(xAxisFontHeight/4)),xtitle,font=titleFont,fill=textcolor)
+    ylboxdraw.text((int(imsize[1]/2-yAxisFontWidth/2),int(yAxisFontHeight/4)),ytitle,font=titleFont,fill=textcolor)
 
     ax.paste(xlbox,(boxSize*2,imsize[1]+boxSize))
 
@@ -731,10 +749,15 @@ def _getsizes(args):
     plotsizes = [item.size for item in args]
     return [item for sublist in plotsizes for item in sublist]
 
-def _bottom_left_corner(im,thumb,bg='#212121'):
-    canvas = Image.new('RGB',(thumb,thumb),bg)
-    canvas.paste(im,(0,thumb-im.height))
+def _bottom_left_corner(im,thumb,bg):
 
+    if bg is None:
+        canvas = Image.new('RGBA',(thumb,thumb),bg)
+        canvas.paste(im,(0,thumb-im.height),im)
+    else:
+        canvas = Image.new('RGB',(thumb,thumb),bg)
+        canvas.paste(im,(0,thumb-im.height))
+    
     return canvas
 
 def _progressBar(pathcol):
