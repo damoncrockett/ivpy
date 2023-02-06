@@ -287,8 +287,8 @@ def _typecheck(**kwargs):
             raise ValueError("'input_range' must be a two-item list or tuple")
     if not isinstance(legend,bool):
         raise TypeError("'legend' must be True or False")
-    if not isinstance(savemap,bool):
-        raise TypeError("'savemap' must be True or False")
+    if not isinstance(savemap,(bool,string_types)):
+        raise TypeError("'savemap' must True, False, or a string defining a directory suffix")
     if textcolor is not None:
         if not isinstance(textcolor,(tuple,string_types)):
             raise TypeError("'textcolor' must be an RGB triplet or a string")

@@ -437,7 +437,7 @@ def _condition_convolution(imgpath,scale,sigma,savemap,side):
     dmax = np.argmin(imgblur_hsv[:,:,2])
     satdmin = imgblur_hsv[:,:,1].flatten()[dmin]
 
-    if savemap:
+    if savemap is not False:
         imgblur = gaussian(img,sigma=sigma,channel_axis=2)
         dmin = np.unravel_index(dmin,imgblur.shape[:2])
         dmax = np.unravel_index(dmax,imgblur.shape[:2])
@@ -452,7 +452,11 @@ def _condition_convolution(imgpath,scale,sigma,savemap,side):
 
         imgdir = os.path.dirname(imgpath)
         imgname = os.path.basename(imgpath)
-        mapdir = os.path.join(imgdir,'_maps')
+
+        if isinstance(savemap,string_types):
+            mapdir = os.path.join(imgdir,'_maps_'+savemap)
+        else:
+            mapdir = os.path.join(imgdir,'_maps')
         if not os.path.exists(mapdir):
             os.makedirs(mapdir)
         mappath = os.path.join(mapdir,imgname[:-4]+".png")
