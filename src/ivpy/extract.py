@@ -64,7 +64,7 @@ def extract(feature,
     elif feature=='neural':
         return _neural(pathcol,verbose)
     elif feature=='condition':
-        return _condition(pathcol,scale,verbose,**kwargs)
+        return _condition(pathcol,verbose,**kwargs)
     elif feature=='roughness':
         return _roughness(pathcol,verbose,**kwargs)
 
@@ -404,52 +404,48 @@ def _featvector(imgpath,model):
 
 #------------------------------------------------------------------------------
 
-def _condition(pathcol,scale,verbose,sigma=6,savemap=False,side=256):
-    """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
-       used for measuring photo fading and yellowing"""
+def _condition(pathcol,verbose,k=1,savemap=True,side=512):
+    """Returns median lightness of the k% darkest pixels, and the
+       median saturation of the k% lightest pixels. If savemap is True,
+       also returns the path to the saved map."""
 
     if isinstance(pathcol,string_types):
-        return _condition_convolution(pathcol,scale,sigma,savemap,side)
+        return _ktop(pathcol,k,savemap,side)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        cols = ['contrast','satdmin']
+        cols = ['lowtone','saturation']
         if savemap:
             cols.append('mappath')
 
-        return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
-                            verbose,scale=scale,sigma=sigma,savemap=savemap,side=side)
+        return _iterextract(pathcol,cols,breaks,pct,_ktop,
+                            verbose,k=k,savemap=savemap,side=side)
 
-def _condition_convolution(imgpath,scale,sigma,savemap,side):
+def _ktop(imgpath,k,savemap,side):
     
     img = imread(imgpath)
     img_hsv = color.rgb2hsv(img)
 
-    if scale==True:
-        img_hsv = _scale(img_hsv,side)
+    img = img_as_ubyte(_scale(img,side))
+    img_hsv = _scale(img_hsv,side)
 
-        if savemap:
-            img = _scale(img,side)
+    npixels = int(img_hsv.shape[0] * img_hsv.shape[1] * k/100)
+    valimage = img_hsv[:,:,2]
 
-    imgblur_hsv = gaussian(img_hsv,sigma=sigma,channel_axis=2)
-    contrast = np.max(imgblur_hsv[:,:,2]) - np.min(imgblur_hsv[:,:,2])
-    dmin = np.argmax(imgblur_hsv[:,:,2])
-    dmax = np.argmin(imgblur_hsv[:,:,2])
-    satdmin = imgblur_hsv[:,:,1].flatten()[dmin]
+    dark_threshold = sorted(valimage.flatten())[npixels]
+    dark_pixels = valimage < dark_threshold
+    
+    light_threshold = sorted(valimage.flatten())[-npixels]
+    light_pixels = valimage > light_threshold
+
+    lowtone = np.median(valimage[dark_pixels])
+    saturation = np.median(img_hsv[:,:,1][light_pixels])
 
     if savemap is not False:
-        imgblur = gaussian(img,sigma=sigma,channel_axis=2)
-        dmin = np.unravel_index(dmin,imgblur.shape[:2])
-        dmax = np.unravel_index(dmax,imgblur.shape[:2])
+
+        img[dark_pixels] = [255,0,255] # magenta
+        img[light_pixels] = [0,255,255] # cyan 
         
-        # draw black circle around dmin in imgblur
-        rr,cc = disk((dmin[0],dmin[1]),radius=10,shape=imgblur.shape[:2])
-        imgblur[rr,cc] = [0,0,0]
-
-        # draw white circle around dmax in imgblur
-        rr,cc = disk((dmax[0],dmax[1]),radius=10,shape=imgblur.shape[:2])
-        imgblur[rr,cc] = [1,1,1]
-
         imgdir = os.path.dirname(imgpath)
         imgname = os.path.basename(imgpath)
 
@@ -460,11 +456,73 @@ def _condition_convolution(imgpath,scale,sigma,savemap,side):
         if not os.path.exists(mapdir):
             os.makedirs(mapdir)
         mappath = os.path.join(mapdir,imgname[:-4]+".png")
-        imsave(mappath,imgblur)
+        imsave(mappath,img)
 
-        return contrast,satdmin,mappath
+        return lowtone,saturation,mappath
 
-    return contrast,satdmin
+    return lowtone,saturation
+
+# def _condition(pathcol,scale,verbose,sigma=6,savemap=False,side=256):
+#     """Returns brightness at 'dmax' (the darkest spot) and saturation at 'dmin';
+#        used for measuring photo fading and yellowing"""
+
+#     if isinstance(pathcol,string_types):
+#         return _condition_convolution(pathcol,scale,sigma,savemap,side)
+
+#     elif isinstance(pathcol,pd.Series):
+#         breaks,pct = _progressBar(pathcol)
+#         cols = ['contrast','satdmin']
+#         if savemap:
+#             cols.append('mappath')
+
+#         return _iterextract(pathcol,cols,breaks,pct,_condition_convolution,
+#                             verbose,scale=scale,sigma=sigma,savemap=savemap,side=side)
+
+# def _condition_convolution(imgpath,scale,sigma,savemap,side):
+    
+#     img = imread(imgpath)
+#     img_hsv = color.rgb2hsv(img)
+
+#     if scale==True:
+#         img_hsv = _scale(img_hsv,side)
+
+#         if savemap:
+#             img = _scale(img,side)
+
+#     imgblur_hsv = gaussian(img_hsv,sigma=sigma,channel_axis=2)
+#     contrast = np.max(imgblur_hsv[:,:,2]) - np.min(imgblur_hsv[:,:,2])
+#     dmin = np.argmax(imgblur_hsv[:,:,2])
+#     dmax = np.argmin(imgblur_hsv[:,:,2])
+#     satdmin = imgblur_hsv[:,:,1].flatten()[dmin]
+
+#     if savemap is not False:
+#         imgblur = gaussian(img,sigma=sigma,channel_axis=2)
+#         dmin = np.unravel_index(dmin,imgblur.shape[:2])
+#         dmax = np.unravel_index(dmax,imgblur.shape[:2])
+        
+#         # draw black circle around dmin in imgblur
+#         rr,cc = disk((dmin[0],dmin[1]),radius=10,shape=imgblur.shape[:2])
+#         imgblur[rr,cc] = [0,0,0]
+
+#         # draw white circle around dmax in imgblur
+#         rr,cc = disk((dmax[0],dmax[1]),radius=10,shape=imgblur.shape[:2])
+#         imgblur[rr,cc] = [1,1,1]
+
+#         imgdir = os.path.dirname(imgpath)
+#         imgname = os.path.basename(imgpath)
+
+#         if isinstance(savemap,string_types):
+#             mapdir = os.path.join(imgdir,'_maps_'+savemap)
+#         else:
+#             mapdir = os.path.join(imgdir,'_maps')
+#         if not os.path.exists(mapdir):
+#             os.makedirs(mapdir)
+#         mappath = os.path.join(mapdir,imgname[:-4]+".png")
+#         imsave(mappath,imgblur)
+
+#         return contrast,satdmin,mappath
+
+#     return contrast,satdmin
 
 #------------------------------------------------------------------------------
 
