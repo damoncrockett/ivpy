@@ -426,7 +426,7 @@ def _ktop(imgpath,k,savemap,side):
     img = imread(imgpath)
     img_hsv = color.rgb2hsv(img)
 
-    img = img_as_ubyte(_scale(img,side))
+    img = img_as_ubyte(_scale(color.gray2rgb(color.rgb2gray(img)),side))
     img_hsv = _scale(img_hsv,side)
 
     npixels = int(img_hsv.shape[0] * img_hsv.shape[1] * k/100)
