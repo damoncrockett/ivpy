@@ -226,22 +226,11 @@ def _radar(polypts,radii,gridlines,radarfill,
 
     im = Image.new('RGBA', (side,side), None)
     draw = ImageDraw.Draw(im)
+    
     adj = int( side / 20 )
     halfside = int( side / 2 )
-    coords = _radarcoords(polypts,halfside)
 
-    if len(coords)==1:
-        x,y = list(coords)[0][0], list(coords)[0][1]
-        draw.ellipse([(x-adj,y-adj),(x+adj,y+adj)], fill=radarfill)
-    elif len(coords)==2:
-        if any([list(coords.index)==[0,2],list(coords.index)==[1,3]]):
-            draw.line(list(coords), fill=radarfill, width=adj*2)
-        else:
-            coords = list(coords)
-            coords.append((halfside,halfside))
-            draw.polygon(coords, fill=radarfill, outline=outline, width=int(side/100))
-    elif len(coords) > 2:
-        draw.polygon(list(coords), fill=radarfill, outline=outline, width=int(side/100))
+    # plot lines first, below the glyph
 
     if radii:
         draw.line([(halfside,0),(halfside,side)],
@@ -273,6 +262,23 @@ def _radar(polypts,radii,gridlines,radarfill,
         draw.line([(sTwoThird,sHalf),(sHalf,sTwoThird)],fill=radiifill,width=round(side/200))
         draw.line([(sHalf,sTwoThird),(sThird,sHalf)],fill=radiifill,width=round(side/200))
         draw.line([(sThird,sHalf),(sHalf,sThird)],fill=radiifill,width=round(side/200))
+
+    # then the glyph atop it
+
+    coords = _radarcoords(polypts,halfside)
+
+    if len(coords)==1:
+        x,y = list(coords)[0][0], list(coords)[0][1]
+        draw.ellipse([(x-adj,y-adj),(x+adj,y+adj)], fill=radarfill)
+    elif len(coords)==2:
+        if any([list(coords.index)==[0,2],list(coords.index)==[1,3]]):
+            draw.line(list(coords), fill=radarfill, width=adj*2)
+        else:
+            coords = list(coords)
+            coords.append((halfside,halfside))
+            draw.polygon(coords, fill=radarfill, outline=outline, width=int(side/100))
+    elif len(coords) > 2:
+        draw.polygon(list(coords), fill=radarfill, outline=outline, width=int(side/100))
 
     return im
 
