@@ -15,7 +15,8 @@ def draw_glyphs(df,aes,savedir,
                 side=200,
                 alpha=1.0,
                 legend=True,
-                savecolor=True):
+                savecolor=True,
+                outline=None):
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -32,7 +33,7 @@ def draw_glyphs(df,aes,savedir,
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor)
+        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline)
 
     return gpaths
 
@@ -93,7 +94,7 @@ def get_legend(df,col):
     return Image.open(legend_path)
 
 
-def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor):
+def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline):
 
     alphargb = int(alpha*255)
 
@@ -161,7 +162,7 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor):
             #c = colors[0]
             c = (0,0,0,alphargb)
 
-        glyph = _radar(polypts,radii,gridlines,c,side)
+        glyph = _radar(polypts,radii,gridlines,c,outline,side)
 
         if mat:
             glyph = _mat(glyph)
@@ -209,15 +210,11 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor):
             gpath_colors.append(c)
 
     if savecolor:
-        return pd.DataFrame({'gpath':gpaths,'gpath_color':gpath_colors})
+        return pd.DataFrame({'gpath':gpaths,'gpath_color':gpath_colors},index=df.index)
     else:
-        return gpaths
+        return pd.Series(gpaths,index=df.index)
 
-# outline not settable by user, currently
-def _radar(polypts,radii,gridlines,radarfill,
-          side=200,
-          outline='black',
-          radiifill='grey'):
+def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey'):
 
     """
     Function where the basic radar glyph is drawn. Not meant to be user-called,
