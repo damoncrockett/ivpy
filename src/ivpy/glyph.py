@@ -107,18 +107,21 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,o
               (201,240,127,alphargb),
               (124,70,160,alphargb),
               (58,166,9,alphargb),
-              (223,42,105,alphargb),
-              (0,0,0,alphargb)]
+              (223,42,105,alphargb)]
 
     color = aes.get('color')
     if color is not None:
         numcolors = len(df[color].value_counts().keys())
         if numcolors > len(colors):
-            raise ValueError("Number of color categories cannot exceed 10")
-        else:
-            keys = list(df[color].value_counts().keys())
-            vals = colors[:len(keys)]
-            cmap = dict(zip(keys,vals))
+            lendiff = numcolors - len(colors)
+            dummycolors = [(0,0,0,alphargb) for i in range(lendiff)]
+            colors = colors + dummycolors
+
+            print("Warning: more than 10 colors specified; groups outside of the 10 largest will be drawn in black.")
+
+        keys = list(df[color].value_counts().keys())
+        vals = colors[:len(keys)]
+        cmap = dict(zip(keys,vals))
         
         if legend:
             _legend(cmap).save(os.path.join(savedir,'_legend.png'))
