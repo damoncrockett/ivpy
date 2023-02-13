@@ -2,6 +2,7 @@ from PIL import Image,ImageDraw
 from pandas import Series
 from numpy import sqrt,arange,ndarray,mean
 from copy import deepcopy
+from six import string_types
 
 from .data import _typecheck,_colfilter,_bin,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
@@ -69,65 +70,6 @@ def show(pathcol=None,
         _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
 
         return canvas
-
-#------------------------------------------------------------------------------
-
-def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=False):
-
-    """
-    Composes PIL canvases into metacanvas
-
-    Args:
-        *args --- any number of canvases, given by name or plot function
-        ncols (int) --- number of columns in metacanvas (optional)
-        rounding (str) --- when ncols is None, round ncols 'up' or 'down'
-        thumb (int) --- pixel value for thumbnail side
-        bg (color) --- background color
-        border (Boolean) --- whether to border plots
-    """
-
-    typelist = [isinstance(item,Image.Image) for item in args]
-    if not all(typelist):
-        raise TypeError("Arguments passed to 'compose' must be PIL Images")
-
-    n = len(args)
-    if ncols is None:
-        ncols = _round(sqrt(n),direction=rounding)
-    if thumb is None:
-        thumb = min(_getsizes(args))
-
-    try:
-        _typecheck(**locals()['kwargs'])
-    except:
-        _typecheck(**locals())
-
-    if ncols > n:
-        raise ValueError("'ncols' cannot be larger than number of plots")
-
-    thumbargs = [deepcopy(arg) for arg in args]
-    for thumbarg in thumbargs:
-        thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
-
-    w,h,coords = _gridcoords(n,ncols,thumb)
-    
-    if bg is None:
-        metacanvas = Image.new('RGBA',(w,h),bg)
-    else:
-        metacanvas = Image.new('RGB',(w,h),bg)
-
-    for i in range(n):
-        canvas = thumbargs[i]
-        if canvas.size!=(thumb,thumb):
-            canvas = _bottom_left_corner(canvas,thumb,bg)
-        if border:
-            canvas = _border(canvas)
-       
-        if bg is None:
-            metacanvas.paste(canvas,coords[i],canvas)
-        else:
-            metacanvas.paste(canvas,coords[i])
-
-    return metacanvas
 
 #------------------------------------------------------------------------------
 
@@ -435,5 +377,102 @@ def line(*args,**kwargs):
             lwidth = width
 
         draw.line(list(coords),fill=fcolor,width=lwidth,joint='curve')
+
+    return canvas
+
+#------------------------------------------------------------------------------
+
+def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=False):
+
+    """
+    Composes PIL canvases into metacanvas
+
+    Args:
+        *args --- any number of canvases, given by name or plot function
+        ncols (int) --- number of columns in metacanvas (optional)
+        rounding (str) --- when ncols is None, round ncols 'up' or 'down'
+        thumb (int) --- pixel value for thumbnail side
+        bg (color) --- background color
+        border (Boolean) --- whether to border plots
+    """
+
+    typelist = [isinstance(item,Image.Image) for item in args]
+    if not all(typelist):
+        raise TypeError("Arguments passed to 'compose' must be PIL Images")
+
+    n = len(args)
+    if ncols is None:
+        ncols = _round(sqrt(n),direction=rounding)
+    if thumb is None:
+        thumb = min(_getsizes(args))
+
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
+
+    if ncols > n:
+        raise ValueError("'ncols' cannot be larger than number of plots")
+
+    thumbargs = [deepcopy(arg) for arg in args]
+    for thumbarg in thumbargs:
+        thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
+
+    w,h,coords = _gridcoords(n,ncols,thumb)
+    
+    if bg is None:
+        metacanvas = Image.new('RGBA',(w,h),bg)
+    else:
+        metacanvas = Image.new('RGB',(w,h),bg)
+
+    for i in range(n):
+        canvas = thumbargs[i]
+        if canvas.size!=(thumb,thumb):
+            canvas = _bottom_left_corner(canvas,thumb,bg)
+        if border:
+            canvas = _border(canvas)
+       
+        if bg is None:
+            metacanvas.paste(canvas,coords[i],canvas)
+        else:
+            metacanvas.paste(canvas,coords[i])
+
+    return metacanvas
+
+#------------------------------------------------------------------------------
+
+def overlay(*args,**kwargs):
+
+    """
+    Overlay images
+
+    Args:
+        *args --- images to be overlaid
+        side (int) --- length of plot side in pixels; all plots enforced square
+        bg (color) --- background color
+    """
+
+    try:
+        _typecheck(**locals()['kwargs'])
+    except:
+        _typecheck(**locals())
+
+    side = kwargs.get('side', 400)
+    bg = kwargs.get('bg', 'white')
+
+    if bg=='transparent':
+        canvas = Image.new('RGBA',(side,side),None) # fixed size
+    else:
+        canvas = Image.new('RGB',(side,side),bg) # fixed size
+
+    for arg in args:
+
+        if isinstance(arg,string_types):
+            arg = Image.open(arg)
+            
+        if arg.size != (side,side):
+            arg = arg.resize((side,side))
+        
+        canvas.paste(arg,(0,0),arg)
 
     return canvas
