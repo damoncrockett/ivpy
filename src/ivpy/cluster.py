@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 from sklearn.cluster import AffinityPropagation,AgglomerativeClustering,Birch
-from sklearn.cluster import DBSCAN,FeatureAgglomeration,KMeans,MiniBatchKMeans
+from sklearn.cluster import DBSCAN,KMeans,MiniBatchKMeans
 from sklearn.cluster import MeanShift,SpectralClustering
+import hdbscan
 from six import string_types
 from .plot import show
 from .data import _typecheck,_pathfilter,_featfilter,int_types,seq_types
@@ -319,6 +320,12 @@ def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
         print("method:",method)
         return _cluster(X,
                         DBSCAN,
+                        **kwargs)
+
+    elif method=='hdbscan':
+        print("method:",method)
+        return _cluster(X,
+                        hdbscan.HDBSCAN,
                         **kwargs)
 
     elif method=='minibatch':

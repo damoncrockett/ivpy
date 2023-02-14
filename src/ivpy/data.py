@@ -189,12 +189,14 @@ def _typecheck(**kwargs):
 
     methods = [
     'kmeans','hierarchical','affinity','birch',
-    'dbscan','minibatch','meanshift','spectral'
+    'dbscan','hdbscan','minibatch','meanshift',
+    'spectral'
     ]
 
     if method not in methods:
         raise TypeError("""'method' must be one of 'kmeans', 'hierarchical',
-        'affinity','birch','dbscan','minibatch','meanshift', or 'spectral'""")
+        'affinity','birch','dbscan','hdbscan','minibatch','meanshift', 
+        or 'spectral'""")
 
     if not isinstance(k,int_types):
         raise TypeError("'k' must be an integer")

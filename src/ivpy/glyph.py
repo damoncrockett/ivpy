@@ -93,6 +93,13 @@ def get_legend(df,col):
     
     return Image.open(legend_path)
 
+def get_random_color():
+    """
+    Get a random color.
+    """
+
+    return tuple(np.random.randint(0,255,3))
+
 
 def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline):
 
@@ -114,10 +121,10 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,o
         numcolors = len(df[color].value_counts().keys())
         if numcolors > len(colors):
             lendiff = numcolors - len(colors)
-            dummycolors = [(0,0,0,alphargb) for i in range(lendiff)]
-            colors = colors + dummycolors
+            randomcolors = [get_random_color() for i in range(lendiff)]
+            colors = colors + randomcolors
 
-            print("Warning: more than 10 colors specified; groups outside of the 10 largest will be drawn in black.")
+            print("Warning: more than 10 colors specified; groups outside of the 10 largest will be drawn in random colors.")
 
         keys = list(df[color].value_counts().keys())
         vals = colors[:len(keys)]
