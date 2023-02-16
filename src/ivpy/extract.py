@@ -579,6 +579,12 @@ def _read_process_image(imgpath,gain,N,low_pass_sigma,high_pass_sigma,low_pass_a
     #low_pass_sigma = 201
     #high_pass_sigma = 5
 
+    if min(tif_array.shape) < N + low_pass_sigma:
+        N = min(tif_array.shape) - low_pass_sigma
+        if N < 512:
+            print('Image too small to process: ' + imgpath)
+            return None
+
     # Crop array to extract middle NxN portion of image
     # Adding extra to allow for smooth filtering
     tif_array = _crop_array(tif_array,N+low_pass_sigma)
