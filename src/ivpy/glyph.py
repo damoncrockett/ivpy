@@ -16,7 +16,8 @@ def draw_glyphs(df,aes,savedir,
                 alpha=1.0,
                 legend=True,
                 savecolor=True,
-                outline=None):
+                outline=None,
+                fill=None):
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -33,7 +34,7 @@ def draw_glyphs(df,aes,savedir,
         pass
 
     if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline)
+        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline,fill)
 
     return gpaths
 
@@ -101,7 +102,7 @@ def get_random_color():
     return tuple(np.random.randint(0,255,3))
 
 
-def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline):
+def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline,fill):
 
     alphargb = int(alpha*255)
 
@@ -169,8 +170,10 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,o
             elif not check_nan(colorval):
                 c = cmap[colorval]
         except:
-            #c = colors[0]
-            c = (0,0,0,alphargb)
+            if fill is not None:
+                c = fill
+            else:
+                c = (0,0,0,alphargb)
 
         glyph = _radar(polypts,radii,gridlines,c,outline,side)
 
@@ -283,9 +286,9 @@ def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey'):
         else:
             coords = list(coords)
             coords.append((halfside,halfside))
-            draw.polygon(coords, fill=radarfill, outline=outline, width=int(side/100))
+            draw.polygon(coords, fill=radarfill, outline=outline, width=int(side/200))
     elif len(coords) > 2:
-        draw.polygon(list(coords), fill=radarfill, outline=outline, width=int(side/100))
+        draw.polygon(list(coords), fill=radarfill, outline=outline, width=int(side/200))
 
     return im
 

@@ -500,11 +500,17 @@ def _titlesize(im):
     return font,pt,fontHeight
 
 def _entitle(im,title,font,fontHeight,bg):
+
+    if _islight(bg):
+        textcolor = 'black'
+    else:
+        textcolor = 'white'
+
     mat = Image.new('RGB',(im.width,im.height+fontHeight*2),bg)
     mat.paste(im,(0,fontHeight*2))
     draw = ImageDraw.Draw(mat)
     titleFontWidth,titleFontHeight = font.getsize(title)
-    draw.text((int(im.width/2-titleFontWidth/2),int(fontHeight-titleFontHeight/2)),title,font=font,fill='grey')
+    draw.text((int(im.width/2-titleFontWidth/2),int(fontHeight-titleFontHeight/2)),title,font=font,fill=textcolor)
 
     return mat
 
@@ -676,11 +682,11 @@ def _annote(im,note):
 
     draw.rectangle(
         [(0,pos),(fontWidth,imHeight)],
-        fill='white',
+        fill='gainsboro',
         outline=None
     )
 
-    draw.multiline_text((0,pos),text,font=font,fill='grey')
+    draw.multiline_text((0,pos),text,font=font,fill='dimgrey')
 
 def _placeholder(thumb):
     im = Image.new('RGB',(thumb,thumb),'#969696')

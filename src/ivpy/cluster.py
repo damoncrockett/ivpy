@@ -317,7 +317,7 @@ def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
                         **kwargs)
 
     elif method=='dbscan':
-        print("method:",method)
+        #print("method:",method)
         return _cluster(X,
                         DBSCAN,
                         **kwargs)
