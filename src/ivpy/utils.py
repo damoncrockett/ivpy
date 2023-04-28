@@ -175,8 +175,16 @@ def _tifprocess(impath,savedir,N,include_dir):
         img = rgb2gray(img)
 
         if img.shape[1] < 2448:
-            N = 1024
-
+            if img.shape[1] >= 1024:
+                N = 1024
+            else:
+                if img.shape[1] < 512:
+                    print('Image too small to process')
+                if img.shape[1] >= 768:
+                    N = 768
+                else:
+                    N = 512
+            
         img = _crop_array(img,N)
         img = _exposure_correction(img)
         img = np.uint8(img * 255)

@@ -4,7 +4,7 @@ from numpy import sqrt,arange,ndarray,mean
 from copy import deepcopy
 from six import string_types
 
-from .data import _typecheck,_colfilter,_bin,_facet
+from .data import _typecheck,_colfilter,_facet
 from .plottools import _gridcoords,_paste,_getsizes,_round
 from .plottools import _border,_montage,_histogram,_scatter,_facetcompose
 from .plottools import _titlesize,_entitle,_bottom_left_corner
@@ -430,7 +430,7 @@ def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=Fals
         if canvas.size!=(thumb,thumb):
             canvas = _bottom_left_corner(canvas,thumb,bg)
         if border:
-            canvas = _border(canvas)
+            canvas = _border(canvas,bg=bg)
        
         if bg is None:
             metacanvas.paste(canvas,coords[i],canvas)

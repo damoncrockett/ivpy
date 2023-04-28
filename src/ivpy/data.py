@@ -115,6 +115,7 @@ def _typecheck(**kwargs):
     legend = kwargs.get('legend',True)
     savemap = kwargs.get('savemap',False)
     textcolor = kwargs.get('textcolor')
+    fill = kwargs.get('fill',None)
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -220,6 +221,9 @@ def _typecheck(**kwargs):
     if radarfill is not None:
         if not isinstance(radarfill,(tuple,string_types)):
             raise TypeError("'radarfill' must be an RGB triplet or a string")
+    if fill is not None:
+        if not isinstance(fill,(tuple,string_types)):
+            raise TypeError("'fill' must be an RGB triplet or a string")
 
     glyphtypes = ['radar']
 
