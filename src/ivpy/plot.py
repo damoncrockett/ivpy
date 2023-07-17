@@ -55,7 +55,7 @@ def show(pathcol=None,
     if isinstance(pathcol, str): # single pathstring
         im = Image.open(pathcol)
         if thumb!=False:
-            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+            im.thumbnail((thumb,thumb),Image.Resampling.LANCZOS)
         return im
     else:
         if thumb==False:
@@ -416,7 +416,7 @@ def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=Fals
 
     thumbargs = [deepcopy(arg) for arg in args]
     for thumbarg in thumbargs:
-        thumbarg.thumbnail((thumb,thumb),Image.ANTIALIAS)
+        thumbarg.thumbnail((thumb,thumb),Image.Resampling.LANCZOS)
 
     w,h,coords = _gridcoords(n,ncols,thumb)
     
