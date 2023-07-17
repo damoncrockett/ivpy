@@ -725,9 +725,9 @@ def _paste(pathcol,thumb,idx,canvas,coords,
             im = _placeholder(thumb)
 
         if isinstance(thumb,tuple):
-            im.thumbnail((thumb[0],thumb[1]),Image.ANTIALIAS)
+            im.thumbnail((thumb[0],thumb[1]),Image.Resampling.LANCZOS)
         elif isinstance(thumb,int_types):        
-            im.thumbnail((thumb,thumb),Image.ANTIALIAS)
+            im.thumbnail((thumb,thumb),Image.Resampling.LANCZOS)
         
         im = im.convert('RGBA') # often unnecessary but for rotation and glyphs
         if idx==True: # idx labels placed after thumbnail
