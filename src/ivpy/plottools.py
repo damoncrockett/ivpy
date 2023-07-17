@@ -315,7 +315,7 @@ def _facetcompose(*args,border=None,bg=None):
     # item[0] in each arg is the Image; item[1] is matdict
     thumb = max( _getsizes([item[0] for item in args]) )
     for arg in args:
-        arg[0].thumbnail((thumb,thumb),Image.ANTIALIAS)
+        arg[0].thumbnail((thumb,thumb),Image.Resampling.LANCZOS)
 
     # below is necessary because hist facets can be different heights
     maxheight = max([item[0].height for item in args])
