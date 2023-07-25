@@ -366,6 +366,9 @@ def _facetcompose(*args,border=None,bg=None):
 
 def _islight(color):
 
+    if color is None:
+        return True
+    
     if isinstance(color,str):
         color = ImageColor.getrgb(color)
 
