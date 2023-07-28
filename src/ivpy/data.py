@@ -553,10 +553,12 @@ def _subset(pathcol,xcol,ycol,xdomain,ydomain,facetcol,notecol):
     return pathcol,xcol,ycol,facetcol,notecol
 
 def _bin(col,bins):
+    colname = col.name
     col = pd.cut(col,bins)
     leftbinedges = [float(str(item).split(",")[0].lstrip("([")) for item in col]
 
-    return pd.Series(leftbinedges,index=col.index)
+    # we set `name` here bc needed for axis titles, original col.name lost otherwise
+    return pd.Series(leftbinedges,index=col.index,name=colname)
 
 def _facet(**kwargs):
     kwargdict = copy.deepcopy(kwargs)
