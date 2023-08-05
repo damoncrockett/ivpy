@@ -227,7 +227,7 @@ def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,o
     else:
         return pd.Series(gpaths,index=df.index)
 
-def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey'):
+def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey',coll=False):
 
     """
     Function where the basic radar glyph is drawn. Not meant to be user-called,
@@ -277,6 +277,11 @@ def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey'):
 
     coords = _radarcoords(polypts,halfside)
 
+    if coll:
+        outlinewidth = int(side/50)
+    else:
+        outlinewidth = int(side/200)
+
     if len(coords)==1:
         x,y = list(coords)[0][0], list(coords)[0][1]
         draw.ellipse([(x-adj,y-adj),(x+adj,y+adj)], fill=radarfill)
@@ -286,9 +291,9 @@ def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey'):
         else:
             coords = list(coords)
             coords.append((halfside,halfside))
-            draw.polygon(coords, fill=radarfill, outline=outline, width=int(side/200))
+            draw.polygon(coords, fill=radarfill, outline=outline, width=outlinewidth)
     elif len(coords) > 2:
-        draw.polygon(list(coords), fill=radarfill, outline=outline, width=int(side/200))
+        draw.polygon(list(coords), fill=radarfill, outline=outline, width=outlinewidth)
 
     return im
 
