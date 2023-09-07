@@ -286,31 +286,31 @@ def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
     if method=='kmeans':
         if centroids is not None:
             k = len(centroids)
-            print("method:",method,"\nnumber of clusters:",str(k))
+            #print("method:",method,"\nnumber of clusters:",str(k))
             return _cluster(X,
                             KMeans,
                             n_clusters=k,
                             init=X.loc[centroids],
                             **kwargs)
         elif centroids is None:
-            print("method:",method,"\nnumber of clusters:",str(k))
+            #print("method:",method,"\nnumber of clusters:",str(k))
             return _cluster(X,KMeans,n_clusters=k,**kwargs)
 
     elif method=='hierarchical':
-        print("method:",method,"\nnumber of clusters:",str(k))
+        #print("method:",method,"\nnumber of clusters:",str(k))
         return _cluster(X,
                         AgglomerativeClustering,
                         n_clusters=k,
                         **kwargs)
 
     elif method=='affinity':
-        print("method:",method)
+        #print("method:",method)
         return _cluster(X,
                         AffinityPropagation,
                         **kwargs)
 
     elif method=='birch':
-        print("method:",method,"\nnumber of clusters:",str(k))
+        #print("method:",method,"\nnumber of clusters:",str(k))
         return _cluster(X,
                         Birch,
                         n_clusters=k,
@@ -323,7 +323,7 @@ def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
                         **kwargs)
 
     elif method=='hdbscan':
-        print("method:",method)
+        #print("method:",method)
         return _cluster(X,
                         hdbscan.HDBSCAN,
                         **kwargs)
@@ -331,24 +331,24 @@ def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
     elif method=='minibatch':
         if centroids is not None:
             k = len(centroids)
-            print("method:",method,"\nnumber of clusters:",str(k))
+            #print("method:",method,"\nnumber of clusters:",str(k))
             return _cluster(X,
                             MiniBatchKMeans,
                             n_clusters=k,
                             init=X.loc[centroids],
                             **kwargs)
         elif centroids is None:
-            print("method:",method,"\nnumber of clusters:",str(k))
+            #print("method:",method,"\nnumber of clusters:",str(k))
             return _cluster(X,MiniBatchKMeans,n_clusters=k,**kwargs)
 
     elif method=='meanshift':
-        print("method:",method)
+        #print("method:",method)
         return _cluster(X,
                         MeanShift,
                         **kwargs)
 
     elif method=='spectral':
-        print("method:",method,"\nnumber of clusters:",str(k))
+        #print("method:",method,"\nnumber of clusters:",str(k))
         return _cluster(X,
                         SpectralClustering,
                         n_clusters=k,
