@@ -382,7 +382,7 @@ def line(*args,**kwargs):
 
 #------------------------------------------------------------------------------
 
-def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=False):
+def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',rgba=False,border=False):
 
     """
     Composes PIL canvases into metacanvas
@@ -420,7 +420,7 @@ def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=Fals
 
     w,h,coords = _gridcoords(n,ncols,thumb)
     
-    if bg is None:
+    if bg is None or rgba==True:
         metacanvas = Image.new('RGBA',(w,h),bg)
     else:
         metacanvas = Image.new('RGB',(w,h),bg)
@@ -432,7 +432,7 @@ def compose(*args,ncols=None,rounding='down',thumb=None,bg='#212121',border=Fals
         if border:
             canvas = _border(canvas,bg=bg)
        
-        if bg is None:
+        if bg is None or rgba==True:
             metacanvas.paste(canvas,coords[i],canvas)
         else:
             metacanvas.paste(canvas,coords[i])

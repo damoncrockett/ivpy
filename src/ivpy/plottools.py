@@ -5,6 +5,7 @@ from numpy import repeat,sqrt,arange,radians,cos,sin,linspace
 import numpy as np
 from math import ceil
 from six import string_types
+from copy import deepcopy
 
 try:
     import requests
@@ -72,7 +73,7 @@ def _montage(pathcol=None,
         canvas = Image.new('RGB',(w,h),bg)
         _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
     elif shape=='rect':
-        ncols = int( sqrt( n / 0.5625 ) )
+        ncols = ceil( sqrt( n / 0.5625 ) )
         w,h,coords = _gridcoords(n,ncols,thumb)
         canvas = Image.new('RGB',(w,h),bg)
         _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
@@ -716,15 +717,22 @@ def _paste(pathcol,thumb,idx,canvas,coords,
     counter=-1
     for i in pathcol.index:
         counter+=1
+        impath = pathcol.loc[i]
         try:
-            if pathcol.loc[i].startswith(("http://", "https://")):
-                response = requests.get(pathcol.loc[i], stream=True)
-                im = Image.open(response.raw)
-            elif dot==True:
+            if dot==True:
                 im = _dot(thumb)
+            elif isinstance(impath,string_types):
+                if impath.startswith(("http://", "https://")):
+                    response = requests.get(impath, stream=True)
+                    im = Image.open(response.raw)
+                else:
+                    im = Image.open(impath)
+            elif isinstance(impath,Image.Image):
+                im = deepcopy(impath) # when pathcol is a list of PIL images
             else:
-                im = Image.open(pathcol.loc[i])
-        except:
+                im = _placeholder(thumb)
+        except Exception as e:
+            print(e)
             im = _placeholder(thumb)
 
         if isinstance(thumb,tuple):
