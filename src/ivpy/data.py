@@ -26,6 +26,8 @@ def _typecheck(**kwargs):
     facetcol = kwargs.get('facetcol')
     notecol = kwargs.get('notecol')
     clustercol = kwargs.get('clustercol')
+    colorcol = kwargs.get('colorcol')
+    savecol = kwargs.get('savecol')
 
     """type checking"""
     if pathcol is not None:
@@ -50,6 +52,12 @@ def _typecheck(**kwargs):
         if not isinstance(clustercol,(string_types,int_types,pd.Series)):
             raise TypeError("""'clustercol' must be a string, int, or
                                a pandas Series""")
+    if colorcol is not None:
+        if not isinstance(colorcol,pd.Series):
+            raise TypeError("""'colorcol' must be a pandas Series""")
+    if savecol is not None:
+        if not isinstance(savecol,pd.Series):
+            raise TypeError("""'savecol' must be a pandas Series""")
 
     """
     plot settings: We add default values to avoid error when kwarg is not
@@ -72,7 +80,7 @@ def _typecheck(**kwargs):
     ydomain = kwargs.get('ydomain') # needs to be None sometimes
     xbins = kwargs.get('xbins') # needs to be None sometimes
     ybins = kwargs.get('ybins') # needs to be None sometimes
-    savedir = kwargs.get('savedir','foo') # any string
+    savedir = kwargs.get('savedir',None)
     feature = kwargs.get('feature','brightness')
     aggregate = kwargs.get('aggregate',True)
     scale = kwargs.get('scale',True)
@@ -94,6 +102,10 @@ def _typecheck(**kwargs):
     verbose = kwargs.get('verbose',False)
     radii = kwargs.get('radii',True)
     gridlines = kwargs.get('gridlines',True)
+    outlinewidth = kwargs.get('outlinewidth',2)
+    gridlinefill = kwargs.get('gridlinefill','lightgray')
+    gridlinewidth = kwargs.get('gridlinewidth',1)
+    axislabels = kwargs.get('axislabels',False)
     alpha = kwargs.get('alpha',1.0)
     plot = kwargs.get('plot',True)
     flip = kwargs.get('flip',False)
@@ -115,7 +127,7 @@ def _typecheck(**kwargs):
     legend = kwargs.get('legend',True)
     savemap = kwargs.get('savemap',False)
     textcolor = kwargs.get('textcolor')
-    fill = kwargs.get('fill',None)
+    fill = kwargs.get('fill')
 
     """type checking"""
     if thumb!=False: # can only be false in show()
@@ -164,8 +176,9 @@ def _typecheck(**kwargs):
     if ybins is not None:
         if not isinstance(ybins,(int_types,seq_types)):
             raise TypeError("'ybins' must be an integer or a sequence")
-    if not isinstance(savedir,string_types):
-        raise TypeError("'savedir' must be a directory string")
+    if savedir is not None:
+        if not isinstance(savedir,string_types):
+            raise TypeError("'savedir' must be a directory string")
 
     feats = [
     'brightness','saturation','hue','entropy','std','contrast',
@@ -243,6 +256,14 @@ def _typecheck(**kwargs):
         raise TypeError("'radii' must be True or False")
     if not isinstance(gridlines,bool):
         raise TypeError("'gridlines' must be True or False")
+    if not isinstance(outlinewidth,int_types):
+        raise TypeError("'outlinewidth' must be an integer")
+    if not isinstance(gridlinefill,(tuple,string_types)):
+            raise TypeError("'gridlinefill' must be an RGB triplet or a string")
+    if not isinstance(gridlinewidth,int_types):
+        raise TypeError("'gridlinewidth' must be an integer")
+    if not isinstance(axislabels,(bool,seq_types)):
+        raise TypeError("'axislabels' must be True, False, or a sequence")
     if not isinstance(alpha,(int_types,float_types)):
         raise TypeError("'alpha' must be a number between 0 and 1")
     if not all([alpha <= 1, alpha >= 0]):

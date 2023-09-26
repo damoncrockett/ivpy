@@ -1,23 +1,33 @@
 import pandas as pd
 from PIL import Image,ImageDraw,ImageFont
-from .data import check_nan, _typecheck
+from .data import _typecheck
+from .plottools import polar2cartesian
 import os
-import numpy as np
+from numpy import radians, arange, linspace, random
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-def draw_glyphs(df,aes,savedir,
+FONTDIR = os.path.expanduser("~") + "/fonts/"
+
+def get_font(fonttype="Roboto-Light", fontsize=40):
+    font = ImageFont.truetype(FONTDIR + fonttype + ".ttf", fontsize)
+
+    return font
+
+#-------------------------------------------------------------------------------
+
+def draw_glyphs(X,
+                colorcol=None,
+                savedir=None,
+                savecol=None,
                 glyphtype='radar',
-                gridlines=True,
                 mat=True,
-                radii=True,
-                side=200,
+                side=800,
                 alpha=1.0,
                 legend=True,
-                savecolor=True,
-                outline=None,
-                fill=None):
+                **kwargs):
+    
     """
     User-called glyph drawing function. Really just a wrapper for all of the
     constituent glyph drawing functions, of which there is currently only one.
@@ -28,319 +38,241 @@ def draw_glyphs(df,aes,savedir,
 
     _typecheck(**locals())
 
-    try:
-        os.mkdir(savedir)
-    except:
-        pass
-
-    if glyphtype=='radar':
-        gpaths = _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline,fill)
-
-    return gpaths
-
-#-------------------------------------------------------------------------------
-
-def _legend_entry(c,val,font,w,h,spacer_width):
-    """
-    Draw a single legend entry.
-    """
-
-    entry = Image.new('RGBA',(w,h),None)
-    draw = ImageDraw.Draw(entry)
-
-    draw.rounded_rectangle([(int(h/6),int(h/6)),(h-int(h/16),h-int(h/16))],fill=c,radius=int(h/8),outline='black',width=5)
-    draw.text((h+spacer_width,0),val.upper(),fill='grey',font=font)
+    if not isinstance(X,pd.DataFrame):
+        raise ValueError("X must be a pandas DataFrame")
     
-    return entry
-
-def _legend(cmap):
-    """
-    Draw a legend for the radar glyphs.
-    """
-
-    font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf", 144)
-    maxwidth = max([font.getsize(val.upper())[0] for val in cmap.keys()])
-    maxheight = max([font.getsize(val.upper())[1] for val in cmap.keys()])
-    vincr = int( maxheight * 0.1)
-    spacer_width = 20
-    entry_height = maxheight + vincr # PIL font height estimate can be short, cutting off bottom
-    entry_width = maxwidth + spacer_width + entry_height + vincr # PIL font width estimate can be short, cutting off right side
-
-
-    entries = []
-    for key in cmap.keys():
-        im = _legend_entry(cmap[key],key,font,entry_width,entry_height,spacer_width)
-        entries.append(im)
-
-    # here, we are using 'vincr' for a different purpose: to add vertical space between entries
-    legend = Image.new('RGBA',(entry_width,(entry_height+vincr*2)*len(entries)),None)
-    
-    for i,im in enumerate(entries):
-        legend.paste(im,(0, i * (entry_height+vincr*2)),im)
-
-    return _mat(legend,rgba=False)
-
-def get_legend(df,col):
-
-    glyph_pathlist = list(df[col])
-    
-    if len(set([os.path.dirname(path) for path in glyph_pathlist])) > 1:
-        print("Glyphs are not all in the same directory; retrieving legend from first glyph")
-
-    legend_path = os.path.join(os.path.dirname(glyph_pathlist[0]),'_legend.png')
-    
-    if not os.path.exists(legend_path):
-        raise ValueError("Legend does not exist; glyph legends are drawn only if 'color' is set in 'aes'")
-    
-    return Image.open(legend_path)
-
-def get_random_color():
-    """
-    Get a random color.
-    """
-
-    return tuple(np.random.randint(0,255,3))
-
-
-def _draw_radar(df,aes,savedir,gridlines,mat,radii,side,alpha,legend,savecolor,outline,fill):
+    assert all([X.min().min() >= 0, X.max().max() <= 1]), "X must be normalized to [0,1]"
 
     alphargb = int(alpha*255)
+    
+    colors = [
+        (40,109,192,alphargb),
+        (141,168,67,alphargb),
+        (189,83,25,alphargb),
+        (99,170,255,alphargb),
+        (255,191,0,alphargb),
+        (58,14,88,alphargb),
+        (201,240,127,alphargb),
+        (124,70,160,alphargb),
+        (58,166,9,alphargb),
+        (223,42,105,alphargb)
+        ]
 
-    colors = [(40,109,192,alphargb),
-              (141,168,67,alphargb),
-              (189,83,25,alphargb),
-              (99,170,255,alphargb),
-              (255,191,0,alphargb),
-              (58,14,88,alphargb),
-              (201,240,127,alphargb),
-              (124,70,160,alphargb),
-              (58,166,9,alphargb),
-              (223,42,105,alphargb)]
-
-    color = aes.get('color')
-    if color is not None:
-        numcolors = len(df[color].value_counts().keys())
+    if colorcol is not None:
+        assert X.index.equals(colorcol.index), "colorcol must have the same index as X"
+        colorkeys = list(colorcol.value_counts().keys())
+        numcolors = len(colorkeys)
         if numcolors > len(colors):
             lendiff = numcolors - len(colors)
-            randomcolors = [get_random_color() for i in range(lendiff)]
+            randomcolors = [get_random_color(alphargb) for _ in range(lendiff)]
             colors = colors + randomcolors
 
             print("Warning: more than 10 colors specified; groups outside of the 10 largest will be drawn in random colors.")
 
-        keys = list(df[color].value_counts().keys())
-        vals = colors[:len(keys)]
-        cmap = dict(zip(keys,vals))
-        
-        if legend:
-            _legend(cmap).save(os.path.join(savedir,'_legend.png'))
+        vals = colors[:len(colorkeys)]
+        cmap = dict(zip(colorkeys,vals))
 
-    basename = aes.get('basename')
-    left = aes.get('left')
-    top = aes.get('top')
-    right = aes.get('right')
-    bottom = aes.get('bottom')
-    lthumb = aes.get('lthumb')
-    rthumb = aes.get('rthumb')
-    topflag = aes.get('topflag')
-    rightflag = aes.get('rightflag')
+        colorcol = pd.Series([cmap[val] for val in colorcol],index=colorcol.index)
+        colorcol.loc[colorcol.isnull()] = (160,160,160,alphargb)
+
+        if legend:
+            _legend(cmap).save('_legend.png')
+    else:
+        colorcol = pd.Series([(160,160,160,alphargb)] * len(X.index),index=X.index)
+
+    if savedir:
+        try:
+            os.mkdir(savedir)
+        except:
+            pass
 
     gpaths = []
-    gpath_colors = []
-    for i in df.index:
-        try:
-            basename_i = df[basename].loc[i]
-            left_i = df[left].loc[i]
-            top_i = df[top].loc[i]
-            right_i = df[right].loc[i]
-        except:
-            raise ValueError("""'aes' must contain 'basename', 'left', 'top',
-            and 'right'""")
+    for i in X.index:
+        if glyphtype=='radar':
+            vertex_list = list(X.loc[i])
+            g = radar(vertex_list, colorcol.loc[i], side, mat=mat, **kwargs)
 
-        if bottom is not None:
-            bottom_i = df[bottom].loc[i]
-
-        polypts = [left_i,top_i,right_i,bottom_i]
-
-        try:
-            colorval = df[color].loc[i]
-            if colorval is None:
-                c = (160,160,160,alphargb)
-            elif check_nan(colorval): # for NaN values in color column
-                c = (160,160,160,alphargb)
-            elif not check_nan(colorval):
-                c = cmap[colorval]
-        except:
-            if fill is not None:
-                c = fill
+        if savedir:
+            if savecol:
+                savepath = os.path.join(savedir,savecol.loc[i]+'.png')
             else:
-                c = (0,0,0,alphargb)
-
-        glyph = _radar(polypts,radii,gridlines,c,outline,side)
-
-        if mat:
-            glyph = _mat(glyph)
-
-        if lthumb is not None:
-            lthumb_i = df[lthumb].loc[i]
-            if not check_nan(lthumb_i):
-                try:
-                    lthumb_i = Image.open(lthumb_i)
-                    glyph = add_thumb(glyph,lthumb_i,'left')
-                except:
-                    pass
-        if rthumb is not None:
-            rthumb_i = df[rthumb].loc[i]
-            if not check_nan(rthumb_i):
-                try:
-                    rthumb_i = Image.open(rthumb_i)
-                    glyph = add_thumb(glyph,rthumb_i,'right')
-                except:
-                    pass
-
-        """
-        Currently the flag settings are not generalized. Here, the top flag
-        indicates a color measurement using mode M2; the gloss flag indicates
-        that the gloss measurement was taken at dmin or dmax, rather than dmid.
-        """
-        if topflag is not None:
-            topflag_i = df[topflag].loc[i]
-            if not check_nan(topflag_i):
-                glyph = add_flag(glyph,'top',outline='white',fill=None)
-        if rightflag is not None:
-            rightflag_i = df[rightflag].loc[i]
-            if not check_nan(rightflag_i):
-                if rightflag_i=='dmin':
-                    fill = 'white'
-                elif rightflag_i=='dmax':
-                    fill = 'black'
-                glyph = add_flag(glyph,'right',outline=None,fill=fill)
-
-        savestring = os.path.join(savedir, str(basename_i) + ".png")
-        glyph.save(savestring)
-        gpaths.append(savestring)
-
-        if savecolor:
-            gpath_colors.append(c)
-
-    if savecolor:
-        return pd.DataFrame({'gpath':gpaths,'gpath_color':gpath_colors},index=df.index)
-    else:
-        return pd.Series(gpaths,index=df.index)
-
-def _radar(polypts,radii,gridlines,radarfill,outline,side=200,radiifill='grey',coll=False):
-
-    """
-    Function where the basic radar glyph is drawn. Not meant to be user-called,
-    though that could change as the glyph module develops.
-    """
-
-    im = Image.new('RGBA', (side,side), None)
-    draw = ImageDraw.Draw(im)
-    
-    adj = int( side / 20 )
-    halfside = int( side / 2 )
-
-    # plot lines first, below the glyph
-
-    if radii:
-        draw.line([(halfside,0),(halfside,side)],
-                  fill=radiifill,
-                  width=round(side/200))
-        draw.line([(0,halfside),(side,halfside)],
-                  fill=radiifill,
-                  width=round(side/200))
-
-    if gridlines:
-
-        sSixth = side / 6;
-        sThird = side / 3;
-        sHalf = side / 2;
-        sTwoThird = side * 2/3;
-        sFiveSixth = side * 5/6;
-
-        draw.line([(sHalf,0),(side,sHalf)],fill=radiifill,width=round(side/200))
-        draw.line([(side,sHalf),(sHalf,side)],fill=radiifill,width=round(side/200))
-        draw.line([(sHalf,side),(0,sHalf)],fill=radiifill,width=round(side/200))
-        draw.line([(0,sHalf),(sHalf,0)],fill=radiifill,width=round(side/200))
-
-        draw.line([(sHalf,sSixth),(sFiveSixth,sHalf)],fill=radiifill,width=round(side/200))
-        draw.line([(sFiveSixth,sHalf),(sHalf,sFiveSixth)],fill=radiifill,width=round(side/200))
-        draw.line([(sHalf,sFiveSixth),(sSixth,sHalf)],fill=radiifill,width=round(side/200))
-        draw.line([(sSixth,sHalf),(sHalf,sSixth)],fill=radiifill,width=round(side/200))
-
-        draw.line([(sHalf,sThird),(sTwoThird,sHalf)],fill=radiifill,width=round(side/200))
-        draw.line([(sTwoThird,sHalf),(sHalf,sTwoThird)],fill=radiifill,width=round(side/200))
-        draw.line([(sHalf,sTwoThird),(sThird,sHalf)],fill=radiifill,width=round(side/200))
-        draw.line([(sThird,sHalf),(sHalf,sThird)],fill=radiifill,width=round(side/200))
-
-    # then the glyph atop it
-
-    coords = _radarcoords(polypts,halfside)
-
-    if coll:
-        outlinewidth = int(side/50)
-    else:
-        outlinewidth = int(side/200)
-
-    if len(coords)==1:
-        x,y = list(coords)[0][0], list(coords)[0][1]
-        draw.ellipse([(x-adj,y-adj),(x+adj,y+adj)], fill=radarfill)
-    elif len(coords)==2:
-        if any([list(coords.index)==[0,2],list(coords.index)==[1,3]]):
-            draw.line(list(coords), fill=radarfill, width=adj*2)
+                savepath = os.path.join(savedir,str(i)+'.png')
+                
+            g.save(savepath)
+            gpaths.append(savepath)
         else:
-            coords = list(coords)
-            coords.append((halfside,halfside))
-            draw.polygon(coords, fill=radarfill, outline=outline, width=outlinewidth)
-    elif len(coords) > 2:
-        draw.polygon(list(coords), fill=radarfill, outline=outline, width=outlinewidth)
+            gpaths.append(g)
 
-    return im
+    return gpaths
 
-def _radarcoords(polypts,halfside):
-    assert len(polypts) > 2
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-    left = _radar_axis_position(False,False,polypts[0],halfside)
-    top = _radar_axis_position(True,False,polypts[1],halfside)
-    #right = _radar_axis_position(False,True,1-polypts[2],halfside) # gloss inversion
-    right = _radar_axis_position(False,True,polypts[2],halfside)
-    bottom = _radar_axis_position(True,True,polypts[3],halfside)
+def radar(vertex_list: list, fill=(160,160,160,255), side=800, mat=True, **kwargs) -> Image:
+    """
+    args:
+    
+    vertex_list: (list) at least 3 normalized radius positions
+    fill: (tuple) polygon fill color
+    side: (int) canvas pixels per side
+    outline: (str) polygon outline color
+    outlinewidth: (int) polygon outline width
+    gridlinefill: (str) gridline color
+    gridlinewidth: (int) gridline width
+    radii: (bool) draw radar axes
+    gridlines: (bool or int) draw radar gridlines; either False or n_ticks
+    axislabels: (bool or seq) draw axis labels; either False or a sequence of labels
+    mat: (bool) add padding to canvas
+    
+    return:
+    
+    canvas: (PIL.Image or filepath) radar glyph or filepath to radar glyph
+    """
 
-    coords = pd.Series([left,top,right,bottom])
-    coords = coords[coords.notnull()]
+    assert isinstance(fill,tuple), "fill must be a tuple of RGBA values"
+    assert len(fill) == 4, "fill must be a 4-tuple of RGBA values"
 
-    return coords
+    outline = kwargs.get('outline','black')
+    outlinewidth = kwargs.get('outlinewidth',2)
+    gridlinefill = kwargs.get('gridlinefill','lightgray')
+    gridlinewidth = kwargs.get('gridlinewidth',1)
+    radii = kwargs.get('radii',True)
+    gridlines = kwargs.get('gridlines',4)
+    axislabels = kwargs.get('axislabels',False)
+    
+    n_axes = len(vertex_list)
+            
+    canvas = Image.new('RGBA', (side,side), None)
+            
+    canvas = draw_polygon(canvas, vertex_list, fill, outline, outlinewidth)
+    
+    if radii:
+        canvas = draw_radii(canvas, n_axes, gridlinefill, gridlinewidth)
+        
+    if gridlines:
+        canvas = draw_gridlines(canvas, n_axes, gridlinefill, gridlinewidth, gridlines)
+        
+    if axislabels:
+        canvas = draw_axis_labels(canvas, axislabels, gridlinefill)
 
-def _radar_axis_position(vert,pos,val,halfside):
-    if check_nan(val):
-        return None
-    elif not check_nan(val):
-        prop = val * halfside
-        if pos:
-            extent = prop + halfside
-        elif not pos:
-            extent = halfside - prop
-        if vert:
-            return (halfside, extent)
-        elif not vert:
-            return (extent, halfside)
+    if mat:
+        canvas = _mat(canvas, rgba=True)
+        
+    return canvas
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+def get_radar_vertices(vertex_list: list, side=800) -> list:
+    """
+    args:
+    
+    vertex_list: (list) at least 3 normalized radius positions
+    side: (int) canvas pixels per side
+    
+    return:
+    
+    image_vertices: (list) a list of canvas coordinates
+    """
+    
+    n_axes = len(vertex_list)
+    if n_axes < 3:
+        raise ValueError("`vertex_list` must contain at least 3 values")
+        
+    is_odd = n_axes % 2 != 0
+    angle_increment = 360 / n_axes
+    
+    if is_odd or n_axes == 4:
+        starting_theta = 90
+    else:
+        starting_theta = 90 - angle_increment / 2
+        
+    polar_thetas = [item-360 if item >= 360 else item for item in arange(starting_theta,
+                                                         starting_theta+360,
+                                                         angle_increment)]
+    
+    polar_thetas_radians = [radians(item) for item in polar_thetas]
+    
+    polar_vertices = list(zip(vertex_list,polar_thetas_radians))
+    cartesian_vertices = [polar2cartesian(*item) for item in polar_vertices]
+    halbside = side / 2
+    cartesian_image_vertices = [(item[0]*halbside, item[1]*halbside) for item in cartesian_vertices]
+    origin = (halbside,halbside)
+    image_vertices = [(origin[0]+item[0], origin[1]-item[1]) for item in cartesian_image_vertices]
+    image_vertices = [(int(item[0]),int(item[1])) for item in image_vertices]
+    
+    return image_vertices
+
+def draw_radii(canvas: Image, n_axes: int, fill: str, width: int) -> Image:
+    side = canvas.width
+    origin = (side/2,side/2)
+    
+    draw = ImageDraw.Draw(canvas)
+    
+    image_vertices = get_radar_vertices([1] * n_axes, side)
+    for image_vertex in image_vertices:
+        draw.line([origin,image_vertex],fill=fill,width=width)
+        
+    return canvas
+
+def draw_gridlines(canvas: Image, n_axes: int, fill: str, width: int, n_ticks: int) -> Image:
+    side = canvas.width
+    
+    draw = ImageDraw.Draw(canvas)
+    
+    for r in linspace(0,1,n_ticks):
+        image_vertices = get_radar_vertices([r] * n_axes, side)
+        for i in range(len(image_vertices)):
+            draw.line([image_vertices[i-1],image_vertices[i]],fill=fill,width=width)
+        
+    return canvas
+
+def draw_polygon(canvas: Image, vertex_list: list, fill: str, outline: str, width: int) -> Image:
+    side = canvas.width
+    
+    draw = ImageDraw.Draw(canvas)
+    
+    image_vertices = get_radar_vertices(vertex_list, side)
+    
+    draw.polygon(image_vertices,
+                 fill=fill,
+                 outline=outline,
+                 width=width)
+    
+    return canvas
+
+def draw_axis_labels(canvas: Image, label_list: list, fill: str) -> Image:
+    
+    canvas = _mat(canvas, rgba=False)
+    side = canvas.width
+    
+    draw = ImageDraw.Draw(canvas)
+    
+    image_vertices = get_radar_vertices([0.95] * len(label_list), side)
+    
+    fontsize = int(side/20)
+    font = get_font(fontsize=fontsize)
+    for i,label in enumerate(label_list):
+        draw.text(image_vertices[i],label,fill=fill,font=font)
+        
+    return canvas
 
 #-------------------------------------------------------------------------------
 
-def _mat(im,rgba=True):
+def _mat(im, incr=0.1, bg='white', rgba=True):
     w = im.width
     h = im.height
 
-    w_incr = int( w * 0.1 )
-    h_incr = int( h * 0.1 )
+    w_incr = int( w * incr )
+    h_incr = int( h * incr )
 
     if rgba:
         newim = Image.new('RGBA',(w+w_incr*2,h+h_incr*2),None)
+        newim.paste(im,(w_incr,h_incr),im)
     else:
         # this for some reason prevents losing rect color when you mat a legend
-        newim = Image.new('RGB',(w+w_incr*2,h+h_incr*2),"white")
-        
-    newim.paste(im,(w_incr,h_incr),im)
+        newim = Image.new('RGB',(w+w_incr*2,h+h_incr*2),bg)
+        newim.paste(im,(w_incr,h_incr))
     
     return newim
 
@@ -384,3 +316,64 @@ def add_flag(im,loc,outline,fill):
 
     draw.ellipse(flag_loc,outline=outline,fill=fill)
     return im
+
+def _legend_entry(c,val,font,w,h,spacer_width):
+    """
+    Draw a single legend entry.
+    """
+
+    entry = Image.new('RGBA',(w,h),None)
+    draw = ImageDraw.Draw(entry)
+
+    draw.rounded_rectangle([(int(h/6),int(h/6)),(h-int(h/16),h-int(h/16))],fill=c,radius=int(h/8),outline='black',width=5)
+    draw.text((h+spacer_width,0),val.upper(),fill='grey',font=font)
+    
+    return entry
+
+def _legend(cmap):
+    """
+    Draw a legend for the radar glyphs.
+    """
+
+    font = get_font(fontsize=144)
+    maxwidth = max([font.getsize(val.upper())[0] for val in cmap.keys()])
+    maxheight = max([font.getsize(val.upper())[1] for val in cmap.keys()])
+    vincr = int( maxheight * 0.1)
+    spacer_width = 20
+    entry_height = maxheight + vincr # PIL font height estimate can be short, cutting off bottom
+    entry_width = maxwidth + spacer_width + entry_height + vincr # PIL font width estimate can be short, cutting off right side
+
+    entries = []
+    for key in cmap.keys():
+        im = _legend_entry(cmap[key],key,font,entry_width,entry_height,spacer_width)
+        entries.append(im)
+
+    # here, we are using 'vincr' for a different purpose: to add vertical space between entries
+    legend = Image.new('RGBA',(entry_width,(entry_height+vincr*2)*len(entries)),None)
+    
+    for i,im in enumerate(entries):
+        legend.paste(im,(0, i * (entry_height+vincr*2)),im)
+
+    return _mat(legend,rgba=False)
+
+def get_legend(df,col):
+
+    glyph_pathlist = list(df[col])
+    
+    if len(set([os.path.dirname(path) for path in glyph_pathlist])) > 1:
+        print("Glyphs are not all in the same directory; retrieving legend from first glyph")
+
+    legend_path = os.path.join(os.path.dirname(glyph_pathlist[0]),'_legend.png')
+    
+    if not os.path.exists(legend_path):
+        raise ValueError("Legend does not exist; glyph legends are drawn only if 'color' is set in 'aes'")
+    
+    return Image.open(legend_path)
+
+def get_random_color(alphargb):
+    """
+    Get a random color.
+    """
+
+    return tuple(*random.randint(0,255,3), alphargb)
+
