@@ -52,9 +52,6 @@ def _typecheck(**kwargs):
         if not isinstance(clustercol,(string_types,int_types,pd.Series)):
             raise TypeError("""'clustercol' must be a string, int, or
                                a pandas Series""")
-    if colorcol is not None:
-        if not isinstance(colorcol,pd.Series):
-            raise TypeError("""'colorcol' must be a pandas Series""")
     if savecol is not None:
         if not isinstance(savecol,pd.Series):
             raise TypeError("""'savecol' must be a pandas Series""")
@@ -235,8 +232,8 @@ def _typecheck(**kwargs):
         if not isinstance(radarfill,(tuple,string_types)):
             raise TypeError("'radarfill' must be an RGB triplet or a string")
     if fill is not None:
-        if not isinstance(fill,(tuple,string_types)):
-            raise TypeError("'fill' must be an RGB triplet or a string")
+        if not isinstance(fill,(tuple,string_types,pd.Series)):
+            raise TypeError("'fill' must be an RGB/A tuple, a string, or a pandas Series")
 
     glyphtypes = ['radar']
 

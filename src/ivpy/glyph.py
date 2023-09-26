@@ -4,6 +4,7 @@ from .data import _typecheck
 from .plottools import polar2cartesian
 import os
 from numpy import radians, arange, linspace, random
+import re
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -18,14 +19,14 @@ def get_font(fonttype="Roboto-Light", fontsize=40):
 #-------------------------------------------------------------------------------
 
 def draw_glyphs(X,
-                colorcol=None,
+                fill=(160,160,160,255),
                 savedir=None,
                 savecol=None,
                 glyphtype='radar',
                 mat=True,
                 side=800,
                 alpha=1.0,
-                legend=True,
+                legend=False,
                 **kwargs):
     
     """
@@ -58,27 +59,36 @@ def draw_glyphs(X,
         (223,42,105,alphargb)
         ]
 
-    if colorcol is not None:
-        assert X.index.equals(colorcol.index), "colorcol must have the same index as X"
-        colorkeys = list(colorcol.value_counts().keys())
-        numcolors = len(colorkeys)
-        if numcolors > len(colors):
-            lendiff = numcolors - len(colors)
-            randomcolors = [get_random_color(alphargb) for _ in range(lendiff)]
-            colors = colors + randomcolors
+    if isinstance(fill, pd.Series):
+        assert X.index.equals(fill.index), "`fill` must have the same index as `X`"
+        
+        # if user supplies a pandas Series of valid colors, use them; otherwise, generate a color map
+        try: 
+            fill = pd.Series([anycolor_to_rgba(item,alphargb) for item in fill], index=fill.index, dtype='object')
+        except:
+            colorkeys = list(fill.value_counts().keys())
+            numcolors = len(colorkeys)
+            if numcolors > len(colors):
+                lendiff = numcolors - len(colors)
+                randomcolors = [get_random_color(alphargb) for _ in range(lendiff)]
+                colors = colors + randomcolors
 
-            print("Warning: more than 10 colors specified; groups outside of the 10 largest will be drawn in random colors.")
+                print("Warning: more than 10 colors specified; groups outside of the 10 largest will be drawn in random colors.")
 
-        vals = colors[:len(colorkeys)]
-        cmap = dict(zip(colorkeys,vals))
+            vals = colors[:len(colorkeys)]
+            cmap = dict(zip(colorkeys,vals))
 
-        colorcol = pd.Series([cmap[val] for val in colorcol],index=colorcol.index)
-        colorcol.loc[colorcol.isnull()] = (160,160,160,alphargb)
+            if legend:
+                _legend(cmap).save('_legend.png')
 
-        if legend:
-            _legend(cmap).save('_legend.png')
-    else:
-        colorcol = pd.Series([(160,160,160,alphargb)] * len(X.index),index=X.index)
+            fill = pd.Series([cmap[val] for val in fill],index=fill.index)
+        
+        na_indices = fill.loc[fill.isna()].index
+        nafiller_series = pd.Series([(160,160,160,alphargb)] * len(na_indices), index=na_indices, dtype='object')
+        fill.loc[na_indices] = nafiller_series
+   
+    elif isinstance(fill, (tuple, str)): 
+        fill = pd.Series([anycolor_to_rgba(fill,alphargb)] * len(X.index),index=X.index, dtype='object')
 
     if savedir:
         try:
@@ -90,7 +100,7 @@ def draw_glyphs(X,
     for i in X.index:
         if glyphtype=='radar':
             vertex_list = list(X.loc[i])
-            g = radar(vertex_list, colorcol.loc[i], side, mat=mat, **kwargs)
+            g = radar(vertex_list, fill.loc[i], side, mat=mat, **kwargs)
 
         if savedir:
             if savecol:
@@ -108,12 +118,12 @@ def draw_glyphs(X,
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 
-def radar(vertex_list: list, fill=(160,160,160,255), side=800, mat=True, **kwargs) -> Image:
+def radar(vertex_list: list, fill=(160,160,160,255), side=800, mat=True, alpha=1.0, **kwargs) -> Image:
     """
     args:
     
     vertex_list: (list) at least 3 normalized radius positions
-    fill: (tuple) polygon fill color
+    fill: (tuple, str) polygon fill color
     side: (int) canvas pixels per side
     outline: (str) polygon outline color
     outlinewidth: (int) polygon outline width
@@ -129,9 +139,19 @@ def radar(vertex_list: list, fill=(160,160,160,255), side=800, mat=True, **kwarg
     canvas: (PIL.Image or filepath) radar glyph or filepath to radar glyph
     """
 
-    assert isinstance(fill,tuple), "fill must be a tuple of RGBA values"
-    assert len(fill) == 4, "fill must be a 4-tuple of RGBA values"
+    _typecheck(**locals())
 
+    # stricter than typecheck, which allows for a Series
+    if not isinstance(fill, (tuple, str)):
+        raise ValueError("`fill` must be a tuple or string")
+    
+    alphargb = int(alpha*255)
+
+    try:
+        fill = anycolor_to_rgba(fill,alphargb)
+    except:
+        raise ValueError("`fill` must be a valid color")
+    
     outline = kwargs.get('outline','black')
     outlinewidth = kwargs.get('outlinewidth',2)
     gridlinefill = kwargs.get('gridlinefill','lightgray')
@@ -377,3 +397,190 @@ def get_random_color(alphargb):
 
     return tuple(*random.randint(0,255,3), alphargb)
 
+def anycolor_to_rgba(color, alphargb=255):
+    
+    # Normalize the color string if it's string type
+    if isinstance(color, str):
+        color = color.lower().strip()
+
+        # Check for RGB/RGBA format
+        rgb_match = re.match(r"rgba?\((\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})(?:,\s*(\d+(\.\d+)?))?\)$", color)
+        if rgb_match:
+            r, g, b = map(int, rgb_match.group(1, 2, 3))
+            a = int(float(rgb_match.group(4))) if rgb_match.group(4) else alphargb
+            return (r, g, b, a)
+
+        # Convert named colors to hex
+        if color in NAMED_COLORS:
+            color = NAMED_COLORS[color]
+
+        # Convert 3-char hex to 6-char hex
+        if len(color) == 4 and color[0] == "#":
+            color = "#" + "".join([c + c for c in color[1:]])
+
+        # Check if it's a valid 6-character hex string
+        if len(color) == 7 and color[0] == "#":
+            r = int(color[1:3], 16)
+            g = int(color[3:5], 16)
+            b = int(color[5:7], 16)
+            return (r, g, b, alphargb)
+    
+    elif isinstance(color, tuple) and len(color) in [3, 4]:
+        r, g, b = color[:3]
+        a = color[3] if len(color) == 4 else alphargb
+        if all(0 <= v <= 255 for v in (r, g, b, a)):
+            return (r, g, b, a)
+
+    raise ValueError("Invalid color format")
+
+# Dictionary of HTML named colors
+NAMED_COLORS = {
+    "aliceblue": "#f0f8ff",
+    "antiquewhite": "#faebd7",
+    "aqua": "#00ffff",
+    "aquamarine": "#7fffd4",
+    "azure": "#f0ffff",
+    "beige": "#f5f5dc",
+    "bisque": "#ffe4c4",
+    "black": "#000000",
+    "blanchedalmond": "#ffebcd",
+    "blue": "#0000ff",
+    "blueviolet": "#8a2be2",
+    "brown": "#a52a2a",
+    "burlywood": "#deb887",
+    "cadetblue": "#5f9ea0",
+    "chartreuse": "#7fff00",
+    "chocolate": "#d2691e",
+    "coral": "#ff7f50",
+    "cornflowerblue": "#6495ed",
+    "cornsilk": "#fff8dc",
+    "crimson": "#dc143c",
+    "cyan": "#00ffff",
+    "darkblue": "#00008b",
+    "darkcyan": "#008b8b",
+    "darkgoldenrod": "#b8860b",
+    "darkgray": "#a9a9a9",
+    "darkgreen": "#006400",
+    "darkgrey": "#a9a9a9",
+    "darkkhaki": "#bdb76b",
+    "darkmagenta": "#8b008b",
+    "darkolivegreen": "#556b2f",
+    "darkorange": "#ff8c00",
+    "darkorchid": "#9932cc",
+    "darkred": "#8b0000",
+    "darksalmon": "#e9967a",
+    "darkseagreen": "#8fbc8f",
+    "darkslateblue": "#483d8b",
+    "darkslategray": "#2f4f4f",
+    "darkslategrey": "#2f4f4f",
+    "darkturquoise": "#00ced1",
+    "darkviolet": "#9400d3",
+    "deeppink": "#ff1493",
+    "deepskyblue": "#00bfff",
+    "dimgray": "#696969",
+    "dimgrey": "#696969",
+    "dodgerblue": "#1e90ff",
+    "firebrick": "#b22222",
+    "floralwhite": "#fffaf0",
+    "forestgreen": "#228b22",
+    "fuchsia": "#ff00ff",
+    "gainsboro": "#dcdcdc",
+    "ghostwhite": "#f8f8ff",
+    "gold": "#ffd700",
+    "goldenrod": "#daa520",
+    "gray": "#808080",
+    "green": "#008000",
+    "greenyellow": "#adff2f",
+    "grey": "#808080",
+    "honeydew": "#f0fff0",
+    "hotpink": "#ff69b4",
+    "indianred ": "#cd5c5c",
+    "indigo ": "#4b0082",
+    "ivory": "#fffff0",
+    "khaki": "#f0e68c",
+    "lavender": "#e6e6fa",
+    "lavenderblush": "#fff0f5",
+    "lawngreen": "#7cfc00",
+    "lemonchiffon": "#fffacd",
+    "lightblue": "#add8e6",
+    "lightcoral": "#f08080",
+    "lightcyan": "#e0ffff",
+    "lightgoldenrodyellow": "#fafad2",
+    "lightgray": "#d3d3d3",
+    "lightgreen": "#90ee90",
+    "lightgrey": "#d3d3d3",
+    "lightpink": "#ffb6c1",
+    "lightsalmon": "#ffa07a",
+    "lightseagreen": "#20b2aa",
+    "lightskyblue": "#87cefa",
+    "lightslategray": "#778899",
+    "lightslategrey": "#778899",
+    "lightsteelblue": "#b0c4de",
+    "lightyellow": "#ffffe0",
+    "lime": "#00ff00",
+    "limegreen": "#32cd32",
+    "linen": "#faf0e6",
+    "magenta": "#ff00ff",
+    "maroon": "#800000",
+    "mediumaquamarine": "#66cdaa",
+    "mediumblue": "#0000cd",
+    "mediumorchid": "#ba55d3",
+    "mediumpurple": "#9370db",
+    "mediumseagreen": "#3cb371",
+    "mediumslateblue": "#7b68ee",
+    "mediumspringgreen": "#00fa9a",
+    "mediumturquoise": "#48d1cc",
+    "mediumvioletred": "#c71585",
+    "midnightblue": "#191970",
+    "mintcream": "#f5fffa",
+    "mistyrose": "#ffe4e1",
+    "moccasin": "#ffe4b5",
+    "navajowhite": "#ffdead",
+    "navy": "#000080",
+    "oldlace": "#fdf5e6",
+    "olive": "#808000",
+    "olivedrab": "#6b8e23",
+    "orange": "#ffa500",
+    "orangered": "#ff4500",
+    "orchid": "#da70d6",
+    "palegoldenrod": "#eee8aa",
+    "palegreen": "#98fb98",
+    "paleturquoise": "#afeeee",
+    "palevioletred": "#db7093",
+    "papayawhip": "#ffefd5",
+    "peachpuff": "#ffdab9",
+    "peru": "#cd853f",
+    "pink": "#ffc0cb",
+    "plum": "#dda0dd",
+    "powderblue": "#b0e0e6",
+    "purple": "#800080",
+    "rebeccapurple": "#663399",
+    "red": "#ff0000",
+    "rosybrown": "#bc8f8f",
+    "royalblue": "#4169e1",
+    "saddlebrown": "#8b4513",
+    "salmon": "#fa8072",
+    "sandybrown": "#f4a460",
+    "seagreen": "#2e8b57",
+    "seashell": "#fff5ee",
+    "sienna": "#a0522d",
+    "silver": "#c0c0c0",
+    "skyblue": "#87ceeb",
+    "slateblue": "#6a5acd",
+    "slategray": "#708090",
+    "slategrey": "#708090",
+    "snow": "#fffafa",
+    "springgreen": "#00ff7f",
+    "steelblue": "#4682b4",
+    "tan": "#d2b48c",
+    "teal": "#008080",
+    "thistle": "#d8bfd8",
+    "tomato": "#ff6347",
+    "turquoise": "#40e0d0",
+    "violet": "#ee82ee",
+    "wheat": "#f5deb3",
+    "white": "#ffffff",
+    "whitesmoke": "#f5f5f5",
+    "yellow": "#ffff00",
+    "yellowgreen": "#9acd32"
+    }
