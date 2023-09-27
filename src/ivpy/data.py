@@ -90,7 +90,6 @@ def _typecheck(**kwargs):
     normtype = kwargs.get('normtype','featscale')
     C = kwargs.get('C',0)
     j = kwargs.get('j')
-    radarfill = kwargs.get('radarfill')
     glyphtype = kwargs.get('glyphtype','radar')
     df = kwargs.get('df',pd.DataFrame())
     aes = kwargs.get('aes',{})
@@ -228,9 +227,6 @@ def _typecheck(**kwargs):
     if j is not None:
         if not isinstance(j,(int_types,seq_types)):
             raise TypeError("'j' must be an integer or sequence")
-    if radarfill is not None:
-        if not isinstance(radarfill,(tuple,string_types)):
-            raise TypeError("'radarfill' must be an RGB triplet or a string")
     if fill is not None:
         if not isinstance(fill,(tuple,string_types,pd.Series)):
             raise TypeError("'fill' must be an RGB/A tuple, a string, or a pandas Series")
