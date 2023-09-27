@@ -141,16 +141,17 @@ def radar(vertex_list: list, fill=(160,160,160,255), side=800, mat=True, alpha=1
 
     _typecheck(**locals())
 
-    # stricter than typecheck, which allows for a Series
-    if not isinstance(fill, (tuple, str)):
-        raise ValueError("`fill` must be a tuple or string")
-    
-    alphargb = int(alpha*255)
+    if fill is not None:
+        # stricter than typecheck, which allows for a Series
+        if not isinstance(fill, (tuple, str)):
+            raise ValueError("`fill` must be a tuple or string")
+        
+        alphargb = int(alpha*255)
 
-    try:
-        fill = anycolor_to_rgba(fill,alphargb)
-    except:
-        raise ValueError("`fill` must be a valid color")
+        try:
+            fill = anycolor_to_rgba(fill,alphargb)
+        except:
+            raise ValueError("`fill` must be a valid color")
     
     outline = kwargs.get('outline','black')
     outlinewidth = kwargs.get('outlinewidth',2)
