@@ -5,6 +5,7 @@ from .plottools import polar2cartesian
 import os
 from numpy import radians, arange, linspace, random
 import re
+from copy import deepcopy
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -159,22 +160,25 @@ def radar(vertex_list: list, fill=(160,160,160,255), side=800, mat=True, alpha=1
     gridlinewidth = kwargs.get('gridlinewidth',1)
     radii = kwargs.get('radii',True)
     gridlines = kwargs.get('gridlines',4)
-    axislabels = kwargs.get('axislabels',False)
+    #axislabels = kwargs.get('axislabels',False)
     
     n_axes = len(vertex_list)
             
     canvas = Image.new('RGBA', (side,side), None)
             
-    canvas = draw_polygon(canvas, vertex_list, fill, outline, outlinewidth)
-    
     if radii:
-        canvas = draw_radii(canvas, n_axes, gridlinefill, gridlinewidth)
+        canvas_copy = draw_radii(deepcopy(canvas), n_axes, gridlinefill, gridlinewidth)
+        canvas.paste(canvas_copy,(0,0),canvas_copy)
         
     if gridlines:
-        canvas = draw_gridlines(canvas, n_axes, gridlinefill, gridlinewidth, gridlines)
+        canvas_copy = draw_gridlines(deepcopy(canvas), n_axes, gridlinefill, gridlinewidth, gridlines)
+        canvas.paste(canvas_copy,(0,0),canvas_copy)
+
+    canvas_copy = draw_polygon(deepcopy(canvas), vertex_list, fill, outline, outlinewidth)
+    canvas.paste(canvas_copy,(0,0),canvas_copy)
         
-    if axislabels:
-        canvas = draw_axis_labels(canvas, axislabels, gridlinefill)
+    # if axislabels:
+    #     canvas = draw_axis_labels(canvas, axislabels, gridlinefill)
 
     if mat:
         canvas = _mat(canvas, rgba=True)
