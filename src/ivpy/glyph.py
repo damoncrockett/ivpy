@@ -84,6 +84,7 @@ def draw_glyphs(X,
 
             fill = pd.Series([cmap[val] for val in fill],index=fill.index)
         
+        # you can't use fillna with tuples, so this is a workaround
         na_indices = fill.loc[fill.isna()].index
         nafiller_series = pd.Series([(160,160,160,alphargb)] * len(na_indices), index=na_indices, dtype='object')
         fill.loc[na_indices] = nafiller_series
