@@ -43,7 +43,7 @@ def draw_glyphs(X,
     if not isinstance(X,pd.DataFrame):
         raise ValueError("X must be a pandas DataFrame")
     
-    assert all([X.min().min() >= 0, X.max().max() <= 1]), "X must be normalized to [0,1]"
+    #assert all([X.min().min() >= 0, X.max().max() <= 1]), "X must be normalized to [0,1]"
 
     alphargb = int(alpha*255)
     
@@ -352,7 +352,7 @@ def _legend_entry(c,val,font,w,h,spacer_width):
     draw = ImageDraw.Draw(entry)
 
     draw.rounded_rectangle([(int(h/6),int(h/6)),(h-int(h/16),h-int(h/16))],fill=c,radius=int(h/8),outline='black',width=5)
-    draw.text((h+spacer_width,0),val.upper(),fill='grey',font=font)
+    draw.text((h+spacer_width,0),str(val).upper(),fill='grey',font=font)
     
     return entry
 
@@ -362,8 +362,8 @@ def _legend(cmap):
     """
 
     font = get_font(fontsize=144)
-    maxwidth = max([font.getsize(val.upper())[0] for val in cmap.keys()])
-    maxheight = max([font.getsize(val.upper())[1] for val in cmap.keys()])
+    maxwidth = max([font.getsize(str(val).upper())[0] for val in cmap.keys()])
+    maxheight = max([font.getsize(str(val).upper())[1] for val in cmap.keys()])
     vincr = int( maxheight * 0.1)
     spacer_width = 20
     entry_height = maxheight + vincr # PIL font height estimate can be short, cutting off bottom
@@ -380,7 +380,7 @@ def _legend(cmap):
     for i,im in enumerate(entries):
         legend.paste(im,(0, i * (entry_height+vincr*2)),im)
 
-    return _mat(legend,rgba=False)
+    return _mat(legend,rgba=True)
 
 def get_legend(df,col):
 
@@ -398,10 +398,10 @@ def get_legend(df,col):
 
 def get_random_color(alphargb):
     """
-    Get a random color.
+    Get a random color between 64 and 192 for each RGB channel.
     """
 
-    return tuple(*random.randint(0,255,3), alphargb)
+    return tuple(list(random.randint(64,192,3)) + [alphargb])
 
 def anycolor_to_rgba(color, alphargb=255):
     
