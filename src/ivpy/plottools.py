@@ -684,7 +684,7 @@ def _annote(im,note):
 
     draw.rectangle(
         [(0,pos),(fontWidth,imHeight)],
-        fill='gainsboro',
+        fill='#fef7db',
         outline=None
     )
 
