@@ -56,6 +56,124 @@ def _clusterfilter(clustercol):
 
 #------------------------------------------------------------------------------
 
+"""
+usage:
+
+df['centrality'] = centrality(X)
+montage(xcol='centrality',facetcol='cluster',shape='circle')
+"""
+
+def centrality(X, clustercol=None):
+    
+    """
+    X: feature matrix
+    clustercol: pandas Series of cluster assignments; same index as X
+    """
+    
+    _typecheck(**locals())
+    clustercol = _clusterfilter(clustercol)
+    
+    centroids = X.groupby(clustercol).mean().values
+
+    distances = pd.concat(
+        [
+            pd.Series(np.linalg.norm(group - group.mean(), axis=1),index=group.index)
+            for _, group in X.groupby(clustercol)
+        ]
+    )
+
+    return distances, centroids
+
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
+
+"""
+Note: it's possible that if the user passes an X whose index doesn't match
+the pathcol they'll ultimately use to plot, you could have an indexing issue.
+Not really any way to prevent that, but it's unlikely to happen because X will
+often be obtained using extract(), which guards against it.
+"""
+
+def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
+    _typecheck(**locals())
+
+    if method=='kmeans':
+        if centroids is not None:
+            k = len(centroids)
+            #print("method:",method,"\nnumber of clusters:",str(k))
+            return _cluster(X,
+                            KMeans,
+                            n_clusters=k,
+                            init=X.loc[centroids],
+                            **kwargs)
+        elif centroids is None:
+            #print("method:",method,"\nnumber of clusters:",str(k))
+            return _cluster(X,KMeans,n_clusters=k,**kwargs)
+
+    elif method=='hierarchical':
+        #print("method:",method,"\nnumber of clusters:",str(k))
+        return _cluster(X,
+                        AgglomerativeClustering,
+                        n_clusters=k,
+                        **kwargs)
+
+    elif method=='affinity':
+        #print("method:",method)
+        return _cluster(X,
+                        AffinityPropagation,
+                        **kwargs)
+
+    elif method=='birch':
+        #print("method:",method,"\nnumber of clusters:",str(k))
+        return _cluster(X,
+                        Birch,
+                        n_clusters=k,
+                        **kwargs)
+
+    elif method=='dbscan':
+        #print("method:",method)
+        return _cluster(X,
+                        DBSCAN,
+                        **kwargs)
+
+    elif method=='hdbscan':
+        #print("method:",method)
+        return _cluster(X,
+                        hdbscan.HDBSCAN,
+                        **kwargs)
+
+    elif method=='minibatch':
+        if centroids is not None:
+            k = len(centroids)
+            #print("method:",method,"\nnumber of clusters:",str(k))
+            return _cluster(X,
+                            MiniBatchKMeans,
+                            n_clusters=k,
+                            init=X.loc[centroids],
+                            **kwargs)
+        elif centroids is None:
+            #print("method:",method,"\nnumber of clusters:",str(k))
+            return _cluster(X,MiniBatchKMeans,n_clusters=k,**kwargs)
+
+    elif method=='meanshift':
+        #print("method:",method)
+        return _cluster(X,
+                        MeanShift,
+                        **kwargs)
+
+    elif method=='spectral':
+        #print("method:",method,"\nnumber of clusters:",str(k))
+        return _cluster(X,
+                        SpectralClustering,
+                        n_clusters=k,
+                        **kwargs)
+
+def _cluster(X,func,**kwargs):
+    fitted = func(**kwargs).fit(X)
+    return pd.Series(fitted.labels_,index=X.index)
+
+#------------------------------------------------------------------------------
+
 def _reassign_i(item,reassignment,clustercol):
     assignment = clustercol.loc[item]
     if check_nan(assignment):
@@ -237,123 +355,3 @@ def idx(C,clustercol=None):
 
     idxs = clustercol.index[clustercol==C]
     return list(idxs)
-
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-
-"""
-usage:
-
-df['centrality'] = centrality(X)
-montage(xcol='centrality',facetcol='cluster',shape='circle')
-"""
-
-def _centrality(centroid,pt):
-    return np.linalg.norm(centroid-pt)
-
-def centrality(X,clustercol=None):
-    _typecheck(**locals())
-    clustercol = _clusterfilter(clustercol)
-
-    distcol = pd.Series(index=clustercol.index)
-    clusternums = list(clustercol.value_counts().index)
-    centroids = []
-    for clusternum in clusternums:
-        idxs = clustercol.index[clustercol==clusternum]
-        tmp = X.loc[idxs]
-        centroid = np.array(tmp.apply(np.mean))
-        centroids.append(centroid)
-        for idx in idxs:
-            row = np.array(tmp.loc[idx])
-            dist = _centrality(centroid,row)
-            distcol.loc[idx] = dist
-
-    return distcol, centroids
-
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------
-
-"""
-Note: it's possible that if the user passes an X whose index doesn't match
-the pathcol they'll ultimately use to plot, you could have an indexing issue.
-Not really any way to prevent that, but it's unlikely to happen because X will
-often be obtained using extract(), which guards against it.
-"""
-
-def cluster(X,method='kmeans',k=4,centroids=None,**kwargs):
-    _typecheck(**locals())
-
-    if method=='kmeans':
-        if centroids is not None:
-            k = len(centroids)
-            #print("method:",method,"\nnumber of clusters:",str(k))
-            return _cluster(X,
-                            KMeans,
-                            n_clusters=k,
-                            init=X.loc[centroids],
-                            **kwargs)
-        elif centroids is None:
-            #print("method:",method,"\nnumber of clusters:",str(k))
-            return _cluster(X,KMeans,n_clusters=k,**kwargs)
-
-    elif method=='hierarchical':
-        #print("method:",method,"\nnumber of clusters:",str(k))
-        return _cluster(X,
-                        AgglomerativeClustering,
-                        n_clusters=k,
-                        **kwargs)
-
-    elif method=='affinity':
-        #print("method:",method)
-        return _cluster(X,
-                        AffinityPropagation,
-                        **kwargs)
-
-    elif method=='birch':
-        #print("method:",method,"\nnumber of clusters:",str(k))
-        return _cluster(X,
-                        Birch,
-                        n_clusters=k,
-                        **kwargs)
-
-    elif method=='dbscan':
-        #print("method:",method)
-        return _cluster(X,
-                        DBSCAN,
-                        **kwargs)
-
-    elif method=='hdbscan':
-        #print("method:",method)
-        return _cluster(X,
-                        hdbscan.HDBSCAN,
-                        **kwargs)
-
-    elif method=='minibatch':
-        if centroids is not None:
-            k = len(centroids)
-            #print("method:",method,"\nnumber of clusters:",str(k))
-            return _cluster(X,
-                            MiniBatchKMeans,
-                            n_clusters=k,
-                            init=X.loc[centroids],
-                            **kwargs)
-        elif centroids is None:
-            #print("method:",method,"\nnumber of clusters:",str(k))
-            return _cluster(X,MiniBatchKMeans,n_clusters=k,**kwargs)
-
-    elif method=='meanshift':
-        #print("method:",method)
-        return _cluster(X,
-                        MeanShift,
-                        **kwargs)
-
-    elif method=='spectral':
-        #print("method:",method,"\nnumber of clusters:",str(k))
-        return _cluster(X,
-                        SpectralClustering,
-                        n_clusters=k,
-                        **kwargs)
-
-def _cluster(X,func,**kwargs):
-    fitted = func(**kwargs).fit(X)
-    return pd.Series(fitted.labels_,index=X.index)
