@@ -22,8 +22,7 @@ $ pip install numpy notebook pandas Pillow
 If you want to use my custom jupyter theme, optimized for viewing image visualizations:
 
 ```shell
-$ cd ~/.jupyter
-$ mkdir custom
+$ mkdir ~/.jupyter/custom
 $ cp ~/ivpy/style/custom.css ~/.jupyter/custom
 ```
 
