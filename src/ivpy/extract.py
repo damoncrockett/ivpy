@@ -20,14 +20,14 @@ try:
     import tifffile as tiff
     import cv2
 except:
-    print("for roughness extraction, must install 'opencv-python' and 'tifffile' modules")
+    print("for roughness extraction, must install `opencv-python` and `tifffile` modules")
 
 try:
-    from tensorflow.keras.preprocessing import image
-    from tensorflow.keras.applications.resnet50 import preprocess_input
-    from tensorflow.keras.applications.resnet50 import ResNet50
+    import torch
+    import torchvision.transforms as transforms
+    from torchvision.models import resnet50, ResNet50_Weights
 except:
-    print("for neural feature extraction, must install 'tensorflow' module")
+    print("for neural feature extraction, must install `torch` and `torchvision` modules")
 
 from .data import _typecheck,_pathfilter
 from .plottools import _progressBar
@@ -381,26 +381,31 @@ def _greycoprops(imgpath,scale,prop):
 def _neural(pathcol,verbose):
     """Returns ResNet50 penultimate vector"""
 
-    # need pooling, otherwise the model returns a 7x7 feature map
-    model = ResNet50(weights='imagenet', include_top=False, pooling='avg')
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    print(f'Using {device} for inference')
+
+    weights = ResNet50_Weights.DEFAULT # default is ImageNet pretrain V2
+    model = resnet50(weights=weights)
+    model.eval()
+    preprocess = weights.transforms()
 
     if isinstance(pathcol,string_types):
-        return _featvector(pathcol,model)
+        return _featvector(pathcol,model,preprocess)
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        cols = list(range(2048))
+        cols = list(range(1000))
         featdf = _iterextract(pathcol,cols,breaks,pct,_featvector,verbose,
-                              model=model)
+                              model=model,preprocess=preprocess)
         return featdf
 
-def _featvector(imgpath,model):
-    img = image.load_img(imgpath, target_size=(224, 224))
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-    x = preprocess_input(x)
+def _featvector(impath,model,preprocess):
+    im = Image.open(impath)
+    batch = preprocess(im).unsqueeze(0)
+    with torch.no_grad():
+        prediction = model(batch).squeeze(0) # important that we don't do softmax here
 
-    return model.predict(x)[0]
+    return prediction
 
 #------------------------------------------------------------------------------
 
