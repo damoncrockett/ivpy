@@ -13,8 +13,12 @@ from skimage.util import img_as_ubyte
 from skimage.transform import resize
 from scipy.stats import entropy
 from scipy.stats import percentileofscore as pct
-from skimage.feature import greycomatrix, greycoprops
 from sklearn.neighbors import KernelDensity
+
+try:
+    from skimage.feature import greycomatrix, greycoprops
+except:
+    from skimage.feature import graycomatrix, graycoprops # real galaxy brain update here
 
 try:
     import tifffile as tiff
