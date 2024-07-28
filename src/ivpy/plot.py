@@ -338,6 +338,10 @@ def line(*args,**kwargs):
     width = kwargs.get('width', 1)
     side = kwargs.get('side', 400)
     bg = kwargs.get('bg', '#212121')
+    ymin = kwargs.get('ymin', min([min(item) for item in args]))
+    ymax = kwargs.get('ymax', max([max(item) for item in args]))
+
+    yrange = ymax - ymin
 
     if bg=='transparent':
         canvas = Image.new('RGBA',(side,side),None) # fixed size
@@ -354,10 +358,6 @@ def line(*args,**kwargs):
     n = lens[0]
     if len(lens) > 1:
         raise ValueError("All sequences passed to 'line' must be the same length")
-
-    ymax = max([max(item) for item in args])
-    ymin = min([min(item) for item in args])
-    yrange = ymax - ymin
 
     for i,arg in enumerate(args):
         incr = side / (n-1)
