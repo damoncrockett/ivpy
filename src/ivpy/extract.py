@@ -128,7 +128,7 @@ def _imgprocess(imgpath,scale):
     elif len(img.shape)==2:
         return color.rgb2hsv(color.gray2rgb(img))
 
-def _scale(img,side):
+def _scale(img,side=256):
     """Scales images to  'side' pixels max side for feature extraction. This
        function is distinct from resize() in data.py and does not save any
        images to file."""
