@@ -390,8 +390,13 @@ def _neural(pathcol,verbose):
 
     weights = ResNet50_Weights.DEFAULT # default is ImageNet pretrain V2
     model = resnet50(weights=weights)
-    model.eval()
-    preprocess = weights.transforms()
+    model.eval().to(device)
+
+    default_transforms = weights.transforms()
+    preprocess = transforms.Compose([
+        transforms.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
+        default_transforms
+    ])
 
     if isinstance(pathcol,string_types):
         return _featvector(pathcol,model,preprocess)
@@ -401,11 +406,16 @@ def _neural(pathcol,verbose):
         cols = list(range(1000))
         featdf = _iterextract(pathcol,cols,breaks,pct,_featvector,verbose,
                               model=model,preprocess=preprocess)
+        
+        # convert featdf cells from tensors to floats
+        for col in featdf.columns:
+            featdf[col] = featdf[col].map(lambda x: x.item())
+
         return featdf
 
 def _featvector(impath,model,preprocess):
     if isinstance(impath, string_types):
-        im = imread(impath)
+        im = Image.open(impath)
     else:
         im = impath
         assert isinstance(im, Image.Image)
