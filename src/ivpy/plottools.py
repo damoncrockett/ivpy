@@ -450,7 +450,8 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,bg,textcolor,xdomain,ydomai
     xlabels = [str(round(item,label_round(xmax))) for item in linspace(xmin,xmax,xaxis)][1:-1]
     for i,xlabel in enumerate(xlabels):
         xtick = xticklocs[i]
-        labelFontWidth,labelFontHeight = tickLabelFont.getsize(xlabel)
+        bbox = tickLabelFont.getbbox(xlabel)
+        labelFontWidth,labelFontHeight = getfontsize(bbox)
         xboxdraw.text((int(xtick-labelFontWidth/2),int(boxSize/8+labelFontHeight/2)),text=xlabel,font=tickLabelFont,fill=textcolor)
 
     if binmax:
@@ -463,7 +464,8 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,bg,textcolor,xdomain,ydomai
     ylabels = list(reversed(ylabels))
     for i,ylabel in enumerate(ylabels):
         ytick = yticklocs[i]
-        labelFontWidth,labelFontHeight = tickLabelFont.getsize(ylabel)
+        bbox = tickLabelFont.getbbox(ylabel)
+        labelFontWidth,labelFontHeight = getfontsize(bbox)
         yboxdraw.text((boxSize-int(boxSize/8)-labelFontWidth-labelFontHeight/2,int(ytick-labelFontHeight/2)),text=ylabel,font=tickLabelFont,fill=textcolor)
 
     ax.paste(xbox,(boxSize*2,imsize[1]))
@@ -471,8 +473,10 @@ def _axes(im,xaxis,yaxis,pt,fontHeight,xtitle,ytitle,bg,textcolor,xdomain,ydomai
 
     # axis titles
     titleFont = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",pt)
-    xAxisFontWidth,xAxisFontHeight = titleFont.getsize(xtitle)
-    yAxisFontWidth,yAxisFontHeight = titleFont.getsize(ytitle)
+    bbox_x = titleFont.getbbox(xtitle)
+    bbox_y = titleFont.getbbox(ytitle)
+    xAxisFontWidth,xAxisFontHeight = getfontsize(bbox_x)
+    yAxisFontWidth,yAxisFontHeight = getfontsize(bbox_y)
 
     xlbox = Image.new('RGB',(imsize[0],boxSize),bg)
     ylbox = Image.new('RGB',(imsize[1],boxSize),bg)
@@ -499,7 +503,8 @@ def _titlesize(im):
         pt+=1
         sampletext = "LANDSCAPE" # just some 9-letter word
         font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",pt)
-        fontWidth,fontHeight = font.getsize(sampletext)
+        bbox = font.getbbox(sampletext)
+        fontWidth,fontHeight = getfontsize(bbox)
 
     return font,pt,fontHeight
 
@@ -513,7 +518,8 @@ def _entitle(im,title,font,fontHeight,bg):
     mat = Image.new('RGB',(im.width,im.height+fontHeight*2),bg)
     mat.paste(im,(0,fontHeight*2))
     draw = ImageDraw.Draw(mat)
-    titleFontWidth,titleFontHeight = font.getsize(title)
+    bbox = font.getbbox(title)
+    titleFontWidth,titleFontHeight = getfontsize(bbox)
     draw.text((int(im.width/2-titleFontWidth/2),int(fontHeight-titleFontHeight/2)),title,font=font,fill=textcolor)
 
     return mat
@@ -645,6 +651,12 @@ def _pct(col,domain):
     drange = dmax - dmin
     return [(item - dmin) / float(drange) for item in col]
 
+def getfontsize(bbox):
+    fontWidth = bbox[2] - bbox[0]
+    fontHeight = bbox[3] - bbox[1]
+
+    return fontWidth,fontHeight
+
 def _idx(im,i):
     pos = 0 # hard-code
     draw = ImageDraw.Draw(im)
@@ -655,7 +667,8 @@ def _idx(im,i):
     if fontsize < 10:
         fontsize = 10
     font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",fontsize)
-    fontWidth, fontHeight = font.getsize(text)
+    bbox = font.getbbox(text)
+    fontWidth, fontHeight = getfontsize(bbox)
 
     draw.rectangle(
         [(pos,pos),(pos+fontWidth,pos+fontHeight)],
@@ -675,9 +688,10 @@ def _annote(im,note):
         fontsize = 10
     font = ImageFont.truetype(os.path.expanduser("~") + "/fonts/Roboto-Light.ttf",fontsize )
     maxwidthtext = max(textlist,key=len)
-    fontWidth = font.getsize(maxwidthtext)[0]
+    bbox = font.getbbox(maxwidthtext)
+    fontWidth = getfontsize(bbox)[0]
     # 4 is default line spacing in PIL multiline_text
-    fontHeight = max([font.getsize(item)[1] for item in textlist]) + 4
+    fontHeight = max([getfontsize(font.getbbox(item))[1] for item in textlist]) + 4
 
     imHeight = im.height
     pos = imHeight - (fontHeight * noterows - 4) # rm unnecessary final space

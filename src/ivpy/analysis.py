@@ -33,16 +33,17 @@ def nearest(X=None,
     notecol = _featfilter(pathcol,notecol)
 
     f = X.shape[1] # number of columns in X
-    t = AnnoyIndex(f)  # Length of item vector that will be indexed
+    t = AnnoyIndex(f, metric='angular')  # Length of item vector that will be indexed
 
-    for i,item in enumerate(X.index):
-        t.add_item(i,list(X.loc[item]))
+    for idx, item in enumerate(X.index):
+        t.add_item(idx, list(X.loc[item]))
+
 
     idmap = dict(zip(X.index,list(range(len(X)))))
     idmapReverse = dict(zip(list(range(len(X))),X.index))
 
     t.build(10) # 10 trees
-    nnsAnnoy = t.get_nns_by_item(idmap[i],k,include_distances=False) # dists?
+    nnsAnnoy = t.get_nns_by_item(idmap[i], k, include_distances=False) # dists?
     nnsNative = [idmapReverse[item] for item in nnsAnnoy]
 
     if plot in [True,'show']:
