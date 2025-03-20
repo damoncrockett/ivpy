@@ -3,3 +3,4 @@ src/.DS_Store
 src/ivpy/__pycache__
 src/.ipynb_checkpoints
 datasets
+notebooks
