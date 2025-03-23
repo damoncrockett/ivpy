@@ -78,8 +78,19 @@ def _montage(pathcol=None,
         canvas = Image.new('RGB',(w,h),bg)
         _paste(pathcol,thumb,idx,canvas,coords,notecol=notecol)
     elif shape=='circle':
-        side = int(sqrt(n)) + 5 # may have to tweak this
-        canvas = Image.new('RGB',(side*thumb,side*thumb),bg)
+        # Calculate a more adaptive canvas size based on number of images
+        # For very small n, use a smaller minimum size
+        if n <= 10:
+            side = max(5, int(sqrt(n)) + 3)
+        # For larger n, use a formula that scales better with image count
+        else:
+            # Calculate radius needed for n points distributed in a circle
+            # Add a buffer to avoid edge clipping
+            side = int(sqrt(n) * 1.2) + 2
+        
+        # Create square canvas to fit the circle
+        canvas_size = side * thumb
+        canvas = Image.new('RGB',(canvas_size, canvas_size),bg)
 
         # center image
         gridlist,maximus,coords = _gridcoordscirclemax(side,thumb)
@@ -607,7 +618,7 @@ def _histcoordspolar(n,binlabel,binmax,nbins,thumb):
     rhos = arange(binmax,binmax-n-1,-1)
     phi = _bin2phi(nbins,binlabel)
     phis = repeat(_bin2phideg(nbins,binlabel),n)
-    xycoords = [_polar2cartesian(rho,phi) for rho in rhos]
+    xycoords = [polar2cartesian(rho,phi) for rho in rhos]
     x = [int((item[0]+binmax)*thumb) for item in xycoords]
     y = [int((binmax-item[1])*thumb) for item in xycoords]
     return list(zip(x,y)),phis # py3 zip
@@ -631,7 +642,7 @@ def _scalepol(xcol,ycol,xdomain,ydomain,side,thumb):
     phiradians = [radians(item) for item in phis]
     # convert these to xy coordinates in (-1,1) range
     polcoords = list(zip(rhos,phiradians))
-    xycoords = [_polar2cartesian(item[0],item[1]) for item in polcoords]
+    xycoords = [polar2cartesian(item[0],item[1]) for item in polcoords]
     # convert to canvas coordinates
     pasterange = side[0] - thumb # otherwise will cut off extremes
     radius = float(pasterange)/2
