@@ -15,10 +15,7 @@ from scipy.stats import entropy
 from scipy.stats import percentileofscore as pct
 from sklearn.neighbors import KernelDensity
 
-try:
-    from skimage.feature import greycomatrix, greycoprops
-except:
-    from skimage.feature import graycomatrix, graycoprops # real galaxy brain update here
+from skimage.feature import graycomatrix, graycoprops
 
 try:
     import tifffile as tiff
@@ -99,7 +96,9 @@ def _iterextract(pathcol,cols,breaks,pct,func,verbose=False,**kwargs):
                 d = vals
 
         except Exception as e:
-            print(e)
+            import traceback
+            traceback.print_exc()  # This prints the full stack trace
+            print(f"Error processing {imgpath}: {e}")
             vals = [None] * ncols
             if ncols > 1:
                 d = dict(zip(cols,vals))
@@ -123,7 +122,9 @@ def _imgprocess(imgpath,scale):
     img = imread(imgpath)
     if scale==True:
         img = _scale(img)
-    if len(img.shape)==3:
+    if len(img.shape)>2:
+        if img.shape[2] == 4:
+            img = img[:, :, :3]
         return color.rgb2hsv(img)
     elif len(img.shape)==2:
         return color.rgb2hsv(color.gray2rgb(img))
@@ -362,23 +363,33 @@ def _glcm(pathcol,scale,verbose,prop):
     """Returns gray-level co-occurrence matrix property"""
 
     if isinstance(pathcol,string_types):
-       return _greycoprops(pathcol,scale,prop)
+       return _graycoprops(pathcol,scale,prop)
 
     elif isinstance(pathcol,pd.Series):
        cols = [0]
        breaks,pct = _progressBar(pathcol)
-       return _iterextract(pathcol,cols,breaks,pct,_greycoprops,verbose,
+       return _iterextract(pathcol,cols,breaks,pct,_graycoprops,verbose,
                            scale=scale,prop=prop)
 
-def _greycoprops(imgpath,scale,prop):
+def _graycoprops(imgpath, scale, prop):
     """Note that _imgprocess is not used; here we need gray integer img"""
     img = imread(imgpath)
-    if scale==True:
+    if scale:
         img = _scale(img)
-    imgray = color.rgb2gray(img)
+    
+    if len(img.shape) == 2:
+        imgray = img
+    
+    elif len(img.shape) == 3:
+        if img.shape[2] == 4:
+            # drop alpha channel
+            img = img[:, :, :3]
+        imgray = color.rgb2gray(img)
+    
     imgray = img_as_ubyte(imgray)
-    glcmat = greycomatrix(imgray,[1],[0],levels=256,symmetric=True,normed=True)
-    return greycoprops(glcmat, prop)[0][0]
+    glcmat = graycomatrix(imgray, [1], [0], levels=256, symmetric=True, normed=True)
+    
+    return graycoprops(glcmat, prop)[0][0]
 
 #------------------------------------------------------------------------------
 
