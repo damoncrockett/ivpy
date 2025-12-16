@@ -25,6 +25,7 @@ except:
 
 try:
     import torch
+    import torch.nn as nn
     import torchvision.transforms as transforms
     from torchvision.models import resnet50, ResNet50_Weights
 except:
@@ -399,8 +400,9 @@ def _neural(pathcol,verbose):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     print(f'Using {device} for inference')
 
-    weights = ResNet50_Weights.DEFAULT # default is ImageNet pretrain V2
+    weights = ResNet50_Weights.DEFAULT
     model = resnet50(weights=weights)
+    model.fc = nn.Identity()
     model.eval().to(device)
 
     default_transforms = weights.transforms()
@@ -414,7 +416,7 @@ def _neural(pathcol,verbose):
 
     elif isinstance(pathcol,pd.Series):
         breaks,pct = _progressBar(pathcol)
-        cols = list(range(1000))
+        cols = list(range(2048))
         featdf = _iterextract(pathcol,cols,breaks,pct,_featvector,verbose,
                               model=model,preprocess=preprocess)
         

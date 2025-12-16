@@ -4,7 +4,6 @@ import numpy as np
 from PIL import Image
 from six import string_types
 #import image_slicer
-from glob2 import glob
 import matplotlib.pyplot as plt
 
 from .data import _pathfilter,_typecheck
