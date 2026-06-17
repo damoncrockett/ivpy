@@ -426,17 +426,21 @@ def _neural(pathcol,verbose):
 
         return featdf
 
-def _featvector(impath,model,preprocess):
+def _featvector(impath, model, preprocess):
     if isinstance(impath, string_types):
         im = Image.open(impath)
     else:
         im = impath
         assert isinstance(im, Image.Image)
-    batch = preprocess(im).unsqueeze(0)
-    with torch.no_grad():
-        prediction = model(batch).squeeze(0) # important that we don't do softmax here
 
-    return prediction
+    device = next(model.parameters()).device
+    batch = preprocess(im).unsqueeze(0).to(device)
+
+    with torch.no_grad():
+        prediction = model(batch).squeeze(0)
+
+    return prediction.detach().cpu()
+
 
 #------------------------------------------------------------------------------
 
